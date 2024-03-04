@@ -15,8 +15,9 @@
 <body>
 
   <h1>Peer.js Sample</h1>
-  <h2>ver0.0.7</h2>
+  <h2>ver0.0.8</h2>
   <h3>hostname</h3><h4></h4>
+  <h5>port</h5><h6></h6>
 
   <!-- start call button -->
   <button onclick="start_call()">Start Call</button>
@@ -32,6 +33,7 @@ document.querySelector('h4').textContent = HOST;
 // const HOST = 'localhost';
 // const PORT = 443;
 const PORT = HOST === 'localhost' ? 9000 : 3000;
+document.querySelector('h6').textContent = PORT;
 // const PORT = 9000;
 
 
