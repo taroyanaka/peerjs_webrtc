@@ -25,3 +25,6 @@ const peerServer = ExpressPeerServer(listener, {
 });
 
 app.use('/peerjs', peerServer);
+
+
+app.get('/', (req, res, next) => res.send('Hello world! ver0.0.7'));
