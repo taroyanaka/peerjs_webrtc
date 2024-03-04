@@ -22,3 +22,5 @@ const peerServer = ExpressPeerServer(server, {debug: true});
 app.use('/myapp', peerServer);
 
 app.get('/', (req, res, next) => res.send('Hello world! ver0.0.7 port: ' + port.toString() ));
+
+

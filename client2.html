@@ -35,6 +35,8 @@ document.querySelector('h4').textContent = HOST;
 const PORT = HOST === 'localhost' ? 9000 : 3000;
 document.querySelector('h6').textContent = PORT;
 // const PORT = 9000;
+const PATH = '/peerjs/myapp';
+
 
 
 
@@ -45,7 +47,9 @@ const peer2 = new Peer('client2', {
   // port: 443,
   // port: 9000,
   // port: 3000,
-  path: '/myapp',
+  
+  // path: '/myapp',
+  path: PATH,
   secure: HOST === 'localhost' ? false : true
 });
 
@@ -73,7 +77,8 @@ function start_call(){
     // port: 443,
     // path: '/peerjs',
     secure: HOST === 'localhost' ? false : true,
-    path: '/myapp'
+    // path: '/myapp'
+    path: PATH,
         // host: 'localhost',
       // port: 9000,
       // path: '/peerjs'
