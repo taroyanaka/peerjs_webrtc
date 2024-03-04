@@ -1,2 +1,2 @@
 # peerjs_webrtc
-peerjs webrtc prototype, npm install, node ./server.js, http://localhost:9000/myapp/peerjs, http://127.0.0.1:3000/client1.html, http://127.0.0.1:3000/client2.html
+peerjs webrtc prototype, npm install, node ./server.js, http://localhost:9000/myapp/peerjs, http://127.0.0.1:3000/client1.html, http://127.0.0.1:3000/client2.html, https://github.com/peers/peerjs, https://github.com/peers/peerjs-server, https://chat.openai.com/share/f471f1d0-1f3f-4b45-99e0-a685997c9928, https://peerjs.com/docs/#start
