@@ -14,7 +14,7 @@
 <body>
 
   <h1>Peer.js Sample</h1>
-  <h2>ver0.0.2</h2>
+  <h2>ver0.0.3</h2>
   <div class="result"></div>
 
   <button id="answer_call" style="display: none;" onclick="answer_call()">Answer Call</button>
@@ -23,8 +23,9 @@
 
 
   <script>
-// const HOST = "married-wandering-passenger.glitch.me";
-const HOST = 'localhost';
+
+const HOST = window.location.hostname === "taroyanaka.github.io" ? "married-wandering-passenger.glitch.me" : "localhost";
+// const HOST = 'localhost';
 // const PORT = 443;
 const PORT = 3000;
 // const PORT = 9000;
