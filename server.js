@@ -15,7 +15,7 @@ const port = 3000;
 
 app.use('/myapp', ExpressPeerServer(server, {
   debug: true,
-  path: '/peerjs'
+//   path: ''
 }));
 
 

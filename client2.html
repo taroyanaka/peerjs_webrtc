@@ -15,7 +15,7 @@
 <body>
 
   <h1>Peer.js Sample</h1>
-  <h2>ver0.0.4</h2>
+  <h2>ver0.0.5</h2>
   <h3>hostname</h3><h4></h4>
 
   <!-- start call button -->
@@ -43,7 +43,7 @@ const peer2 = new Peer('client2', {
   // port: 443,
   // port: 9000,
   // port: 3000,
-  path: '/myapp/peerjs',
+  path: '/myapp',
   secure: HOST === 'localhost' ? false : true
 });
 
@@ -71,7 +71,7 @@ function start_call(){
     // port: 443,
     // path: '/peerjs',
     secure: HOST === 'localhost' ? false : true,
-    path: '/myapp/peerjs'
+    path: '/myapp'
         // host: 'localhost',
       // port: 9000,
       // path: '/peerjs'

@@ -14,7 +14,7 @@
 <body>
 
   <h1>Peer.js Sample</h1>
-  <h2>ver0.0.4</h2>
+  <h2>ver0.0.5</h2>
   <h3>hostname</h3><h4></h4>
   <div class="result"></div>
 
@@ -43,7 +43,8 @@ const peer1 = new Peer('client1', {
   // port: 443,
   // path: '/peerjs',
   secure: HOST === 'localhost' ? false : true,
-  path: '/myapp/peerjs'
+  // path: '/myapp/peerjs'
+  path: "/myapp"
 });
 
 peer1.on('open', id => {
