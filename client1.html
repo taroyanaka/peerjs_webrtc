@@ -15,7 +15,7 @@
   <h1>Peer.js Sample</h1>
   <div class="result"></div>
 
-  <button id="answer_call" style="display: none;">Answer Call</button>
+  <button id="answer_call" style="display: none;" onclick="answer_call()">Answer Call</button>
   <button id="hang_up_call" style="display: none;">Hang Up Call</button>
 <video autoplay></video>
 
@@ -45,28 +45,27 @@ peer1.on('connection', conn => {
 let callGlobal = null;
 let mediaStreamGlobal = null;
 
-peer1.on('call', call => {
-  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-    .then(mediaStream => {
-      mediaStreamGlobal = mediaStream;
-      callGlobal = call;
-      document.getElementById('answer_call').style.display = 'block'; // Show the button when a call is received
-    })
-    .catch(err => console.error('Failed to get local stream', err));
+peer1.on('call', async (call) => {
+  try {
+    const mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    mediaStreamGlobal = mediaStream;
+    callGlobal = call;
+    document.getElementById('answer_call').style.display = 'block'; // Show the button when a call is received
+  } catch (err) {
+    console.error('Failed to get local stream', err);
+  }
 });
 
-document.getElementById('answer_call').addEventListener('click', () => {
+function answer_call() {
   if (callGlobal && mediaStreamGlobal) {
     callGlobal.answer(mediaStreamGlobal); // Answer the call with an A/V stream.
     const video = document.querySelector('video');
     video.srcObject = mediaStreamGlobal;
     video.play();
     document.getElementById('answer_call').style.display = 'none'; // Hide the button after answering the call
-// hang_up
     document.getElementById('hang_up_call').style.display = 'block'; // Show the button after answering the call
-
   }
-});
+}
 
 // 通話を切る hang_up_callを実装
 document.getElementById('hang_up_call').addEventListener('click', () => {
