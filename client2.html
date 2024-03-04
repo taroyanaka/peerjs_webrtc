@@ -15,7 +15,8 @@
 <body>
 
   <h1>Peer.js Sample</h1>
-  <h2>ver0.0.3</h2>
+  <h2>ver0.0.4</h2>
+  <h3>hostname</h3><h4></h4>
 
   <!-- start call button -->
   <button onclick="start_call()">Start Call</button>
@@ -26,6 +27,8 @@
   <script>
     // window.location.hostname === "taroyanaka.github.io" ? "married-wandering-passenger.glitch.me" : "localhost";
 const HOST = window.location.hostname === "taroyanaka.github.io" ? "married-wandering-passenger.glitch.me" : "localhost";
+// h4にhostnameを表示
+document.querySelector('h4').textContent = HOST;
 // const HOST = 'localhost';
 // const PORT = 443;
 const PORT = 3000;
