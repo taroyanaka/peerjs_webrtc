@@ -1,109 +1,41 @@
-<!-- public/index.html -->
-
+<!-- This is a static file -->
+<!-- served from your routes in server.js -->
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- <script src="./peerjs@1.5.2/dist/peerjs.min.js"></script> -->
-  <script src="./peerjs.1.5.2.min.js"></script>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="A cool thing made with Glitch">
 
-  
-  <title>Peer 3</title>
-</head>
-<body>
+    <title>Welcome to Glitch!</title>
 
+    <link id="favicon" rel="icon" href="https://glitch.com/edit/favicon-app.ico" type="image/x-icon">
+    <!-- import the webpage's stylesheet -->
+    <!-- <link rel="stylesheet" href="/style.css"> -->
 
-<script>
-    // client-side js, loaded by index.html
-// run by the browser each time the page is loaded
+    <!-- import libraries -->
+    <script src="/lib/peerjs.js"></script>
+    
+    <!-- import the webpage's client-side javascript file -->
+    <script src="./main.js" type="module"></script>
+  </head>
+  <body>
+    <video class="remote-video" autoplay></video>
+    <input type="text" id="connect-to-peer" />
+    <button onclick="connectToPeer()">
+      Connect
+    </button>
+    
+    <div class="messages">
+      
+    </div>
 
-let Peer = window.Peer;
+    <footer>Made with <a href="https://glitch.com">Glitch</a>!</footer>
 
-let messagesEl = document.querySelector('.messages');
-let peerIdEl = document.querySelector('#connect-to-peer');
-let videoEl = document.querySelector('.remote-video');
-
-let logMessage = (message) => {
-  let newMessage = document.createElement('div');
-  newMessage.innerText = message;
-  messagesEl.appendChild(newMessage);
-};
-
-let renderVideo = (stream) => {
-  videoEl.srcObject = stream;
-};
-
-// Register with the peer server
-let peer = new Peer({
-//   host: '/',
-  host: 'boundless-abyssinian-legume.glitch.me',
-  path: '/peerjs/myapp'
-});
-peer.on('open', (id) => {
-  logMessage('My peer ID is: ' + id);
-});
-peer.on('error', (error) => {
-  console.error(error);
-});
-
-// Handle incoming data connection
-peer.on('connection', (conn) => {
-  logMessage('incoming peer connection!');
-  conn.on('data', (data) => {
-    logMessage(`received: ${data}`);
-  });
-  conn.on('open', () => {
-    conn.send('hello!');
-  });
-});
-
-// Handle incoming voice/video connection
-peer.on('call', (call) => {
-  navigator.mediaDevices.getUserMedia({video: true, audio: true})
-    .then((stream) => {
-      call.answer(stream); // Answer the call with an A/V stream.
-      call.on('stream', renderVideo);
-    })
-    .catch((err) => {
-      console.error('Failed to get local stream', err);
-    });
-});
-
-// Initiate outgoing connection
-let connectToPeer = () => {
-  let peerId = peerIdEl.value;
-  logMessage(`Connecting to ${peerId}...`);
-  
-  let conn = peer.connect(peerId);
-  conn.on('data', (data) => {
-    logMessage(`received: ${data}`);
-  });
-  conn.on('open', () => {
-    conn.send('hi!');
-  });
-  
-  navigator.mediaDevices.getUserMedia({video: true, audio: true})
-    .then((stream) => {
-      let call = peer.call(peerId, stream);
-      call.on('stream', renderVideo);
-    })
-    .catch((err) => {
-      logMessage('Failed to get local stream', err);
-    });
-};
-
-window.connectToPeer = connectToPeer;
-</script>
-
-
-<h1>Peer 3</h1>
-<div class="messages"></div>
-<input id="connect-to-peer" type="text" placeholder="Enter peer ID">
-<button onclick="connectToPeer()">Connect</button>
-<video class="remote-video" autoplay></video>
-
-
-</body>
+    <!-- include the Glitch button to show what the webpage is about and
+          to make it easier for folks to view source and remix -->
+    <div class="glitchButton" style="position:fixed;top:2em;right:20px;"></div>
+    <script src="https://button.glitch.me/button.js" defer></script>
+  </body>
 </html>
