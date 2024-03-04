@@ -74,5 +74,3 @@ let connectToPeer = () => {
       logMessage('Failed to get local stream', err);
     });
 };
-
-window.connectToPeer = connectToPeer;
