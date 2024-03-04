@@ -21,10 +21,23 @@
 
 
   <script>
+const HOST = "married-wandering-passenger.glitch.me";
+// const HOST = 'localhost';
+// const PORT = 443;
+// const PORT = 3000;
+const PORT = 9000;
+
+
+
 const peer2 = new Peer('client2', {
-  host: 'localhost',
-  port: 9000,
-  path: '/myapp/peerjs'
+  host: HOST,
+  // host: 'https://aware-hypnotic-organization.glitch.me',
+  port: PORT,
+  // port: 443,
+  // port: 9000,
+  // port: 3000,
+  path: '/myapp/peerjs',
+  secure: HOST === 'localhost' ? false : true
 });
 
 peer2.on('open', id => {
@@ -44,9 +57,17 @@ let mediaStreamGlobal = null;
 function start_call(){
   if (!peer2) {
     peer2 = new Peer('client2', {
-      host: 'localhost',
-      port: 9000,
-      path: '/peerjs'
+      host: HOST,
+      port: PORT,
+    // port: 9000,
+    // port: 3000,
+    // port: 443,
+    // path: '/peerjs',
+    secure: HOST === 'localhost' ? false : true,
+    path: '/myapp/peerjs'
+        // host: 'localhost',
+      // port: 9000,
+      // path: '/peerjs'
     });
 
     peer2.on('open', id => {
