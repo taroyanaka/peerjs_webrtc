@@ -31,7 +31,7 @@ const HOST = window.location.hostname === "taroyanaka.github.io" ? "married-wand
 document.querySelector('h4').textContent = HOST;
 // const HOST = 'localhost';
 // const PORT = 443;
-const PORT = 3000;
+const PORT = HOST === 'localhost' ? 9000 : 3000;
 // const PORT = 9000;
 
 
