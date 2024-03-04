@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "express": "^4.18.3",
+    "peer": "^1.0.2",
+    "peerjs": "^1.5.2"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "name": "peerjs_webrtc",
+  "description": "peerjs webrtc prototype",
+  "version": "1.0.0",
+  "main": "server.js",
+  "author": "",
+  "license": "ISC"
+}

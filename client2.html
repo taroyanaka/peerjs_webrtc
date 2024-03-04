@@ -1,0 +1,105 @@
+<!-- public/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="./peerjs@1.5.2/dist/peerjs.min.js"></script>
+  
+  <title>Peer 2</title>
+</head>
+<body>
+
+  <h1>Peer.js Sample</h1>
+
+  <!-- start call button -->
+  <button onclick="start_call()">Start Call</button>
+  <button id="hang_up_call" style="display: none;" onclick="hang_up_call()">Hang Up Call</button>
+<video autoplay></video>
+
+
+  <script>
+const peer2 = new Peer('client2', {
+  host: 'localhost',
+  port: 9000,
+  path: '/myapp/peerjs'
+});
+
+peer2.on('open', id => {
+  console.log('Client2 connected with ID: ', id);
+
+  const conn = peer2.connect('client1');
+  conn.on('open', () => {
+    conn.send('Hello from Client2!');
+  });
+});
+
+
+let callGlobal = null;
+let mediaStreamGlobal = null;
+
+
+function start_call(){
+  if (!peer2) {
+    peer2 = new Peer('client2', {
+      host: 'localhost',
+      port: 9000,
+      path: '/peerjs'
+    });
+
+    peer2.on('open', id => {
+      console.log('Client2 connected with ID: ', id);
+    });
+  }
+
+  // Call a peer, providing our mediaStream
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    .then(mediaStream => {
+      const call = peer2.call('client1', mediaStream);
+      callGlobal = call; // Save the call object globally
+
+      call.on('stream', remoteStream => {
+        // Show stream in some video/canvas element.
+        const video = document.querySelector('video');
+        video.srcObject = remoteStream;
+        video.play();
+      });
+
+      call.on('error', err => {
+        console.error('Failed to establish call', err);
+      });
+
+      document.getElementById('hang_up_call').style.display = 'block'; // Show the hang up button when a call is started
+    })
+    .catch(err => console.error('Failed to get local stream', err));
+}
+
+function hang_up_call(){
+  if (callGlobal) {
+    callGlobal.close(); // Close the call
+    document.getElementById('hang_up_call').style.display = 'none'; // Hide the hang up button after the call is closed
+
+    // hang_up_callを押したら、videoを停止する
+    const video = document.querySelector('video');
+    video.srcObject.getTracks().forEach(track => track.stop());
+    video.srcObject = null;
+
+    // hang_up_callを押したら、カメラを停止する
+    mediaStreamGlobal.getTracks().forEach(track => track.stop());
+
+  }
+}
+
+// document.getElementById('hang_up_call').addEventListener('click', () => {
+//   if (callGlobal) {
+//     callGlobal.close(); // Close the call
+//     document.getElementById('hang_up_call').style.display = 'none'; // Hide the hang up button after the call is closed
+//   }
+// });
+
+
+</script>
+</body>
+</html>

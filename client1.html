@@ -1,0 +1,106 @@
+<!-- public/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="./peerjs@1.5.2/dist/peerjs.min.js"></script>
+  
+  <title>Peer 1</title>
+</head>
+<body>
+
+  <h1>Peer.js Sample</h1>
+  <div class="result"></div>
+
+  <button id="answer_call" style="display: none;">Answer Call</button>
+  <button id="hang_up_call" style="display: none;">Hang Up Call</button>
+<video autoplay></video>
+
+
+  <script>
+// client1.js
+const peer1 = new Peer('client1', {
+  host: 'localhost',
+  port: 9000,
+  path: '/myapp/peerjs'
+});
+
+peer1.on('open', id => {
+  console.log('Client1 connected with ID: ', id);
+});
+
+peer1.on('connection', conn => {
+  conn.on('data', data => {
+    console.log('Received', data);
+    // resultに受信したデータを表示
+    document.querySelector('.result').textContent = data;
+  });
+});
+
+
+
+let callGlobal = null;
+let mediaStreamGlobal = null;
+
+peer1.on('call', call => {
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+    .then(mediaStream => {
+      mediaStreamGlobal = mediaStream;
+      callGlobal = call;
+      document.getElementById('answer_call').style.display = 'block'; // Show the button when a call is received
+    })
+    .catch(err => console.error('Failed to get local stream', err));
+});
+
+document.getElementById('answer_call').addEventListener('click', () => {
+  if (callGlobal && mediaStreamGlobal) {
+    callGlobal.answer(mediaStreamGlobal); // Answer the call with an A/V stream.
+    const video = document.querySelector('video');
+    video.srcObject = mediaStreamGlobal;
+    video.play();
+    document.getElementById('answer_call').style.display = 'none'; // Hide the button after answering the call
+// hang_up
+    document.getElementById('hang_up_call').style.display = 'block'; // Show the button after answering the call
+
+  }
+});
+
+// 通話を切る hang_up_callを実装
+document.getElementById('hang_up_call').addEventListener('click', () => {
+  if (callGlobal) {
+    callGlobal.close();
+    document.getElementById('answer_call').style.display = 'block'; // Show the button after hanging up the call
+  }
+
+
+  // hang_up_callを押したら、videoを停止する
+  const video = document.querySelector('video');
+  video.srcObject.getTracks().forEach(track => track.stop());
+  video.srcObject = null;
+  document.getElementById('hang_up_call').style.display = 'none'; // Hide the button after hanging up the call
+});
+
+
+// 相手側からの通話が切れたら、videoを停止する
+peer1.on('close', () => {
+  const video = document.querySelector('video');
+  video.srcObject.getTracks().forEach(track => track.stop());
+  video.srcObject = null;
+  // 通話が切れたら、ビデオを停止
+  mediaStreamGlobal.getTracks().forEach(track => track.stop());
+
+
+  document.getElementById('hang_up_call').style.display = 'none'; // Hide the button after hanging up the call
+});
+
+  </script>
+
+
+</script>
+
+
+</body>
+</html>
