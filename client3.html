@@ -6,10 +6,13 @@
     <title>Document</title>
     <script src="./peerjs.1.5.2.min.js"></script>
     <script src="./qrcode.js"></script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/node-qrcode@0.0.5/index.min.js"></script> -->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/node-qrcode@0.0.7/index.min.js"></script> -->
 </head>
+<audio></audio>
 <!-- <script src="./main.js"></script> -->
 <script>
+
+
     const text_to_qr = () => {
         const Text = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
         // const Text = "abc";
@@ -89,39 +92,74 @@ peer.on('error', (error) => {
 
 // Handle incoming voice/video connection
 peer.on('call', (call) => {
-//   navigator.mediaDevices.getUserMedia({video: true, audio: true})
-  navigator.mediaDevices.getUserMedia({video: false, audio: true})
-    .then((stream) => {
-      call.answer(stream); // Answer the call with an A/V stream.
-      call.on('stream', renderVideo);
-    })
-    .catch((err) => {
-      console.error('Failed to get local stream', err);
-    });
+navigator.mediaDevices.getUserMedia({video: false, audio: true})
+  .then((stream) => {
+    call.answer(stream); // Answer the call with an A/V stream.
+    call.on('stream', renderVideo);
+
+    // Create new audio element to play the stream
+    var audioElement = document.createElement('audio');
+    audioElement.srcObject = stream;
+    audioElement.play();
+
+    // Check if setSinkId is supported
+    if (typeof audioElement.setSinkId === 'function') {
+      navigator.mediaDevices.enumerateDevices()
+        .then(function(devices) {
+          var speakerDevice = devices.find(function(device) {
+            return device.kind === 'audiooutput' && device.label.includes('Speaker');
+          });
+          if (speakerDevice) {
+            audioElement.setSinkId(speakerDevice.deviceId);
+          }
+        });
+    }
+  })
+  .catch((err) => {
+    console.error('Failed to get local stream', err);
+  });
 });
 
 // Initiate outgoing connection
 let connectToPeer = () => {
-  let peerId = document.querySelector('#connect-to-peer').value;
+    let peerId = document.querySelector('#connect-to-peer').value;
 //   logMessage(`Connecting to ${peerId}...`);
-  
-  let conn = peer.connect(peerId);
-  conn.on('data', (data) => {
-    // logMessage(`received: ${data}`);
-  });
-  conn.on('open', () => {
-    conn.send('hi!');
-  });
-  
-//   navigator.mediaDevices.getUserMedia({video: true, audio: true})
-  navigator.mediaDevices.getUserMedia({video: false, audio: true})
-    .then((stream) => {
-      let call = peer.call(peerId, stream);
-      call.on('stream', renderVideo);
-    })
-    .catch((err) => {
-    //   logMessage('Failed to get local stream', err);
+    
+    let conn = peer.connect(peerId);
+    conn.on('data', (data) => {
+        // logMessage(`received: ${data}`);
     });
+    conn.on('open', () => {
+        conn.send('hi!');
+    });
+    
+//   navigator.mediaDevices.getUserMedia({video: true, audio: true})
+    navigator.mediaDevices.getUserMedia({video: false, audio: true})
+        .then((stream) => {
+            let call = peer.call(peerId, stream);
+            call.on('stream', renderVideo);
+
+            // Create new audio element to play the stream
+            var audioElement = document.createElement('audio');
+            audioElement.srcObject = stream;
+            audioElement.play();
+
+            // Check if setSinkId is supported
+            if (typeof audioElement.setSinkId === 'function') {
+                navigator.mediaDevices.enumerateDevices()
+                    .then(function(devices) {
+                        var speakerDevice = devices.find(function(device) {
+                            return device.kind === 'audiooutput' && device.label.includes('Speaker');
+                        });
+                        if (speakerDevice) {
+                            audioElement.setSinkId(speakerDevice.deviceId);
+                        }
+                    });
+            }
+        })
+        .catch((err) => {
+        //   logMessage('Failed to get local stream', err);
+        });
 };
 // let logMessage = (message) => {
 //   messagesEl.appendChild(newMessage);
@@ -150,12 +188,30 @@ function exe_connection(){
 
 
 <body>
+    <div>
+        setSinkId対応状態を確認
+        <p class="audio_can_set_sink_id"></p>
+    </div>
+    <script>
+            var audioElement = document.querySelector('audio');
+
+if (typeof audioElement.setSinkId === 'function') {
+  console.log('setSinkId is supported');
+//   audio_can_set_sink_id
+    document.querySelector('.audio_can_set_sink_id').textContent = 'setSinkId is supported';
+} else {
+    console.log('setSinkId is not supported'); 
+    document.querySelector('.audio_can_set_sink_id').textContent = 'setSinkId is not supported';
+}
+
+    </script>
+
     <p>qrcode</p>
     <div id="qrcode"></div>
 
     <button onclick="text_to_qr()">text_to_qr</button>
     <h1>PeerJS Example</h1>
-    <h2>version 0.0.5</h2>
+    <h2>version 0.0.7</h2>
     <!-- url_with_peer_idを表示するためのa:link -->
     <a href="" id="url_with_peer_id">通話用URL</a>
     <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
