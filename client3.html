@@ -8,6 +8,23 @@
 </head>
 <!-- <script src="./main.js"></script> -->
 <script>
+        let url_with_peer_id = new URL(window.location.href);
+    // 生成されたpeer idをurlに追加してhrefにセットする関数(ワンライナー)
+    const set_url_with_peer_id = () => document.getElementById('url_with_peer_id').href = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
+    // 生成されたpeer idをgetパラメーターで受け取る関数(get paramに存在しない場合は実行しない)
+    const get_peer_id = () => {
+        const url = new URL(window.location.href);
+        const peer_id = url.searchParams.get('peer_id');
+        if (peer_id){
+            console.log("get id", peer_id);
+            document.querySelector('#connect-to-peer').value = peer_id;
+            connectToPeer();
+        }
+    }
+    // dom content load したらget_peer_idを実行
+    document.addEventListener('DOMContentLoaded', get_peer_id);
+
+
     // client-side js, loaded by index.html
 // run by the browser each time the page is loaded
 
@@ -92,6 +109,7 @@ let connectToPeer = () => {
 peer.on('open', (id) => {
     // resultに受信したデータを表示
     document.querySelector('.result').value = id;
+    set_url_with_peer_id();
 //   logMessage('My peer ID is: ' + id);
 });
 // connectionを手動で行う関数
@@ -109,10 +127,13 @@ function exe_connection(){
 }
 </script>
 
-<body>
 
+
+<body>
     <h1>PeerJS Example</h1>
     <h2>version 0.0.1</h2>
+    <!-- url_with_peer_idを表示するためのa:link -->
+    <a href="" id="url_with_peer_id">通話用URL</a>
     <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
     <p>参考にしたコードは https://glitch.com/~peerjs-video</p>
     <!-- exe_connection -->
