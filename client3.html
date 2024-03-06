@@ -89,8 +89,8 @@ peer.on('error', (error) => {
 
 // Handle incoming voice/video connection
 peer.on('call', (call) => {
-//   navigator.mediaDevices.getUserMedia({video: true, audio: true})
-  navigator.mediaDevices.getUserMedia({video: false, audio: true})
+  navigator.mediaDevices.getUserMedia({video: true, audio: true})
+//   navigator.mediaDevices.getUserMedia({video: false, audio: true})
     .then((stream) => {
       call.answer(stream); // Answer the call with an A/V stream.
       call.on('stream', renderVideo);
@@ -113,8 +113,8 @@ let connectToPeer = () => {
     conn.send('hi!');
   });
   
-//   navigator.mediaDevices.getUserMedia({video: true, audio: true})
-  navigator.mediaDevices.getUserMedia({video: false, audio: true})
+  navigator.mediaDevices.getUserMedia({video: true, audio: true})
+//   navigator.mediaDevices.getUserMedia({video: false, audio: true})
     .then((stream) => {
       let call = peer.call(peerId, stream);
       call.on('stream', renderVideo);
@@ -155,7 +155,7 @@ function exe_connection(){
 
     <button onclick="text_to_qr()">text_to_qr</button>
     <h1>PeerJS Example</h1>
-    <h2>version 0.0.3</h2>
+    <h2>version 0.0.4</h2>
     <!-- url_with_peer_idを表示するためのa:link -->
     <a href="" id="url_with_peer_id">通話用URL</a>
     <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
