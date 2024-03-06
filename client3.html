@@ -52,7 +52,8 @@ peer.on('error', (error) => {
 
 // Handle incoming voice/video connection
 peer.on('call', (call) => {
-  navigator.mediaDevices.getUserMedia({video: true, audio: true})
+//   navigator.mediaDevices.getUserMedia({video: true, audio: true})
+  navigator.mediaDevices.getUserMedia({video: false, audio: true})
     .then((stream) => {
       call.answer(stream); // Answer the call with an A/V stream.
       call.on('stream', renderVideo);
@@ -75,7 +76,8 @@ let connectToPeer = () => {
     conn.send('hi!');
   });
   
-  navigator.mediaDevices.getUserMedia({video: true, audio: true})
+//   navigator.mediaDevices.getUserMedia({video: true, audio: true})
+  navigator.mediaDevices.getUserMedia({video: false, audio: true})
     .then((stream) => {
       let call = peer.call(peerId, stream);
       call.on('stream', renderVideo);
