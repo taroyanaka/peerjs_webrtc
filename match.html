@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="./vue@3.2.36.global.prod.js"></script>
+    <style>
+        .block_0 {
+            /* 右にずらす */
+            margin-left: 0rem;
+            /* background-color: yellow; */
+        }
+        .block_1 {
+            /* 右にずらす */
+            margin-left: 1rem;
+            /* background-color: red; */
+        }
+        .block_2 {
+            /* 右にずらす */
+            margin-left: 3rem;
+            /* background-color: blue; */
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <!-- list_1 -->
+        <div v-for="a, a_idx in list_1">
+            <input type="text" v-model="list_1[a_idx]">
+            {{a}}
+        </div>
+        <div class="block_0" v-for="a, a_idx in LIST">
+            <div>
+                <div>{{a.name}} <span class="block_1">{{a.user_type.customer_type}}</span></div>
+                <div v-for="b, b_idx in a.keyword_list" class="block_2">
+                    <div>{{b.keyword}}</div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+<script>
+const app = Vue.createApp({
+data() {
+return {
+    list_1: [1,2,3,4,5],
+    user_type_list: [
+        {id: 1, customer_type: "company",},
+        {id: 2, customer_type: "customer",},
+    ],
+    user_list: [
+        {id: 1, name: "a", user_type_list_id: 1, keyword_list: [1,2]},
+        {id: 2, name: "b", user_type_list_id: 1, keyword_list: [3,4]},
+        {id: 3, name: "c", user_type_list_id: 2, keyword_list: [5,6]},
+        {id: 4, name: "d", user_type_list_id: 2, keyword_list: [1,7,8,9]},
+    ],
+    keyword_list: [
+        {id: 1, keyword: "java"},
+        {id: 2, keyword: "sql"},
+        {id: 3, keyword: "html"},
+        {id: 4, keyword: "css"},
+        {id: 5, keyword: "javascript"},
+        {id: 6, keyword: "php"},
+        {id: 7, keyword: "python"},
+        {id: 8, keyword: "ruby"},
+        {id: 9, keyword: "c"},
+    ],
+    LIST: [],
+
+    // user_type_listとuser_listを1:Nで結合
+    // user_listとkeyword_listを1:Nで結合(user_listが持つkeword_listは0個でも可)
+
+}
+},
+watch: {
+    list_1: {
+     handler(new_val, old_val) {
+        console.log("list_1", this.to_ary(new_val), this.to_ary(old_val));
+        this.make_LIST();
+        this.exe();
+     },
+     deep: true
+   },
+},
+mounted() {
+    this.make_LIST();
+},
+beforeUpdated() {
+},
+updated() {
+},
+methods: {
+make_LIST(){
+    this.LIST = this.user_list.map(user => {
+        return {
+            name: user.name,
+            user_type: this.user_type_list.find(user_type => user_type.id === user.user_type_list_id),
+            keyword_list: user.keyword_list.map(keyword_id => this.keyword_list.find(keyword => keyword.id === keyword_id)),
+        }
+    });
+
+},
+
+exe(){
+    console.log("abc");
+},
+to_ary(from){
+    return JSON.parse(JSON.stringify(from));
+},
+}}).mount('#app');
+</script>
+</html>
