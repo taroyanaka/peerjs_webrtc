@@ -25,11 +25,40 @@
 </head>
 <body>
     <div id="app">
-        <!-- list_1 -->
-        <div v-for="a, a_idx in list_1">
-            <input type="text" v-model="list_1[a_idx]">
-            {{a}}
+        <!-- user名のselect -->
+        <select v-model="selected_user" @change="list_filter">
+            <!-- 空欄のリスト(初期値) -->
+            <option v-for="a, a_idx in LIST" :value="a.id">{{a.name}}</option>
+        </select>
+
+        <!-- selectされたuserからそれに付随するkeyword_listだけを表示(selected_userで選択) -->
+        <div v-for="keyword, keyword_idx in filtered_LIST ">
+            <div>{{keyword.name}} <span class="block_1">{{keyword.user_type.customer_type}}</span></div>
+            <div v-for="keyword, keyword_idx in keyword.keyword_list" class="block_2">
+                <div>{{keyword.keyword}}
+                            <!-- keywordの横に削除ボタン -->
+        <button @click="delete_keyword(keyword.id)">削除</button>
+                </div>
+
+            </div>
         </div>
+
+
+
+
+
+
+
+
+
+        {{ERROR_MESSAGE}}
+        <!-- 追加ボタン -->
+        <!-- keywordのselect -->
+        <select v-model="selected_keyword">
+            <option v-for="a, a_idx in keyword_list" :value="a.id">{{a.keyword}}</option>
+        </select>
+        <button @click="add_keyword">追加</button>
+
         <div class="block_0" v-for="a, a_idx in LIST">
             <div>
                 <div>{{a.name}} <span class="block_1">{{a.user_type.customer_type}}</span></div>
@@ -45,7 +74,9 @@
 const app = Vue.createApp({
 data() {
 return {
-    list_1: [1,2,3,4,5],
+    ERROR_MESSAGE: "",
+    selected_user: 1,
+    selected_keyword: "",
     user_type_list: [
         {id: 1, customer_type: "company",},
         {id: 2, customer_type: "customer",},
@@ -68,6 +99,7 @@ return {
         {id: 9, keyword: "c"},
     ],
     LIST: [],
+    filtered_LIST: [],
 
     // user_type_listとuser_listを1:Nで結合
     // user_listとkeyword_listを1:Nで結合(user_listが持つkeword_listは0個でも可)
@@ -77,25 +109,34 @@ return {
 watch: {
     list_1: {
      handler(new_val, old_val) {
-        console.log("list_1", this.to_ary(new_val), this.to_ary(old_val));
-        this.make_LIST();
-        this.exe();
+        // console.log("list_1", this.to_ary(new_val), this.to_ary(old_val));
+        // this.make_LIST();
+        // this.list_filter();
+        // this.exe();
      },
      deep: true
    },
 },
 mounted() {
-    this.make_LIST();
+    // this.make_LIST();
+    this.list_filter();
 },
 beforeUpdated() {
 },
 updated() {
 },
 methods: {
+    list_filter(){
+        console.log("list_filter", this.selected_user);
+        this.make_LIST();
+        this.filtered_LIST = this.LIST.filter(user => user.id === this.selected_user);
+    },
+
 make_LIST(){
     this.LIST = this.user_list.map(user => {
         return {
             name: user.name,
+            id: user.id,
             user_type: this.user_type_list.find(user_type => user_type.id === user.user_type_list_id),
             keyword_list: user.keyword_list.map(keyword_id => this.keyword_list.find(keyword => keyword.id === keyword_id)),
         }
@@ -109,6 +150,39 @@ exe(){
 to_ary(from){
     return JSON.parse(JSON.stringify(from));
 },
+
+add_keyword(){
+    try {
+        console.log("add_keyword", this.selected_keyword);
+    const user = this.user_list.find(user => user.id === this.selected_user);
+        // 同じキーワードがある場合は追加しない 
+        // エラースローのワンライナー
+        if (user.keyword_list.some(keyword_id => keyword_id === this.selected_keyword)) throw new Error("すでに追加されています");
+    user.keyword_list.push(this.selected_keyword);
+    this.list_filter();
+    // 問題なく追加できた場合はERROR_MESSAGEを空にする
+    this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+delete_keyword(keyword_id){
+    try {
+        console.log("delete_keyword", keyword_id);
+        const user = this.user_list.find(user => user.id === this.selected_user);
+        // 削除するキーワードが存在しない場合はエラースロー
+        if (!user.keyword_list.some(keyword => keyword === keyword_id)) throw new Error("削除するキーワードが存在しません");
+        user.keyword_list = user.keyword_list.filter(keyword => keyword !== keyword_id);
+        this.list_filter();
+        // 問題なく削除できた場合はERROR_MESSAGEを空にする
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+
+
+
 }}).mount('#app');
 </script>
 </html>
