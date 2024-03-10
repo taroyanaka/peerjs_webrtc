@@ -1,3 +1,4 @@
+<!-- statusをuserに追加してonline状態の相手とだけマッチする -->
 <!-- start_chatボタンを追加してpeerJSでチャットを開始 -->
 <!DOCTYPE html>
 <html lang="en">
@@ -46,6 +47,7 @@
 </head>
 <body>
     <div id="app">
+        <button @click="parse_url">parse_url</button>
         <!-- user名のselect -->
         <select v-model="selected_user" @change="list_filter">
             <!-- 空欄のリスト(初期値) -->
@@ -100,12 +102,17 @@
         <div>matching</div>
         <!-- matching実行 -->
         <button @click="match_company_and_customer">match</button>
+        <div v-if="other_side_data_link && own_side_data_link">
+            <a :href="other_side_data_link">other_side_data_link</a>
+            <a :href="own_side_data_link">own_side_data_link</a>
+        </div>
+        
         <!-- match_resultが一覧でmatch_resultに表示される -->
         <div v-for="a, a_idx in match_result">
             <!-- companyがあればcompanyを表示、customerがあればcustomerを表示 -->
             <div v-if="a.company">
                 <!-- start_chatボタン -->
-                <button @click="start_chat(a.company.id)">start_chat</button>
+                    <button @click="start_chat(a.company.id, selected_user)">start_chat</button>
                 <div>{{a.company.name}} 
                     <span class="block_1">{{ a.company ? "company" : null }}</span>
                     <!-- weightを表示 -->
@@ -119,7 +126,7 @@
             </div>
             <div v-if="a.customer">
                 <!-- start_chatボタン -->
-                <button @click="start_chat(a.customer.id)">start_chat</button>
+                <button @click="start_chat(a.customer.id, selected_user)">start_chat</button>
                 <div>{{a.customer.name}}
                     <span class="block_1">{{ a.customer ? "customer" : null }}</span>
                     <!-- weightを表示 -->
@@ -157,6 +164,8 @@
 const app = Vue.createApp({
 data() {
 return {
+    other_side_data_link: '',
+    own_side_data_lin: '',
     match_result: [],
     ERROR_MESSAGE: "",
     selected_user: 1,
@@ -205,10 +214,13 @@ watch: {
 mounted() {
     // this.make_LIST();
     this.list_filter();
+    this.login_as();
 },
 beforeUpdated() {
 },
 updated() {
+    
+    
 },
 methods: {
     list_filter(){
@@ -293,7 +305,6 @@ add_new_keyword(){
 // selected_userとのマッチ機能(companyとcustomerが同じキーワードを持っていたらマッチングしてmatch_resultに追加される(weightが大きい方が優先)
 //         // selected_userがcompanyの場合はresultはcustomerのリスト、selected_userがcustomerの場合はresultはcompanyのリスト
 weight_change(id){
-
     this.LIST = this.LIST.map(user => {
         if (user.id === id){
             // user.weightは0が下限。weightが0の場合はweightを変更しない
@@ -361,6 +372,54 @@ match_company_and_customer(){
 
 },
 
+login_as(){
+    // userをget paramで受け取って、そのidをselected_userにセットする
+    // get param
+    const url = new URL(window.location.href);
+    const user = url.searchParams.get('user');
+    // userからidを取得
+    if(user){
+        console.log(user);
+        console.log(typeof user);
+        const user_id_list = this.user_list.filter(user => user.name === "b");
+
+        console.log(user_id_list);
+        console.log(user_id_list[0]);
+        this.selected_user = user_id_list[0].id;
+        this.filtered_LIST = this.LIST.filter(user => user.id === this.selected_user);
+    }
+},
+start_chat(other_side_id, own_side_id){
+    // other_side_id, own_side_idがnullやundefinedでない場合はchatを開始する
+            // other_side_idがあるかfindする
+    other_side_bool = this.LIST.find(user => user.id === other_side_id);
+    own_side_bool = this.LIST.find(user => user.id === own_side_id);
+    if (other_side_id && own_side_id && other_side_bool && own_side_bool){
+        console.log("start_chat", other_side_id, own_side_id);
+
+    }
+    other_side_data = this.LIST.filter(user => user.id === other_side_id)[0];
+    own_side_data = this.LIST.filter(user => user.id === own_side_id)[0];
+    // 同じパスのclient3.htmlにget paramでJSON.stringifyされたother_side_idもしくはown_side_idを渡すリンクを作る
+    // 例:http://127.0.0.1:3000/client3.html?other_side_data_str=*****
+    var url = window.location.href;
+    var dirname = url.substring(0, url.lastIndexOf('/'));
+    this.other_side_data_link = dirname + "/match.html?other_side_data_str=" + JSON.stringify(other_side_data);
+    this.own_side_data_link = dirname + "/match.html?own_side_data_str=" + JSON.stringify(own_side_data);
+},
+parse_url(){
+    const url = new URL(window.location.href);
+    const other_side_data_str = url.searchParams.get('other_side_data_str');
+    const own_side_data_str = url.searchParams.get('own_side_data_str');
+    if (other_side_data_str){
+        console.log("other_side_data_str", other_side_data_str);
+        console.log(JSON.parse(other_side_data_str));
+    }
+    if (own_side_data_str){
+        console.log("own_side_data_str", own_side_data_str);
+        console.log(JSON.parse(own_side_data_str));
+    }
+},
 
 }}).mount('#app');
 </script>
