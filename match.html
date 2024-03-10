@@ -1,3 +1,4 @@
+<!-- start_chatボタンを追加してpeerJSでチャットを開始 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,6 +104,8 @@
         <div v-for="a, a_idx in match_result">
             <!-- companyがあればcompanyを表示、customerがあればcustomerを表示 -->
             <div v-if="a.company">
+                <!-- start_chatボタン -->
+                <button @click="start_chat(a.company.id)">start_chat</button>
                 <div>{{a.company.name}} 
                     <span class="block_1">{{ a.company ? "company" : null }}</span>
                     <!-- weightを表示 -->
@@ -115,6 +118,8 @@
                 </span></div>
             </div>
             <div v-if="a.customer">
+                <!-- start_chatボタン -->
+                <button @click="start_chat(a.customer.id)">start_chat</button>
                 <div>{{a.customer.name}}
                     <span class="block_1">{{ a.customer ? "customer" : null }}</span>
                     <!-- weightを表示 -->
