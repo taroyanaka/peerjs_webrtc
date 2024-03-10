@@ -21,6 +21,26 @@
             margin-left: 3rem;
             /* background-color: blue; */
         }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            margin: auto;
+        }
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+        .message-left {
+            align-self: flex-start;
+            background-color: #f0f0f0;
+        }
+        .message-right {
+            align-self: flex-end;
+            background-color: #0f0;
+        }
     </style>
 </head>
 <body>
@@ -31,9 +51,21 @@
             <option v-for="a, a_idx in LIST" :value="a.id">{{a.name}}</option>
         </select>
 
+
+
         <!-- selectされたuserからそれに付随するkeyword_listだけを表示(selected_userで選択) -->
         <div v-for="keyword, keyword_idx in filtered_LIST ">
-            <div>{{keyword.name}} <span class="block_1">{{keyword.user_type.customer_type}}</span></div>
+
+            <div>
+                name: {{keyword.name}}
+                <span class="block_1">weight: {{keyword.weight}}
+                <button @click="weight_change(keyword.id)">weight +1</button>
+
+                </span>
+
+                <span class="block_1">type: {{keyword.user_type.customer_type}}</span>
+            </div>
+            
             <div v-for="keyword, keyword_idx in keyword.keyword_list" class="block_2">
                 <div>{{keyword.keyword}}
                             <!-- keywordの横に削除ボタン -->
@@ -51,6 +83,8 @@
 
 
 
+
+
         {{ERROR_MESSAGE}}
         <!-- 追加ボタン -->
         <!-- keywordのselect -->
@@ -58,13 +92,57 @@
             <option v-for="a, a_idx in keyword_list" :value="a.id">{{a.keyword}}</option>
         </select>
         <button @click="add_keyword">追加</button>
+        <!-- オリジナルのキーワードを追加する -->
+        <input type="text" v-model="new_keyword">
+        <button @click="add_new_keyword">追加</button>
 
-        <div class="block_0" v-for="a, a_idx in LIST">
-            <div>
-                <div>{{a.name}} <span class="block_1">{{a.user_type.customer_type}}</span></div>
-                <div v-for="b, b_idx in a.keyword_list" class="block_2">
-                    <div>{{b.keyword}}</div>
-                </div>
+        <div>matching</div>
+        <!-- matching実行 -->
+        <button @click="match_company_and_customer">match</button>
+        <!-- match_resultが一覧でmatch_resultに表示される -->
+        <div v-for="a, a_idx in match_result">
+            <!-- companyがあればcompanyを表示、customerがあればcustomerを表示 -->
+            <div v-if="a.company">
+                <div>{{a.company.name}} 
+                    <span class="block_1">{{ a.company ? "company" : null }}</span>
+                    <!-- weightを表示 -->
+                    <span class="block_1">{{a.weight}}</span>
+                    <span class="block_1">
+                    <!-- matchしたキーワードを表示 -->
+                    <span v-for="b, b_idx in a.match_keyword_list" class="block_2">
+                        <div>{{b.keyword}}</div>
+                    </span>
+                </span></div>
+            </div>
+            <div v-if="a.customer">
+                <div>{{a.customer.name}}
+                    <span class="block_1">{{ a.customer ? "customer" : null }}</span>
+                    <!-- weightを表示 -->
+                    <span class="block_1">{{a.weight}}</span>
+                    <span class="block_1">
+                    <!-- matchしたキーワードを表示 -->
+                    <span v-for="b, b_idx in a.match_keyword_list" class="block_2">
+                        <div>{{b.keyword}}</div>
+                    </span>
+                </span></div>
+            </div>
+
+            <!-- <div v-for="b, b_idx in a.match_keyword_list" class="block_2"><div>{{b.keyword}}</div></div> -->
+        </div>
+        <br>
+        <br>
+        <br>
+        <div class="chat-container">
+            <div  :class="a.user_type.customer_type === 'company' ? 'message message-left' : 'message message-right'" v-for="a, a_idx in LIST">
+                <!-- aがcompanyならclassがcompany、customerならclassがcustomer -->
+                    <div>{{a.name}}
+                        {{a.weight}}
+                        <span class="block_1">{{a.user_type.customer_type}}</span>
+                    </div>
+                        <div v-for="b, b_idx in a.keyword_list" class="block_2">
+                            <div>{{b.keyword}}</div>
+                        </div>
+
             </div>
         </div>
 
@@ -74,18 +152,20 @@
 const app = Vue.createApp({
 data() {
 return {
+    match_result: [],
     ERROR_MESSAGE: "",
     selected_user: 1,
     selected_keyword: "",
+    new_keyword: "",
     user_type_list: [
         {id: 1, customer_type: "company",},
         {id: 2, customer_type: "customer",},
     ],
     user_list: [
-        {id: 1, name: "a", user_type_list_id: 1, keyword_list: [1,2]},
-        {id: 2, name: "b", user_type_list_id: 1, keyword_list: [3,4]},
-        {id: 3, name: "c", user_type_list_id: 2, keyword_list: [5,6]},
-        {id: 4, name: "d", user_type_list_id: 2, keyword_list: [1,7,8,9]},
+        {id: 1, name: "a", user_type_list_id: 1, keyword_list: [1,2,3,5], weight: 1,},
+        {id: 2, name: "b", user_type_list_id: 1, keyword_list: [3,4], weight: 2,},
+        {id: 3, name: "c", user_type_list_id: 2, keyword_list: [5,6], weight: 0,},
+        {id: 4, name: "d", user_type_list_id: 2, keyword_list: [1,7,8,9], weight: 3,},
     ],
     keyword_list: [
         {id: 1, keyword: "java"},
@@ -137,6 +217,7 @@ make_LIST(){
         return {
             name: user.name,
             id: user.id,
+            weight: user.weight,
             user_type: this.user_type_list.find(user_type => user_type.id === user.user_type_list_id),
             keyword_list: user.keyword_list.map(keyword_id => this.keyword_list.find(keyword => keyword.id === keyword_id)),
         }
@@ -180,7 +261,100 @@ delete_keyword(keyword_id){
         this.ERROR_MESSAGE = error.message;
     }
 },
+add_new_keyword(){
+    try {
+        console.log("add_new_keyword", this.new_keyword);
+        // 同じキーワードがある場合は追加しない 
+        // エラースローのワンライナー
+        if (this.keyword_list.some(keyword => keyword.keyword === this.new_keyword)) throw new Error("すでに追加されています");
+        this.keyword_list.push({
+            id: this.keyword_list.length + 1,
+            keyword: this.new_keyword,
+        });
+        this.list_filter();
+        // 追加したキーワードをadd_keywordする
+        // keyword_listの最後の要素が追加されたキーワード
+        this.selected_keyword = this.keyword_list[this.keyword_list.length - 1].id;
 
+        this.add_keyword();
+
+
+        // 問題なく追加できた場合はERROR_MESSAGEを空にする
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+// selected_userとのマッチ機能(companyとcustomerが同じキーワードを持っていたらマッチングしてmatch_resultに追加される(weightが大きい方が優先)
+//         // selected_userがcompanyの場合はresultはcustomerのリスト、selected_userがcustomerの場合はresultはcompanyのリスト
+weight_change(id){
+
+    this.LIST = this.LIST.map(user => {
+        if (user.id === id){
+            // user.weightは0が下限。weightが0の場合はweightを変更しない
+            user.weight > 0 ? user.weight += 1 : null;
+        }
+        return user;
+    });
+
+},
+match_company_and_customer(){
+
+    // selected_userがcompanyかcustomerかを判定
+    const selected_user = this.user_list.find(user => user.id === this.selected_user);
+    let match_result = [];
+    if (selected_user.user_type_list_id === 1){
+        // selected_userがcompanyの場合
+        // selected_userがcompanyの場合はresultはcustomerのリスト
+        const customer_list = this.user_list.filter(user => user.user_type_list_id === 2);
+        for (const customer of customer_list){
+            // selected_userとcustomerが共通して持っているキーワードを抽出
+            const match_keyword_num = selected_user.keyword_list.filter(keyword => customer.keyword_list.some(customer_keyword => customer_keyword === keyword));
+            // match_keyword_listの番号から実際のキーワードの配列を取得
+            const match_keyword_list = match_keyword_num.map(keyword_id => this.keyword_list.find(keyword => keyword.id === keyword_id));
+
+            if (match_keyword_list.length > 0){
+                match_result.push({
+                    customer: customer,
+                    weight: customer.weight,
+                    match_keyword_list: match_keyword_list,
+                });
+            }
+        }
+    } ;
+    if (selected_user.user_type_list_id === 2){
+        // selected_userがcustomerの場合
+        // selected_userがcustomerの場合はresultはcompanyのリスト
+        const company_list = this.user_list.filter(user => user.user_type_list_id === 1);
+        for (const company of company_list){
+            // selected_userとcompanyが共通して持っているキーワードを抽出
+            const match_keyword_num = selected_user.keyword_list.filter(keyword => company.keyword_list.some(company_keyword => company_keyword === keyword));
+            // match_keyword_listの番号から実際のキーワードの配列を取得
+            const match_keyword_list = match_keyword_num.map(keyword_id => this.keyword_list.find(keyword => keyword.id === keyword_id));
+            if (match_keyword_list.length > 0){
+                match_result.push({
+                    company: company,
+                    weight: company.weight,
+                    match_keyword_list: match_keyword_list,
+                });
+            }
+        }
+    } ;
+    console.log(match_result);
+        // match_resultをweightの降順にソートする関数
+    const sort_by_weight = (res) =>{
+        return match_result.sort((a, b) => {
+            if (a.weight < b.weight) return 1;
+            if (a.weight > b.weight) return -1;
+            return 0;
+        });
+    }
+    this.match_result = sort_by_weight(match_result);
+
+    this.match_result = match_result;
+
+
+},
 
 
 }}).mount('#app');
