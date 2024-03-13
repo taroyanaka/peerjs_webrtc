@@ -43,7 +43,9 @@ let messagesEl = document.querySelector('.messages');
 let videoEl = document.querySelector('.remote-video');
 
 
-let renderVideo = (stream) => document.querySelector('video').srcObject = stream;
+let renderVideo = (stream) => {
+    document.querySelector('video').srcObject = stream;
+};
 
 let peer = new Peer({
     host: 'cypress-serious-bird.glitch.me',
@@ -158,7 +160,26 @@ function send_text(){
     });
 }
 
+const sequence_of_peer = () =>{
+    let peer_id_a = "";
+    let peer_id_b = "";
 
+    let peer = new Peer({
+        host: 'cypress-serious-bird.glitch.me',
+        secure: true,
+        path: '/peerjs/myapp'
+    });
+    
+    // peer idを発行する関数(peer_id_aとpeer_id_b、それぞれ別のidを発行してそれぞれを変数に代入)
+    function get_peer_id(){
+        peer.on('open', (id) => {
+            peer_id_a = id;
+        });
+        peer.on('open', (id) => {
+            peer_id_b = id;
+        });
+    }
+}
 
 
 </script>

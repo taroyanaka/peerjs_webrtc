@@ -161,11 +161,11 @@
                     <div>{{a.name}}
                         {{a.weight}}
                         <!-- reset_selected_user_online_status button -->
-                        <button @click="reset_selected_user_online_status(a.id)">off</button>
+                        <span><button @click="reset_selected_user_online_status(a.id)">off</button></span>
                         <!-- set_selected_user_online_status -->
-                        <button @click="set_selected_user_online_status(a.id)">on</button>
-                        <!-- on_and_other_off -->
-                        <button @click="on_and_other_off(a.id)">on_and_other_off</button>
+                        <span><button @click="set_selected_user_online_status(a.id)">on</button></span>
+                        <!-- on_off -->
+                        <span><button @click="on_off(a.id)">on_off</button></span>
                         <!-- online status -->
                         <span class="online" v-if="a.online_status.on_off === 'on'">online</span>
                         <span class="offline" v-else>offline</span>
@@ -174,7 +174,7 @@
                         <!-- <span v-if="a.online_status.until">until: {{a.online_status.until}}</span> -->
 
 
-                        <span class="block_1">{{a.user_type.customer_type}}</span>
+                        <div class="block_1">{{a.user_type.customer_type}}</div>
                     </div>
                         <div v-for="b, b_idx in a.keyword_list" class="block_2">
                             <div>{{b.keyword}}</div>
@@ -285,7 +285,7 @@ methods: {
             return user;
         });
     },
-    on_and_other_off(Id){
+    on_off(Id){
         this.reset_other_user_online_status(Id);
         this.set_selected_user_online_status(Id);
     },
