@@ -169,7 +169,7 @@ const sequence_of_peer = () =>{
         secure: true,
         path: '/peerjs/myapp'
     });
-    
+
     // peer idを発行する関数(peer_id_aとpeer_id_b、それぞれ別のidを発行してそれぞれを変数に代入)
     function get_peer_id(){
         peer.on('open', (id) => {
@@ -178,6 +178,21 @@ const sequence_of_peer = () =>{
         peer.on('open', (id) => {
             peer_id_b = id;
         });
+    }
+
+    let user_json_str_a = JSON.stringify({name: "A", foo: "foo", bar: "bar"});
+    let user_json_str_b = JSON.stringify({name: "B", foo: "fo", bar: "ba"});
+    let url_str_a = ""
+    let url_str_b = ""
+    // aには対向のbを、bには対向のaをセットする、それぞれ用の2つの関数
+
+    // user_a用のurl文字列を作る関数
+    const make_url_str_a = () => {
+        url_str_a = url + '?user_json_str=' + user_json_str_a + '&peer_id_a=' + peer_id_a + '&peer_id_b=' + peer_id_b;
+    }
+    // user_b用のurl文字列を作る関数
+    const make_url_str_b = () => {
+        url_str_b = url + '?user_json_str=' + user_json_str_b + '&peer_id_b=' + peer_id_a + '&peer_id_b=' + peer_id_a;
     }
 }
 
