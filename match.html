@@ -161,9 +161,11 @@
                     <div>{{a.name}}
                         {{a.weight}}
                         <!-- reset_selected_user_online_status button -->
-                        <button @click="reset_selected_user_online_status(a.id)">reset</button>
+                        <button @click="reset_selected_user_online_status(a.id)">off</button>
                         <!-- set_selected_user_online_status -->
-                        <button @click="set_selected_user_online_status(a.id)">set online</button>
+                        <button @click="set_selected_user_online_status(a.id)">on</button>
+                        <!-- on_and_other_off -->
+                        <button @click="on_and_other_off(a.id)">on_and_other_off</button>
                         <!-- online status -->
                         <span class="online" v-if="a.online_status.on_off === 'on'">online</span>
                         <span class="offline" v-else>offline</span>
@@ -283,6 +285,11 @@ methods: {
             return user;
         });
     },
+    on_and_other_off(Id){
+        this.reset_other_user_online_status(Id);
+        this.set_selected_user_online_status(Id);
+    },
+
 // 全てのuserのonline_statusをonにする関数
     set_all_online_status(){
         this.user_list = this.user_list.map(user => {
@@ -292,6 +299,19 @@ methods: {
             return user;
         });
     },
+    // 指定したuser以外は全て初期化する関数
+    reset_other_user_online_status(Id){
+        this.user_list = this.user_list.map(user => {
+            if (user.id !== Id){
+                user.online_status.start = null;
+                user.online_status.until = null;
+                user.online_status.on_off = "off";
+            }
+            return user;
+        });
+    },
+
+
 
 
     list_filter(){
