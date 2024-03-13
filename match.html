@@ -57,7 +57,7 @@
 
 
         <!-- selectされたuserからそれに付随するkeyword_listだけを表示(selected_userで選択) -->
-        <div v-for="keyword, keyword_idx in filtered_LIST ">
+        <div v-for="keyword, keyword_idx in selected_user_LIST ">
 
             <div>
                 name: {{keyword.name}}
@@ -176,10 +176,10 @@ return {
         {id: 2, customer_type: "customer",},
     ],
     user_list: [
-        {id: 1, name: "a", user_type_list_id: 1, keyword_list: [1,2,3,5], weight: 1,},
-        {id: 2, name: "b", user_type_list_id: 1, keyword_list: [3,4], weight: 2,},
-        {id: 3, name: "c", user_type_list_id: 2, keyword_list: [5,6], weight: 0,},
-        {id: 4, name: "d", user_type_list_id: 2, keyword_list: [1,7,8,9], weight: 3,},
+        {id: 1, online_status: {start: null, until:null, on_off: "off"}, name: "a", user_type_list_id: 1, keyword_list: [1,2,3,5], weight: 1,},
+        {id: 2, online_status: {start: null, until:null, on_off: "off"}, name: "b", user_type_list_id: 1, keyword_list: [3,4], weight: 2,},
+        {id: 3, online_status: {start: null, until:null, on_off: "off"}, name: "c", user_type_list_id: 2, keyword_list: [5,6], weight: 0,},
+        {id: 4, online_status: {start: null, until:null, on_off: "off"}, name: "d", user_type_list_id: 2, keyword_list: [1,7,8,9], weight: 3,},
     ],
     keyword_list: [
         {id: 1, keyword: "java"},
@@ -193,7 +193,7 @@ return {
         {id: 9, keyword: "c"},
     ],
     LIST: [],
-    filtered_LIST: [],
+    selected_user_LIST: [],
 
     // user_type_listとuser_listを1:Nで結合
     // user_listとkeyword_listを1:Nで結合(user_listが持つkeword_listは0個でも可)
@@ -223,10 +223,27 @@ updated() {
     
 },
 methods: {
+    update_online_status(){
+        // selected_user_LISTのonline_statusを更新(startをutfの日時、untilをstartの10分後、on_offを"on"に変更)
+        this.selected_user_LIST[0].online_status.start = new Date().toISOString();
+        this.selected_user_LIST[0].online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
+        this.selected_user_LIST[0].online_status.on_off = "on";
+    },
+    // 全てのuserのonline_statusを初期化する関数
+    reset_all_online_status(){
+        this.user_list = this.user_list.map(user => {
+            user.online_status.start = null;
+            user.online_status.until = null;
+            user.online_status.on_off = "off";
+            return user;
+        });
+    },
+
     list_filter(){
         console.log("list_filter", this.selected_user);
         this.make_LIST();
-        this.filtered_LIST = this.LIST.filter(user => user.id === this.selected_user);
+        this.selected_user_LIST = this.LIST.filter(user => user.id === this.selected_user);
+        this.update_online_status();
     },
 
 make_LIST(){
@@ -386,7 +403,7 @@ login_as(){
         console.log(user_id_list);
         console.log(user_id_list[0]);
         this.selected_user = user_id_list[0].id;
-        this.filtered_LIST = this.LIST.filter(user => user.id === this.selected_user);
+        this.selected_user_LIST = this.LIST.filter(user => user.id === this.selected_user);
     }
 },
 start_chat(other_side_id, own_side_id){
