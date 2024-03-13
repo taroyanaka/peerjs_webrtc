@@ -43,6 +43,14 @@
             align-self: flex-end;
             background-color: #0f0;
         }
+        .online{
+            /* onlineはbold */
+            font-weight: bold;
+        }
+        .offline{
+            /* offlineの場合は灰色 */
+            color: gray;
+        }
     </style>
 </head>
 <body>
@@ -98,10 +106,10 @@
         <!-- オリジナルのキーワードを追加する -->
         <input type="text" v-model="new_keyword">
         <button @click="add_new_keyword">追加</button>
-
-        <div>matching</div>
+        <div>matching実行(onlineで同じキーワードを持っているuserをcompanyかcustomerを表示)
+        </div>
         <!-- matching実行 -->
-        <button @click="match_company_and_customer">match</button>
+        <button @click="match_exe">match_exe</button>
         <div v-if="other_side_data_link && own_side_data_link">
             <a :href="other_side_data_link">other_side_data_link</a>
             <a :href="own_side_data_link">own_side_data_link</a>
@@ -145,10 +153,25 @@
         <br>
         <br>
         <div class="chat-container">
-            <div  :class="a.user_type.customer_type === 'company' ? 'message message-left' : 'message message-right'" v-for="a, a_idx in LIST">
+            <!-- set_all_online_status -->
+            <button @click="set_all_online_status">set_all_online_status</button>
+
+            <div :class="a.user_type.customer_type === 'company' ? 'message message-left' : 'message message-right'" v-for="a, a_idx in LIST">
                 <!-- aがcompanyならclassがcompany、customerならclassがcustomer -->
                     <div>{{a.name}}
                         {{a.weight}}
+                        <!-- reset_selected_user_online_status button -->
+                        <button @click="reset_selected_user_online_status(a.id)">reset</button>
+                        <!-- set_selected_user_online_status -->
+                        <button @click="set_selected_user_online_status(a.id)">set online</button>
+                        <!-- online status -->
+                        <span class="online" v-if="a.online_status.on_off === 'on'">online</span>
+                        <span class="offline" v-else>offline</span>
+                        <!-- nullでないならstartとuntilを表示 -->
+                        <!-- <span v-if="a.online_status.start">start: {{a.online_status.start}}</span> -->
+                        <!-- <span v-if="a.online_status.until">until: {{a.online_status.until}}</span> -->
+
+
                         <span class="block_1">{{a.user_type.customer_type}}</span>
                     </div>
                         <div v-for="b, b_idx in a.keyword_list" class="block_2">
@@ -238,6 +261,38 @@ methods: {
             return user;
         });
     },
+    // 指定したuserのonline_statusを初期化する関数
+    reset_selected_user_online_status(Id){
+        this.user_list = this.user_list.map(user => {
+            if (user.id === Id){
+                user.online_status.start = null;
+                user.online_status.until = null;
+                user.online_status.on_off = "off";
+            }
+            return user;
+        });
+    },
+    // 指定したuserのonline_statusをonにする関数
+    set_selected_user_online_status(Id){
+        this.user_list = this.user_list.map(user => {
+            if (user.id === Id){
+                user.online_status.start = new Date().toISOString();
+                user.online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
+                user.online_status.on_off = "on";
+            }
+            return user;
+        });
+    },
+// 全てのuserのonline_statusをonにする関数
+    set_all_online_status(){
+        this.user_list = this.user_list.map(user => {
+            user.online_status.start = new Date().toISOString();
+            user.online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
+            user.online_status.on_off = "on";
+            return user;
+        });
+    },
+
 
     list_filter(){
         console.log("list_filter", this.selected_user);
@@ -250,6 +305,7 @@ make_LIST(){
     this.LIST = this.user_list.map(user => {
         return {
             name: user.name,
+            online_status: user.online_status,
             id: user.id,
             weight: user.weight,
             user_type: this.user_type_list.find(user_type => user_type.id === user.user_type_list_id),
@@ -331,7 +387,12 @@ weight_change(id){
     });
 
 },
-match_company_and_customer(){
+match_exe(){
+    // match_resultからstatusがonlineのuserのみを抽出する関数
+    const match_result_online = (res) =>{
+        return res.filter(user => user.online_status.on_off === "on");
+    }
+
 
     // selected_userがcompanyかcustomerかを判定
     const selected_user = this.user_list.find(user => user.id === this.selected_user);
@@ -350,6 +411,7 @@ match_company_and_customer(){
                 match_result.push({
                     customer: customer,
                     weight: customer.weight,
+                    online_status: customer.online_status,
                     match_keyword_list: match_keyword_list,
                 });
             }
@@ -368,6 +430,7 @@ match_company_and_customer(){
                 match_result.push({
                     company: company,
                     weight: company.weight,
+                    online_status: company.online_status,
                     match_keyword_list: match_keyword_list,
                 });
             }
@@ -382,6 +445,10 @@ match_company_and_customer(){
             return 0;
         });
     }
+
+    // match_result_onlineでfilterする
+    match_result = match_result_online(match_result);
+
     this.match_result = sort_by_weight(match_result);
 
     this.match_result = match_result;
