@@ -557,15 +557,15 @@ const set_url = () =>{
     // 三項演算子でget_paramからown_side_data_strを取得、nullの場合は実行しない
     LIST_2 = get_own_side_data_str() ? get_own_side_data_str() : LIST_2;
 
-// chat_aryをアップデートする
-// {date_time: get_iso8601(), id: 0, my_user_list: LIST_1, another_user_list: LIST_2, name:"a", type:"company", text_id: 0, text: "今通話可能"},
-// {date_time: get_iso8601(), id: 1, my_user_list: LIST_2, another_user_list: LIST_1, name:"b", type:"customer", text_id: 1, text: "通話OK"},
-chat_ary.push(
-    {date_time: get_iso8601(), id: 0, my_user_list: LIST_1, another_user_list: LIST_2, name:"a", type:"company", text_id: 0, text: "今通話可能"},
-)
-chat_ary.push(
-    {date_time: get_iso8601(), id: 1, my_user_list: LIST_2, another_user_list: LIST_1, name:"b", type:"customer", text_id: 1, text: "通話OK"},
-)
+    // chat_aryをアップデートする
+    // {date_time: get_iso8601(), id: 0, my_user_list: LIST_1, another_user_list: LIST_2, name:"a", type:"company", text_id: 0, text: "今通話可能"},
+    // {date_time: get_iso8601(), id: 1, my_user_list: LIST_2, another_user_list: LIST_1, name:"b", type:"customer", text_id: 1, text: "通話OK"},
+    chat_ary.push(
+        {date_time: get_iso8601(), id: 0, my_user_list: LIST_1, another_user_list: LIST_2, name:"a", type:"company", text_id: 0, text: "今通話可能"},
+    )
+    chat_ary.push(
+        {date_time: get_iso8601(), id: 1, my_user_list: LIST_2, another_user_list: LIST_1, name:"b", type:"customer", text_id: 1, text: "通話OK"},
+    )
 
 
 }
@@ -609,18 +609,9 @@ const get_own_side_data_str = () => {
     return JSON.parse(own_side_data_str);
 }
 
-
-
-
-
-    let url_str_a = "";
-    let url_str_b = "";
-    // aには対向のbを、bには対向のaをセットする、それぞれ用の2つの関数
-
-
-    // return {get_peer_id, make_url_str_a, make_url_str_b,url_str_a, url_str_b};
-// }
-// const {get_peer_id, make_url_str_a, make_url_str_b,url_str_a, url_str_b} = sequence_of_peer();
+let url_str_a = "";
+let url_str_b = "";
+// aには対向のbを、bには対向のaをセットする、それぞれ用の2つの関数
 
 const text_id_ary = [
         {id: 0, text: "今通話可能", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
@@ -633,10 +624,6 @@ const get_iso8601 = () => {
     const date = new Date();
     return date.toISOString();
 }
-
-
 let chat_ary = [];
-
-
 </script>
 </html>
