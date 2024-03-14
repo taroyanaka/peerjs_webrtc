@@ -590,21 +590,21 @@ const get_iso8601 = () => {
     const date = new Date();
     return date.toISOString();
 }
+let LIST_user = null;
+let LIST_company = null;
+// LIST_userにuser_json_str_aを入れる関数
+const set_LIST_user = () => {
+    LIST_user = JSON.parse(user_json_str_a);
+}
+// LIST_companyにuser_json_str_bを入れる関数
+const set_LIST_company = () => {
+    LIST_company = JSON.parse(user_json_str_b);
+}
     let chat_ary = [
         {date_time: get_iso8601(), id: 0, user_list: LIST_user, company_list: LIST_company, name:"a", type:"company", text_id: 0, text: "今通話可能"},
         {date_time: get_iso8601(), id: 1, user_list: LIST_user, company_list: LIST_company, name:"c", type:"user", text_id: 0, text: "今通話可能"},
     ];
 
-    let LIST_user = null;
-    let LIST_company = null;
-    // LIST_userにuser_json_str_aを入れる関数
-    const set_LIST_user = () => {
-        LIST_user = JSON.parse(user_json_str_a);
-    }
-    // LIST_companyにuser_json_str_bを入れる関数
-    const set_LIST_company = () => {
-        LIST_company = JSON.parse(user_json_str_b);
-    }
 
 </script>
 </html>
