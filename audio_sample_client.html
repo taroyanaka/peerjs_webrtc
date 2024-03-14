@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="./peerjs.1.5.2.min.js"></script>
+    <script src="./qrcode.js"></script>
+</head>
+<!-- <script src="./main.js"></script> -->
+
+
+<body>
+    <p>qrcode</p>
+    <div id="qrcode"></div>
+
+    <button onclick="text_to_qr()">text_to_qr</button>
+    <h1>PeerJS Example</h1>
+    <h2>version 0.0.6</h2>
+    <!-- url_with_peer_idを表示するためのa:link -->
+    <a href="" id="url_with_peer_id">通話用URL</a>
+    <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
+    <p>参考にしたコードは https://glitch.com/~peerjs-video</p>
+    <!-- exe_connection -->
+    <!-- <button onclick="exe_connection()">exe_connection</button> -->
+
+    <!-- <p>Open the console to see what's happening.</p> -->
+    <p>このURL(https://taroyanaka.github.io/peerjs_webrtc/client3.html)2枚のタブで別々に開く。片方に表示されたpeer id Aの英数文字列を、もう片方のタブのPeer ID BのinputにコピペしてConnect Bをクリック</p>
+    <!-- <div class="messages"></div> -->
+    <!-- peer id A<p class="result"></p> -->
+    peer id A<input class="result" type="text">
+    <input id="connect-to-peer" type="text" placeholder="Peer ID B">
+    <button onclick="connectToPeer()">Connect B</button>
+    <video autoplay></video>
+</body>
+<script>
+
+    
+    const text_to_qr = async () => {
+        const Text = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
+        new QRCode(document.getElementById("qrcode"), Text);
+    }
+    
+    let url_with_peer_id;
+    
+    const set_url_with_peer_id = async () => {
+        document.getElementById('url_with_peer_id').href = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
+    }
+    
+    const get_peer_id = async () => {
+        const url = new URL(window.location.href);
+        const peer_id = url.searchParams.get('peer_id');
+        if (peer_id){
+            console.log("get id", peer_id);
+            document.querySelector('#connect-to-peer').value = peer_id;
+            await connectToPeer();
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', get_peer_id);
+    
+    let messagesEl = document.querySelector('.messages');
+    let videoEl = document.querySelector('.remote-video');
+    
+    const renderVideo = (stream) => {
+        document.querySelector('video').srcObject = stream;
+    };
+    
+    let peer;
+    
+    const initializePeer = async () => {
+        return new Promise(resolve => {
+            peer = new Peer({
+                host: 'cypress-serious-bird.glitch.me',
+                secure: true,
+                path: '/peerjs/myapp'
+            });
+    
+            peer.on('error', (error) => {
+                console.error(error);
+                resolve();
+            });
+    
+            peer.on('open', (id) => {
+                document.querySelector('.result').value = id;
+                set_url_with_peer_id();
+                resolve();
+            });
+        });
+    };
+
+    let abc = ["a", "b", "c"];
+    
+    const connectToPeer = async () => {
+        await initializePeer();
+    
+        let peerId = document.querySelector('#connect-to-peer').value;
+        let conn = peer.connect(peerId);
+    
+        conn.on('data', (data) => {
+            // データ受信時の処理
+        });
+    
+        conn.on('open', () => {
+            conn.send('hi!');
+        });
+    
+        try {
+            let stream = await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+            let call = peer.call(peerId, stream);
+            call.on('stream', renderVideo);
+        } catch (err) {
+            console.error('Failed to get local stream', err);
+        }
+    };
+    
+    const exe_connection = async () => {
+        await initializePeer();
+    
+        peer.on('connection', (conn) => {
+            conn.on('data', (data) => {
+                // データ受信時の処理
+            });
+        });
+    };
+    
+    // 以下は非同期処理を実行するための呼び出し
+    text_to_qr();
+    set_url_with_peer_id();
+    get_peer_id();
+    exe_connection();
+    </script>
+    
+
+</html>
+
