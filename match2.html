@@ -514,8 +514,8 @@ start_chat(other_side_id, own_side_id){
     // 例:http://127.0.0.1:3000/client3.html?other_side_data_str=*****
     var url = window.location.href;
     var dirname = url.substring(0, url.lastIndexOf('/'));
-    this.other_side_data_link = dirname + "/match.html?other_side_data_str=" + JSON.stringify(other_side_data);
-    this.own_side_data_link = dirname + "/match.html?own_side_data_str=" + JSON.stringify(own_side_data);
+    this.other_side_data_link = dirname + "/match2.html?other_side_data_str=" + JSON.stringify(other_side_data);
+    this.own_side_data_link = dirname + "/match2.html?own_side_data_str=" + JSON.stringify(own_side_data);
 },
 parse_url(){
     const url = new URL(window.location.href);
@@ -557,8 +557,41 @@ parse_url(){
     // }
 
     let url = "http://127.0.0.1:3000/client4.html"
+
+// get_paramからother_side_data_strを取得する関数
+const get_other_side_data_str = () => {
+    const url = new URL(window.location.href);
+    const other_side_data_str = url.searchParams.get('other_side_data_str');
+    if (other_side_data_str){
+        console.log("other_side_data_str", other_side_data_str);
+        console.log(JSON.parse(other_side_data_str));
+    }
+    return JSON.parse(other_side_data_str);
+}
+
+// get_paramからown_side_data_strを取得する関数
+const get_own_side_data_str = () => {
+    const url = new URL(window.location.href);
+    const own_side_data_str = url.searchParams.get('own_side_data_str');
+    if (own_side_data_str){
+        console.log("own_side_data_str", own_side_data_str);
+        console.log(JSON.parse(own_side_data_str));
+    }
+    return JSON.parse(own_side_data_str);
+}
+
+
+
     let user_json_str_a = JSON.stringify({name: "A", foo: "foo", bar: "bar"});
     let user_json_str_b = JSON.stringify({name: "B", foo: "fo", bar: "ba"});
+
+    // 三項演算子でget_paramからother_side_data_strを取得、nullの場合は実行しない
+    user_json_str_a = get_other_side_data_str() ? get_other_side_data_str() : user_json_str_a;
+    // 三項演算子でget_paramからown_side_data_strを取得、nullの場合は実行しない
+    user_json_str_b = get_own_side_data_str() ? get_own_side_data_str() : user_json_str_b;
+
+
+
     let url_str_a = ""
     let url_str_b = ""
     // aには対向のbを、bには対向のaをセットする、それぞれ用の2つの関数
@@ -600,6 +633,8 @@ const set_LIST_user = () => {
 const set_LIST_company = () => {
     LIST_company = JSON.parse(user_json_str_b);
 }
+set_LIST_user();
+set_LIST_company();
     let chat_ary = [
         {date_time: get_iso8601(), id: 0, user_list: LIST_user, company_list: LIST_company, name:"a", type:"company", text_id: 0, text: "今通話可能"},
         {date_time: get_iso8601(), id: 1, user_list: LIST_user, company_list: LIST_company, name:"c", type:"user", text_id: 0, text: "今通話可能"},
