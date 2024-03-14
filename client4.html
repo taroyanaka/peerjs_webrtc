@@ -30,7 +30,7 @@
             document.querySelector('#connect-to-peer').value = peer_id;
 
             // exe_connection();
-            // connect_to_peer_for_call();
+            connect_to_peer_for_call();
         }
     }
     document.addEventListener('DOMContentLoaded', get_peer_id);
@@ -62,7 +62,8 @@ peer.on('error', (error) => {
 peer.on('call', (call) => {
     async function getMedia() {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
+            // const stream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
+            const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
             call.on('stream', renderVideo);
         } catch (err) {
             console.error('Failed to get local stream', err);
@@ -74,7 +75,8 @@ peer.on('call', (call) => {
 let connect_to_peer_for_call = async () => {
   try {
   let peerId = document.querySelector('#connect-to-peer').value;
-  const stream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
+//   const stream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
+  const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
   let call = peer.call(peerId, stream);
   call.on('stream', renderVideo);
 } catch (err) {

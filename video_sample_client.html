@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="./peerjs.1.5.2.min.js"></script>
+    <script src="./qrcode.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/node-qrcode@0.0.4/index.min.js"></script> -->
+</head>
+<!-- <script src="./main.js"></script> -->
+<script>
+    const text_to_qr = () => {
+        const Text = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
+        // const Text = "abc";
+        console.log("text_to_qr", Text);
+        // var qrcode = new QRCode(document.getElementById("qrcode"), {
+        //     text: Text,
+        //     width: 128,
+        //     height: 128,
+        //     colorDark : "#000000",
+        //     colorLight : "#ffffff",
+        //     correctLevel : QRCode.CorrectLevel.H
+        // });
+        new QRCode(document.getElementById("qrcode"), Text);
+        
+    }
+        
+        let url_with_peer_id = new URL(window.location.href);
+    // 生成されたpeer idをurlに追加してhrefにセットする関数(ワンライナー)
+    const set_url_with_peer_id = () => {
+        document.getElementById('url_with_peer_id').href = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
+    }
+    // 生成されたpeer idをgetパラメーターで受け取る関数(get paramに存在しない場合は実行しない)
+    const get_peer_id = () => {
+        const url = new URL(window.location.href);
+        const peer_id = url.searchParams.get('peer_id');
+        if (peer_id){
+            console.log("get id", peer_id);
+            document.querySelector('#connect-to-peer').value = peer_id;
+            connectToPeer();
+        }
+    }
+    // dom content load したらget_peer_idを実行
+    document.addEventListener('DOMContentLoaded', get_peer_id);
+
+
+    // client-side js, loaded by index.html
+// run by the browser each time the page is loaded
+
+
+
+let messagesEl = document.querySelector('.messages');
+// let peerIdEl = document.querySelector('#connect-to-peer');
+let videoEl = document.querySelector('.remote-video');
+
+
+let renderVideo = (stream) => {
+//   videoEl.srcObject = stream;
+    document.querySelector('video').srcObject = stream;
+};
+
+// Register with the peer server
+let peer = new Peer({
+//   host: '/',
+// hostは https://cypress-serious-bird.glitch.me/
+// hostは https://cypress-serious-bird.glitch.me/
+    // host: 'cypress-serious-bird.glitch.me',
+    host: 'cypress-serious-bird.glitch.me',
+// https
+    secure: true,
+  path: '/peerjs/myapp'
+});
+
+peer.on('error', (error) => {
+  console.error(error);
+});
+
+// Handle incoming data connection
+// peer.on('connection', (conn) => {
+//   logMessage('incoming peer connection!');
+//   conn.on('data', (data) => {
+//     logMessage(`received: ${data}`);
+//   });
+//   conn.on('open', () => {
+//     conn.send('hello!');
+//   });
+// });
+
+// Handle incoming voice/video connection
+peer.on('call', (call) => {
+  navigator.mediaDevices.getUserMedia({video: true, audio: true})
+//   navigator.mediaDevices.getUserMedia({video: false, audio: true})
+    .then((stream) => {
+      call.answer(stream); // Answer the call with an A/V stream.
+      call.on('stream', renderVideo);
+    })
+    .catch((err) => {
+      console.error('Failed to get local stream', err);
+    });
+});
+
+// Initiate outgoing connection
+let connectToPeer = () => {
+  let peerId = document.querySelector('#connect-to-peer').value;
+//   logMessage(`Connecting to ${peerId}...`);
+  
+  let conn = peer.connect(peerId);
+  conn.on('data', (data) => {
+    // logMessage(`received: ${data}`);
+  });
+  conn.on('open', () => {
+    conn.send('hi!');
+  });
+  
+  navigator.mediaDevices.getUserMedia({video: true, audio: true})
+//   navigator.mediaDevices.getUserMedia({video: false, audio: true})
+    .then((stream) => {
+      let call = peer.call(peerId, stream);
+      call.on('stream', renderVideo);
+    })
+    .catch((err) => {
+    //   logMessage('Failed to get local stream', err);
+    });
+};
+// let logMessage = (message) => {
+//   messagesEl.appendChild(newMessage);
+// };
+peer.on('open', (id) => {
+    // resultに受信したデータを表示
+    document.querySelector('.result').value = id;
+    set_url_with_peer_id();
+//   logMessage('My peer ID is: ' + id);
+});
+// connectionを手動で行う関数
+function exe_connection(){
+    peer.on('connection', (conn) => {
+        //   logMessage('incoming peer connection!');
+        conn.on('data', (data) => {
+            // logMessage(`received: ${data}`);
+        });
+        // conn.on('open', () => {
+        //     conn.send('hello!');
+        // });
+    });
+
+}
+</script>
+
+
+
+<body>
+    <p>qrcode</p>
+    <div id="qrcode"></div>
+
+    <button onclick="text_to_qr()">text_to_qr</button>
+    <h1>PeerJS Example</h1>
+    <h2>version 0.0.4</h2>
+    <!-- url_with_peer_idを表示するためのa:link -->
+    <a href="" id="url_with_peer_id">通話用URL</a>
+    <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
+    <p>参考にしたコードは https://glitch.com/~peerjs-video</p>
+    <!-- exe_connection -->
+    <!-- <button onclick="exe_connection()">exe_connection</button> -->
+
+    <!-- <p>Open the console to see what's happening.</p> -->
+    <p>このURL(https://taroyanaka.github.io/peerjs_webrtc/client3.html)2枚のタブで別々に開く。片方に表示されたpeer id Aの英数文字列を、もう片方のタブのPeer ID BのinputにコピペしてConnect Bをクリック</p>
+    <!-- <div class="messages"></div> -->
+    <!-- peer id A<p class="result"></p> -->
+    peer id A<input class="result" type="text">
+    <input id="connect-to-peer" type="text" placeholder="Peer ID B">
+    <button onclick="connectToPeer()">Connect B</button>
+    <video autoplay></video>
+</body>
+</html>
+
