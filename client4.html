@@ -4,60 +4,137 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="./vue@3.2.36.global.prod.js"></script>
     <script src="./peerjs.1.5.2.min.js"></script>
     <script src="./qrcode.js"></script>
 </head>
 <!-- <script src="./main.js"></script> -->
+<body>
+    <div id="app">
+        <div v-for="keyword, keyword_idx in ary_1" class="block_2">
+            <div>
+                {{keyword}}
+                <button @click="test_fn(keyword_idx)">test_fn</button>
+            </div>
+        </div>
+    </div>
+    <!-- <p>qrcode</p> -->
+    <div id="qrcode"></div>
+    <button onclick="text_to_qr()">text_to_qr</button>
+    <!-- <h1>PeerJS Example</h1> -->
+    <!-- <h2>version 0.0.6</h2> -->
+    <a href="" id="url_with_peer_id">通話用URL</a>
+    <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
+    <p>参考にしたコードは https://glitch.com/~peerjs-video</p>
+    <button onclick="exe_connection()">exe_connection</button>
+    <button onclick="send_text()">send_text</button>
+    <div class="random_message"></div>
+    <p>このURL(https://taroyanaka.github.io/peerjs_webrtc/client3.html)2枚のタブで別々に開く。片方に表示されたpeer id Aの英数文字列を、もう片方のタブのPeer ID BのinputにコピペしてConnect Bをクリック</p>
+    peer id A<input class="result" type="text">
+    <input id="connect-to-peer" type="text" placeholder="Peer ID B">
+    <!-- <button onclick="connect_to_peer_for_call()">Connect B</button> -->
+    <!-- <video autoplay></video> -->
+</body>
 <script>
-
-    const text_to_qr = () => {
-        const Text = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
-        console.log("text_to_qr", Text);
-        new QRCode(document.getElementById("qrcode"), Text);
-        
-    }
-        
-        let url_with_peer_id = new URL(window.location.href);
-    const set_url_with_peer_id = () => {
-        document.getElementById('url_with_peer_id').href = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
-    }
-    const get_peer_id = () => {
-        const url = new URL(window.location.href);
-        const peer_id = url.searchParams.get('peer_id');
-        if (peer_id){
-            console.log("get id", peer_id);
-            document.querySelector('#connect-to-peer').value = peer_id;
-
-            // exe_connection();
-            connect_to_peer_for_call();
+let global_conn = null;
+const app = Vue.createApp({
+data() {
+return {
+    other_side_data_link: '',
+    ary_1: [1,2,3],
+}
+},
+watch: {
+    ary_1: {
+            handler(new_val, old_val) {
+        },
+        deep: true
+    },
+},
+mounted() {},
+beforeUpdated() {},
+updated() {},
+methods: {
+send_text(TEXT="abcdefgABCDEFG"){
+    function send_text_fn(){
+        let peerId = document.querySelector('#connect-to-peer').value;
+        if (!peerId) {
+            console.error('Peer ID is not specified.');
+            return;
         }
+        global_conn = peer.connect(peerId);
+        global_conn.on('open', function() {
+            try {
+                global_conn.send('Hello, peer! with send_text_fn()');
+                // abcdefからランダムに選んでglobal_conn.sendする
+                // global_conn.send({random_message: abcdef[Math.floor(Math.random() * abcdef.length)]});
+                global_conn.send({random_message: TEXT});
+            } catch (err) {
+                console.error('Failed to send message:', err);
+            }
+        });
+        global_conn.on('error', function(err) {
+            console.error('Connection error:', err);
+        });
     }
-    document.addEventListener('DOMContentLoaded', get_peer_id);
+    send_text_fn();
+},
+test_fn(ary_idx){
+    console.log("test_fn", ary_idx);
+    this.ary_1[ary_idx] = 100;
+},
+to_ary(from){
+    return JSON.parse(JSON.stringify(from));
+},
+parse_url(){
+    const url = new URL(window.location.href);
+    const other_side_data_str = url.searchParams.get('other_side_data_str');
+    const own_side_data_str = url.searchParams.get('own_side_data_str');
+    if (other_side_data_str){
+        console.log("other_side_data_str", other_side_data_str);
+        console.log(JSON.parse(other_side_data_str));
+    }
+    if (own_side_data_str){
+        console.log("own_side_data_str", own_side_data_str);
+        console.log(JSON.parse(own_side_data_str));
+    }
+},
+}}).mount('#app');
+const text_to_qr = () => {
+    const Text = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
+    console.log("text_to_qr", Text);
+    new QRCode(document.getElementById("qrcode"), Text);
+    
+}
+let url_with_peer_id = new URL(window.location.href);
+const set_url_with_peer_id = () => {
+    document.getElementById('url_with_peer_id').href = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
+}
+const get_peer_id = () => {
+    const url = new URL(window.location.href);
+    const peer_id = url.searchParams.get('peer_id');
+    if (peer_id){
+        console.log("get id", peer_id);
+        document.querySelector('#connect-to-peer').value = peer_id;
 
-
-
-
-
+        // exe_connection();
+        connect_to_peer_for_call();
+    }
+}
+document.addEventListener('DOMContentLoaded', get_peer_id);
 let messagesEl = document.querySelector('.messages');
 let videoEl = document.querySelector('.remote-video');
-
-
 let renderVideo = (stream) => {
     document.querySelector('video').srcObject = stream;
 };
-
 let peer = new Peer({
     host: 'cypress-serious-bird.glitch.me',
     secure: true,
-  path: '/peerjs/myapp'
+    path: '/peerjs/myapp'
 });
-
-
 peer.on('error', (error) => {
-  console.error(error);
+    console.error(error);
 });
-
-
 peer.on('call', (call) => {
     async function getMedia() {
         try {
@@ -70,56 +147,42 @@ peer.on('call', (call) => {
     }
     getMedia();
 });
-
 let connect_to_peer_for_call = async () => {
-  try {
-  let peerId = document.querySelector('#connect-to-peer').value;
+    try {
+    let peerId = document.querySelector('#connect-to-peer').value;
 //   const stream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
-  const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
-  let call = peer.call(peerId, stream);
-  call.on('stream', renderVideo);
+    const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
+    let call = peer.call(peerId, stream);
+    call.on('stream', renderVideo);
 } catch (err) {
-  // エラーハンドリングを行います
+    // エラーハンドリングを行います
 }
 };
 peer.on('open', (id) => {
     document.querySelector('.result').value = id;
     set_url_with_peer_id();
 });
-
 peer.on('connection', function(conn) {
-  conn.on('data', function(data){
-    // 他のピアから受信したデータを表示します
-    console.log('Received', data);
-    // 受信したデータにanoter_peer_idが含まれていたらBのinputにセット
-    // すでにBのinputに値がセットされていたら上書きしない
-    if (data.anoter_peer_id && !document.querySelector('#connect-to-peer').value){
-        document.querySelector('#connect-to-peer').value = data.anoter_peer_id;
-    }
-    if(data.random_message){
-        console.log("random_message", data.random_message);
-        document.querySelector('.random_message').textContent = data.random_message;
-    }
-  });
-
-  // メッセージを送信する関数
-  function sendMessage(message) {
-    conn.send(message);
-  }
-
-  // 例えば、以下のようにメッセージを送信できます
-  sendMessage('Hello, peer!');
+    conn.on('data', function(data){
+        console.log('Received', data);
+        if (data.anoter_peer_id && !document.querySelector('#connect-to-peer').value){
+            document.querySelector('#connect-to-peer').value = data.anoter_peer_id;
+        }
+        if(data.random_message){
+            console.log("random_message", data.random_message);
+            document.querySelector('.random_message').textContent = data.random_message;
+        }
+    });
+function sendMessage(message) {conn.send(message)}
+sendMessage('Hello, peer!');
 });
-
 function exe_connection(){
     let peerId = document.querySelector('#connect-to-peer').value;
     if (!peerId) {
         console.error('Peer ID is not specified.');
         return;
     }
-
     let conn = peer.connect(peerId);
-
     conn.on('open', function() {
         try {
             conn.send('Hello, peer! with exe_connection()');
@@ -129,107 +192,10 @@ function exe_connection(){
             console.error('Failed to send message:', err);
         }
     });
-
     conn.on('error', function(err) {
         console.error('Connection error:', err);
     });
-}
-
+};
 let abcdef = ["a", "b", "c", "d", "e", "f"];
-
-function send_text(){
-    let peerId = document.querySelector('#connect-to-peer').value;
-    if (!peerId) {
-        console.error('Peer ID is not specified.');
-        return;
-    }
-
-    let conn2 = peer.connect(peerId);
-
-    conn2.on('open', function() {
-        try {
-            conn2.send('Hello, peer! with send_text()');
-            // abcdefからランダムに選んでconn2.sendする
-            conn2.send({random_message: abcdef[Math.floor(Math.random() * abcdef.length)]});
-        } catch (err) {
-            console.error('Failed to send message:', err);
-        }
-    });
-
-    conn2.on('error', function(err) {
-        console.error('Connection error:', err);
-    });
-}
-
-const sequence_of_peer = () =>{
-    let peer_id_a = "";
-    let peer_id_b = "";
-
-    let peer = new Peer({
-        host: 'cypress-serious-bird.glitch.me',
-        secure: true,
-        path: '/peerjs/myapp'
-    });
-
-    // peer idを発行する関数(peer_id_aとpeer_id_b、それぞれ別のidを発行してそれぞれを変数に代入)
-    function get_peer_id(){
-        peer.on('open', (id) => {
-            peer_id_a = id;
-        });
-        peer.on('open', (id) => {
-            peer_id_b = id;
-        });
-    }
-
-    let url = "http://127.0.0.1:3000/client4.html"
-    let user_json_str_a = JSON.stringify({name: "A", foo: "foo", bar: "bar"});
-    let user_json_str_b = JSON.stringify({name: "B", foo: "fo", bar: "ba"});
-    let url_str_a = ""
-    let url_str_b = ""
-    // aには対向のbを、bには対向のaをセットする、それぞれ用の2つの関数
-
-    // user_a用のurl文字列を作る関数
-    const make_url_str_a = () => {
-        url_str_a = url + '?user_json_str=' + user_json_str_a + '&peer_id_a=' + peer_id_a + '&peer_id_b=' + peer_id_b;
-    }
-    // user_b用のurl文字列を作る関数
-    const make_url_str_b = () => {
-        url_str_b = url + '?user_json_str=' + user_json_str_b + '&peer_id_b=' + peer_id_a + '&peer_id_b=' + peer_id_a;
-    }
-}
-
-
-</script>
-
-
-
-<body>
-
-    <p>qrcode</p>
-    <div id="qrcode"></div>
-
-    <button onclick="text_to_qr()">text_to_qr</button>
-    <h1>PeerJS Example</h1>
-    <h2>version 0.0.6</h2>
-    <!-- url_with_peer_idを表示するためのa:link -->
-    <a href="" id="url_with_peer_id">通話用URL</a>
-    <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
-    <p>参考にしたコードは https://glitch.com/~peerjs-video</p>
-    <!-- exe_connection -->
-    <button onclick="exe_connection()">exe_connection</button>
-    <button onclick="send_text()">send_text</button>
-
-    <div class="random_message"></div>
-    
-
-    <!-- <p>Open the console to see what's happening.</p> -->
-    <p>このURL(https://taroyanaka.github.io/peerjs_webrtc/client3.html)2枚のタブで別々に開く。片方に表示されたpeer id Aの英数文字列を、もう片方のタブのPeer ID BのinputにコピペしてConnect Bをクリック</p>
-    <!-- <div class="messages"></div> -->
-    <!-- peer id A<p class="result"></p> -->
-    peer id A<input class="result" type="text">
-    <input id="connect-to-peer" type="text" placeholder="Peer ID B">
-    <button onclick="connect_to_peer_for_call()">Connect B</button>
-    <video autoplay></video>
-</body>
+</script>    
 </html>
-
