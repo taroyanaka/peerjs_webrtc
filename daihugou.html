@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>大富豪</title>
+    <script src="./vue@3.2.36.global.prod.js"></script>
+</head>
+<style>
+    h1{
+        font-size: 0.5rem;
+    }
+    h2{
+        font-size: 0.5rem;
+    }
+</style>
+<body>
+    <div id="app">
+        <!-- human1 card length -->
+        <span>{{ player_card[0].length }}</span><br><br>
+        <!-- ai1 card length -->
+        <span>{{ player_card[1].length }}</span><br>
+        <!-- ai2 card length -->
+        <span>{{ player_card[2].length }}</span><br>
+        <!-- ai3 card length -->
+        <span>{{ player_card[3].length }}</span><br>
+        
+        <button @click="startGame">ゲーム開始</button>
+        <!-- this.field_cardをeachする -->
+        <div v-for="card in field_card">
+            <h2>{{ card }}</h2>
+        </div>
+        
+<!-- playersのnameとcardをeachする -->
+        <div v-for="player, player_idx in player_name">
+            <h2>{{ player }}</h2>
+            <div v-for="card in player_card[player_idx]">
+                <h2>
+                    {{ card }}
+                    <button @click="human_play_card(false, card.id)">use</button>
+                    <!-- pass -->
+                    <button @click="human_play_card(true)">pass</button>
+                </h2>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const app = Vue.createApp({
+            data() {
+                return {
+                    winner_player_ary: [],
+                    passed_players_index: [],
+                    player_name: [],
+                    player_card: [],
+                    field_card: [],
+                    deck: [],
+                    revolution: false,
+                }
+            },
+            mounted() {
+                this.startGame();
+            },
+            methods: {
+                get_card_idx(card_idx){
+                    return this.current_card_idx = card_idx;
+                },
+                startGame() {
+                    this.deck = this.shuffle(this.createDeck());
+                    this.dealCards();
+                },
+                createDeck() {
+                    const suits = ['Spades', 'Hearts', 'Diamonds', 'Clubs'];
+                    // const ranks = Array.from({length: 13}, (_, i) => i + 1).concat('Joker');
+                    const ranks = Array.from({length: 13}, (_, i) => i + 1);
+                    return suits.flatMap(suit => ranks.map((rank,idx) => ({ rank, suit })));
+                },
+                shuffle(array) {
+                    return array.sort(() => Math.random() - 0.5);
+                },
+                dealCards() {
+                    // player_nameに全てのnameを入れる['human1', 'ai1', 'ai2', 'ai3']
+                    this.player_name = ['human1', 'ai1', 'ai2', 'ai3'];
+                        // player_card[0]にhuman1のカードを入れる(cardにユニークなIDを付与する)
+                        // player_card[1]にai1のカードを入れる
+                        // player_card[2]にai2のカードを入れる
+                        // player_card[3]にai3のカードを入れる
+                        this.player_card[0] = this.deck.slice(0, 13).map((card, idx) => ({ ...card, id: this.player_name[0]+"_"+idx.toString() }));
+                        this.player_card[1] = this.deck.slice(13, 26).map((card, idx) => ({ ...card, id: this.player_name[1]+"_"+idx.toString() }));
+                        this.player_card[2] = this.deck.slice(26, 39).map((card, idx) => ({ ...card, id: this.player_name[2]+"_"+idx.toString() }));
+                        this.player_card[3] = this.deck.slice(39, 52).map((card, idx) => ({ ...card, id: this.player_name[3]+"_"+idx.toString() }));
+
+
+                },
+                human_play_card(pass=false, CARD_ID="human1_0") {
+
+// winner_player_aryに0が存在する場合はreturn
+if(this.winner_player_ary.includes(0)){return;}
+
+
+// passがtrueの場合はpassed_players_indexに0を追加
+if(pass===true){this.passed_players_index.push(0)
+    // passed_players_indexで一巡したか確認
+    if(this.passed_players_index.length === this.player_name.length - 1){
+        // 勝ったplayerのidxを取得(passed_players_indexに存在しないplayerのidx)
+        const winner_idx = this.player_name.findIndex((_, idx) => !this.passed_players_index.includes(idx));
+        // 一巡した場合はfieldを空にしたあと、passed_players_indexを空にして、who_turnを更新
+        this.field_card = [];
+        this.passed_players_index = [];
+        // winner_idxがaiの場合はai_play_cardを実行
+        console.log(winner_idx);
+        if(winner_idx !== 0){
+            this.ai_play_card(winner_idx, this.player_name[winner_idx], false, this.player_name[winner_idx]+"_0");
+        }
+    }
+
+};
+if(pass===false){
+    // CARD_IDを指定してcardを選択
+    const card = this.player_card[0].filter(card => card.id === CARD_ID)[0];
+    console.log(card);
+    // this.field_cardがthis.field_cardにcardを追加
+    // 追加条件としてthis.field_cardが[]か、this.field_cardの最後の要素がcardよりrankの値が小さい場合のみ追加
+    if(this.field_card.length === 0 || this.field_card[this.field_card.length - 1].rank < card.rank){
+        this.field_card.push(card);
+        // this.player_card[0]からcardを削除
+        this.player_card[0] = this.player_card[0].filter(c => c.id !== CARD_ID);
+            // this.player_card[AI_PLAYER_IDX]のlengthが0の場合は勝利(winner_player_aryにidxを追加)
+            if(this.player_card[0].length === 0){
+                this.winner_player_ary.push(0);
+                console.log(ai_name + "の勝利");
+            }
+    }
+}
+
+this.ai_play_card(1, "ai1", false, "ai1_0");
+this.ai_play_card(2, "ai2", false, "ai2_0");
+this.ai_play_card(3, "ai3", false, "ai3_0");
+
+},
+
+
+// human_play_card()を自動で行う関数
+ai_play_card(AI_PLAYER_IDX=1,ai_name="ai1",pass=false, card_id="ai1_0") {
+// winner_player_aryにAI_PLAYER_IDXが存在する場合はreturn
+if(this.winner_player_ary.includes(AI_PLAYER_IDX)){return;}
+
+
+// いちばんrankが大きいカードを選ぶ
+const card = this.player_card[AI_PLAYER_IDX].reduce((a, b) => a.rank > b.rank ? a : b );
+console.log(card);
+// this.field_cardがthis.field_cardにcardを追加
+// 追加条件としてthis.field_cardが[]か、this.field_cardの最後の要素がcardよりrankの値が小さい場合のみ追加
+if(this.field_card.length === 0 || this.field_card[this.field_card.length - 1].rank < card.rank){
+    this.field_card.push(card);
+    this.player_card[AI_PLAYER_IDX] = this.player_card[AI_PLAYER_IDX].filter(c => c.id !== card.id);
+    // this.player_card[AI_PLAYER_IDX]のlengthが0の場合は勝利(winner_player_aryにidxを追加)
+    if(this.player_card[AI_PLAYER_IDX].length === 0){
+        this.winner_player_ary.push(AI_PLAYER_IDX);
+        console.log(ai_name + "の勝利");
+    }
+
+}
+// cardがthis.field_cardの末尾のカードよりrankの値が小さい場合はpassする
+else{
+    this.passed_players_index.push(AI_PLAYER_IDX);
+    if(this.passed_players_index.length === this.player_name.length - 1){
+        // 勝ったplayerのidxを取得(passed_players_indexに存在しないplayerのidx)
+        const winner_idx = this.player_name.findIndex((_, idx) => !this.passed_players_index.includes(idx));
+        // 一巡した場合はfieldを空にしたあと、passed_players_indexを空にして、who_turnを更新
+        this.field_card = [];
+        this.passed_players_index = [];
+        // winner_idxがaiの場合はai_play_cardを実行
+        if(winner_idx !== 0){
+            this.ai_play_card(winner_idx, this.player_name[winner_idx], false, this.player_name[winner_idx]+"_0");
+        }
+    }
+}
+
+},
+
+// 8切りの判定
+// isEight(card) {
+//     return card.rank === '8';
+// },
+// joker切りの判定
+// isJoker(card) {
+//     return card.rank === 'Joker';
+// },
+isRevolution(){
+    // 階段が4枚以上の場合はtrue(例: 3, 4, 5, 6, 7などの連続する数字のカード
+    const staircase = this.choosed_card.length >= 4 && this.choosed_card.every((card, i, cards) => i === 0 || this.isStronger(card, cards[i - 1]));
+    // 4枚の同じ数字のカードの場合はtrue(例: 4枚の8など)
+    const pair_4 = this.choosed_card.length === 4 && this.choosed_card.every(card => card.rank === this.choosed_card[0].rank);
+    return staircase || pair_4;
+},
+
+
+                to_ary(ary_like){
+                    return JSON.parse(JSON.stringify(ary_like));
+                },
+            },
+        }).mount('#app');
+    </script>
+</body>
+</html>
