@@ -14,6 +14,7 @@
 </style>
 <body>
     <div id="app">
+        <button @click="human_play_card(true)">pass</button>
         <!-- human1 card length -->
         <span>{{ player_card[0].length }}</span><br><br>
         <!-- ai1 card length -->
@@ -32,12 +33,11 @@
 <!-- playersのnameとcardをeachする -->
         <div v-for="player, player_idx in player_name">
             <h2>{{ player }}</h2>
+            <button @click="human_play_card(true)">pass</button>
             <div v-for="card in player_card[player_idx]">
                 <h2>
                     {{ card }}
                     <button @click="human_play_card(false, card.id)">use</button>
-                    <!-- pass -->
-                    <button @click="human_play_card(true)">pass</button>
                 </h2>
 
             </div>
@@ -91,8 +91,10 @@
 
 
                 },
-                human_play_card(pass=false, CARD_ID="human1_0") {
 
+
+
+human_play_card(pass=false, CARD_ID="human1_0") {
 // winner_player_aryに0が存在する場合はreturn
 if(this.winner_player_ary.includes(0)){return;}
 
@@ -114,27 +116,41 @@ if(pass===true){this.passed_players_index.push(0)
     }
 
 };
-if(pass===false){
+if(pass===false){    
     // CARD_IDを指定してcardを選択
     const card = this.player_card[0].filter(card => card.id === CARD_ID)[0];
     console.log(card);
-    // this.field_cardがthis.field_cardにcardを追加
-    // 追加条件としてthis.field_cardが[]か、this.field_cardの最後の要素がcardよりrankの値が小さい場合のみ追加
-    if(this.field_card.length === 0 || this.field_card[this.field_card.length - 1].rank < card.rank){
-        this.field_card.push(card);
-        // this.player_card[0]からcardを削除
-        this.player_card[0] = this.player_card[0].filter(c => c.id !== CARD_ID);
+    // 8切り
+    if(card.rank === 8 && this.field_card.length === 0 || this.field_card[this.field_card.length - 1].rank < card.rank){
+            this.field_card.push(card);
+            this.player_card[0] = this.player_card[0].filter(c => c.id !== CARD_ID);
             // this.player_card[AI_PLAYER_IDX]のlengthが0の場合は勝利(winner_player_aryにidxを追加)
             if(this.player_card[0].length === 0){
                 this.winner_player_ary.push(0);
-                console.log(ai_name + "の勝利");
+                console.log("human1の勝利");
             }
+            this.field_card = [];
+            this.passed_players_index = [];
+    }
+    // 8切り以外
+    // this.field_cardがthis.field_cardにcardを追加
+    // 追加条件としてthis.field_cardが[]か、this.field_cardの最後の要素がcardよりrankの値が小さい場合のみ追加
+    if(card.rank !== 8 && this.field_card.length === 0 || this.field_card[this.field_card.length - 1].rank < card.rank){
+        this.field_card.push(card);
+        // this.player_card[0]からcardを削除
+        this.player_card[0] = this.player_card[0].filter(c => c.id !== CARD_ID);
+        // this.player_card[AI_PLAYER_IDX]のlengthが0の場合は勝利(winner_player_aryにidxを追加)
+        if(this.player_card[0].length === 0){
+            this.winner_player_ary.push(0);
+            console.log("human1の勝利");
+        }
+
+        this.ai_play_card(1, "ai1", false, "ai1_0");
+        this.ai_play_card(2, "ai2", false, "ai2_0");
+        this.ai_play_card(3, "ai3", false, "ai3_0");
     }
 }
 
-this.ai_play_card(1, "ai1", false, "ai1_0");
-this.ai_play_card(2, "ai2", false, "ai2_0");
-this.ai_play_card(3, "ai3", false, "ai3_0");
 
 },
 
@@ -148,6 +164,29 @@ if(this.winner_player_ary.includes(AI_PLAYER_IDX)){return;}
 // いちばんrankが大きいカードを選ぶ
 const card = this.player_card[AI_PLAYER_IDX].reduce((a, b) => a.rank > b.rank ? a : b );
 console.log(card);
+
+// 8切り
+if(this.field_card.length === 0 || this.field_card[this.field_card.length - 1].rank < card.rank){
+    if(card.rank === 8){
+        this.field_card.push(card);
+        this.player_card[AI_PLAYER_IDX] = this.player_card[AI_PLAYER_IDX].filter(c => c.id !== card.id);
+        // this.player_card[AI_PLAYER_IDX]のlengthが0の場合は勝利(winner_player_aryにidxを追加)
+        if(this.player_card[AI_PLAYER_IDX].length === 0){
+            this.winner_player_ary.push(AI_PLAYER_IDX);
+            console.log(ai_name + "の勝利");
+        }
+        // 勝ったplayerのidxを取得(passed_players_indexに存在しないplayerのidx)
+        const winner_idx = this.player_name.findIndex((_, idx) => !this.passed_players_index.includes(idx));
+        // 一巡した場合はfieldを空にしたあと、passed_players_indexを空に
+        this.field_card = [];
+        this.passed_players_index = [];
+        // winner_idxがaiの場合はai_play_cardを実行
+        if(winner_idx !== 0){
+            this.ai_play_card(winner_idx, this.player_name[winner_idx], false, this.player_name[winner_idx]+"_0");
+        }
+    }
+}
+
 // this.field_cardがthis.field_cardにcardを追加
 // 追加条件としてthis.field_cardが[]か、this.field_cardの最後の要素がcardよりrankの値が小さい場合のみ追加
 if(this.field_card.length === 0 || this.field_card[this.field_card.length - 1].rank < card.rank){
@@ -166,7 +205,7 @@ else{
     if(this.passed_players_index.length === this.player_name.length - 1){
         // 勝ったplayerのidxを取得(passed_players_indexに存在しないplayerのidx)
         const winner_idx = this.player_name.findIndex((_, idx) => !this.passed_players_index.includes(idx));
-        // 一巡した場合はfieldを空にしたあと、passed_players_indexを空にして、who_turnを更新
+        // 一巡した場合はfieldを空にしたあと、passed_players_indexを空に
         this.field_card = [];
         this.passed_players_index = [];
         // winner_idxがaiの場合はai_play_cardを実行
