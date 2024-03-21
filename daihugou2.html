@@ -141,7 +141,8 @@
                 check_pass() {
                     // pass確認関数:check_fnはwinner_player_aryに含まれていないlast_played_player_idx以外のプレイヤーが全員passしたらtrueを返す関数
                     const all_player_passed_check_fn = () => {
-                        if (this.passed_players_index.length === this.player_name.length - 1) {
+                        if (this.passed_players_index.length === this.player_name.length - 2) {
+                        // if (this.passed_players_index.length === this.player_name.length - this.winner_player_ary.length - 1) {
                             return true;
                         }
                         return false;
@@ -156,16 +157,13 @@
                         const remaining_player_idx = this.player_name.filter((_, idx) => !this.passed_players_index.includes(idx));
                         console.log(remaining_player_idx)
                         // remaining_player_idxを配列に変換
-                        const remaining_player_idx_ary = remaining_player_idx.map((_, idx) => idx);
-
-                        // remaining_player_idxが1つの場合はそのプレイヤーにターンを渡す
-                        if (remaining_player_idx.length === 1) {
-                            this.current_player_index_num = remaining_player_idx[0];
-                            this.field_card = [];
-                            this.passed_players_index = [];
-                            console.log(remaining_player_idx)
+                        const remaining_player_idx_ary = this.player_name_to_index_ary(remaining_player_idx);
+                        console.log(remaining_player_idx_ary);
+                        // remaining_player_idx_aryが1つの場合は処理をしない
+                        if(remaining_player_idx_ary.length === 1) {
+                            return;
                         }
-
+                        this.ai_play_card(remaining_player_idx_ary[0]);
 
 
                     }
@@ -199,6 +197,11 @@
                         this.last_played_player_idx = played_player;
                         this.played_player_index.push(played_player);
                     }
+                },
+                // player_nameをindexの数字の配列に変換する関数
+                player_name_to_index_ary(player_name_ary){
+                    // player_name_aryは['human1', 'ai1', 'ai2', 'ai3', 'ai4', 'ai5', 'ai6', 'ai7', 'ai9']のような配列
+                    return player_name_ary.map(player_name => this.player_name.indexOf(player_name));
                 },
 
                 to_ary(ary_like) {
