@@ -55,88 +55,63 @@
     </style>
 </head>
 <body>
-    <div id="app">
-        <div>
-            <!-- input text skill_str -->
-            <input type="text" v-model="skill_str" placeholder="Enter skill">
-            <!-- fetch skill_str -->
-            <button @click="fetch_add_skill_str">fetch_add_skill_str</button>
-
-            {{ web_data }}
-
-            <!-- web_dataの中身をeachする -->
-            <!--         // { "result": "success", "status": 200, "message": [ { "user_data_id": 1, "user_name": "a", "weight_num": 1, "user_type": "company", "offline_online": 0, "skills_id_array": "1,2,3", "skills": [ { "id": 1, "skill": "SKILL_A", "created_at": "2024-03-22T09:24:09.697Z", "updated_at": "2024-03-22T09:24:09.697Z" }, { "id": 2, "skill": "skill_b", "created_at": "2024-03-22T09:24:22.458Z", "updated_at": "2024-03-22T09:24:22.458Z" }, { "id": 3, "skill": "skill_c", "created_at": "2024-03-22T09:24:27.064Z", "updated_at": "2024-03-22T09:24:27.064Z" } ] } ] } -->
-            <!--
-                massage
-                user_name
-                weight_num
-                user_type
-                offline_online
-                skills_id_array
-            -->
-<!-- each web_data.message -->
-<!-- v-if -->
+<div id="app">
+<div>
+    <!-- input text skill_str -->
+    <input type="text" v-model="skill_str" placeholder="Enter skill">
+    <button @click="fetch_add_skill_str">fetch_add_skill_str</button>
 <div v-if="web_data">
+    {{web_data}}
 <div v-if="web_data.message">
-            <div v-for="a, a_idx in web_data.message">
-                <div>
-                    <div>user_name: {{a.user_name}}</div>
-                    <div>weight_num: {{a.weight_num}}</div>
-                    <div>user_type: {{a.user_type}}</div>
-                    <div>offline_online: {{a.offline_online}}</div>
-                    <div>skills_id_array: {{a.skills_id_array}}</div>
-                    <div>skills: </div>
-                    <div v-for="b, b_idx in a.skills">
-                        <div>{{b.skill}}</div>
-                    </div>
-                </div>
-            </div>
-</div>
-</div>
-
-
-
-
-
-            <!-- fetch_read_user_datas_skills buton -->
-        <button @click="fetch_read_user_datas_skills">fetch_read_user_datas_skills</button>
-        <!-- Add User Data -->
-        <input type="text" v-model="userName" placeholder="Enter user name">
-        <input type="text" v-model="weightNum" placeholder="Enter weight num">
-        <input type="text" v-model="userType" placeholder="Enter user type">
-        <input type="text" v-model="onlineOffline" placeholder="Enter 0 for offline, 1 for online">
-        <!-- <button @click="addUserData">Add User Data</button> -->
-        <button @click="fetch_add_user_data">fetch_add_user_data</button>
-
-
-        <!-- Add Skills -->
-        <!-- skillsをeach -->
-        <ul>
-            <li v-for="skill, skill_idx in skills">{{skill}}</li>
-        </ul>
-
-        <!-- <input type="text" v-model="skills" placeholder="Enter skills"> -->
-        <input type="button" @click="skill_num_add_to_user(1)" value="Add Skills to user 1">
-        <input type="button" @click="skill_num_add_to_user(2)" value="Add Skills to user 2">
-        <input type="button" @click="skill_num_add_to_user(3)" value="Add Skills to user 3">
-        <input type="button" @click="skill_num_add_to_user(4)" value="Add Skills to user 4">
-        <input type="button" @click="skill_num_add_to_user(5)" value="Add Skills to user 5">
-
-
-        <button @click="addSkills">Add Skills</button>
+    <div v-for="a, a_idx in web_data.message">
+        <div>user_name: {{a.user_name}}</div>
+        <div>weight_num: {{a.weight_num}}
+            <!-- fetch_update_user_datas_weight_num -->
+            <button @click="fetch_update_user_datas_weight_num(a.user_data_id, a.weight_num, '+')">+ fetch_update_user_datas_weight_num</button>
+            <button @click="fetch_update_user_datas_weight_num(a.user_data_id, a.weight_num, '-')">- fetch_update_user_datas_weight_num</button>
         </div>
-        <!-- input peer id a, length 200 chars -->
-        <input type="text" value="peer_id_a" id="peer_id_a" style="width: 200rem;">
+        <div>user_type: {{a.user_type}}</div>
+        <div>offline_online: {{a.offline_online}}
+            <!-- fetch_update_user_datas_online_offline -->
+            <button @click="fetch_update_user_datas_online_offline(a.user_data_id)">fetch_update_user_datas_online_offline</button>
+        </div>
+        <div>skills_id_array: {{a.skills_id_array}}</div>
+        <div>skills: </div>
+        <div v-for="b, b_idx in a.skills">
+            <span>{{b.skill}}</span>
+            <!-- fetch_delete_user_datas_skills_id_array -->
+            <button @click="fetch_delete_user_datas_skills_id_array(a.user_data_id, b.id)">fetch_delete_user_datas_skills_id_array</button>
+        </div>
 
-        <button @click="parse_url">parse_url</button>
-        <!-- user名のselect -->
-        <select v-model="selected_user" @change="list_filter">
-            <!-- 空欄のリスト(初期値) -->
-            <option v-for="a, a_idx in LIST" :value="a.id">{{a.name}}</option>
-        </select>
+        <!-- <span v-for="skill_num in [1,2,3,4,5]">
+        <button @click="fetch_update_user_datas_skills_id_array(a.user_data_id, skill_num)">skill add {{skill_num}}</button>
+        </span> -->
 
-        {{ERROR_MESSAGE}}
     </div>
+</div>
+</div>
+    <button @click="fetch_read_user_datas_skills">fetch_read_user_datas_skills</button>
+    <!-- Add User Data -->
+    <input type="text" v-model="userName" placeholder="Enter user name">
+    <input type="text" v-model="weightNum" placeholder="Enter weight num">
+    <input type="text" v-model="userType" placeholder="Enter user type">
+    <input type="text" v-model="onlineOffline" placeholder="Enter 0 for offline, 1 for online">
+    <!-- <button @click="addUserData">Add User Data</button> -->
+    <button @click="fetch_add_user_data">fetch_add_user_data</button>
+    <ul>
+        <li v-for="all_skills_one, all_skills_one_idx in all_skills">{{all_skills_one}}</li>
+    </ul>
+
+
+</div>
+
+
+
+
+
+<input type="text" value="peer_id_a" id="peer_id_a" style="width: 200rem;">
+{{ERROR_MESSAGE}}
+</div>
 </body>
 <script>
 const app = Vue.createApp({
@@ -151,6 +126,7 @@ return {
     userType: '',
     onlineOffline: '',
     skills: [1,2,3],
+    all_skills: [],
 
     other_side_data_link: '',
     own_side_data_lin: '',
@@ -208,6 +184,9 @@ mounted() {
     this.weightNum = 1;
     this.userType = "company";
     this.onlineOffline = 0;
+    // fetch read
+    this.fetch_read_skills();
+    this.fetch_read_user_datas_skills();
 
 },
 beforeUpdated() {
@@ -448,17 +427,7 @@ login_as(){
     // get param
     const url = new URL(window.location.href);
     const user = url.searchParams.get('user');
-    // userからidを取得
-    if(user){
-        console.log(user);
-        console.log(typeof user);
-        const user_id_list = this.user_list.filter(user => user.name === "b");
 
-        console.log(user_id_list);
-        console.log(user_id_list[0]);
-        this.selected_user = user_id_list[0].id;
-        this.selected_user_LIST = this.LIST.filter(user => user.id === this.selected_user);
-    }
 },
 start_chat(other_side_id, own_side_id){
     // other_side_id, own_side_idがnullやundefinedでない場合はchatを開始する
@@ -497,11 +466,6 @@ parse_url(){
 },
 
 
-skill_num_add_to_user(skill_num){
-    this.skills.push(skill_num);
-    // this.skillsが重複していたら削除しsortする
-    this.skills = Array.from(new Set(this.skills)).sort((a, b) => a - b);
-},
 
 async fetch_add_user_data() {
 // 以下に従ってvalidationして
@@ -605,7 +569,107 @@ async fetch_read_user_datas_skills() {
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
     }
-}
+},
+
+
+
+// update_user_datas_online_offline
+// パラメーターはuser_data_id, offline_online
+async fetch_update_user_datas_online_offline(Id) {
+    try {
+        console.log(JSON.stringify({user_data_id: Id}));
+        const res = await fetch(this.endpoint + '/update_user_datas_online_offline', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+
+
+
+// update_user_datas_weight_num
+// パラメーターはuser_data_id, weight_num
+async fetch_update_user_datas_weight_num(Id, Weight_Num, Plus_Minus="+") {
+    try {
+        console.log(JSON.stringify({user_data_id: Id, weight_num: Weight_Num}));
+        const Plus_Minus_Num = Plus_Minus === "+" ? 1 : -1;
+        const res = await fetch(this.endpoint + '/update_user_datas_weight_num', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: Id, weight_num: Weight_Num+(Plus_Minus_Num) }),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+
+
+// user_datasテーブルのskills_id_arrayにskillのidを追加するエンドポイント
+// update_user_datas_skills_id_array
+// パラメーターはuser_data_id, skill_id
+async fetch_update_user_datas_skills_id_array(Id, Skill_Id) {
+    try {
+        console.log
+        (JSON.stringify({user_data_id: Id, skill_id: Skill_Id}));
+        const res = await fetch(this.endpoint + '/update_user_datas_skills_id_array', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: Id, skill_id: Skill_Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+
+// delete_user_datas_skills_id_array
+// パラメーターはuser_data_id, skill_id
+async fetch_delete_user_datas_skills_id_array(Id, Skill_Id) {
+    try {
+        console.log(JSON.stringify({user_data_id: Id, skill_id: Skill_Id}));
+        const res = await fetch(this.endpoint + '/delete_user_datas_skills_id_array', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: Id, skill_id: Skill_Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+
+
+
+// skillsテーブルを取得するgetのエンドポイント
+// app.get('/read_skills', (req, res) => {
+//     try {
+//         const RESULT = db.prepare(`SELECT * FROM skills`).all()
+//         ? db.prepare(`SELECT * FROM skills`).all()
+//         : (()=>{throw new Error('skillsテーブルからデータを取得できませんでした')})();
+//         res.status(200)
+//             .json({result: 'success',
+//                 status: 200,
+//                 message: RESULT
+//             });
+//     } catch (error) {
+//         res.status(400).json({status: 400, result: 'fail', message: error.message});
+//     }
+// });
+async fetch_read_skills() {
+    try {
+        const res = await fetch(this.endpoint + '/read_skills', {method: 'GET',headers: {'Content-Type': 'application/json',},
+        });
+        const data = await res.json(); console.log(data);
+
+        // dataのフォーマットをhtml用に変換する
+        // { "result": "success", "status": 200, "message": [ { "user_data_id": 1, "user_name": "a", "weight_num": 1, "user_type": "company", "offline_online": 0, "skills_id_array": "1,2,3", "skills": [ { "id": 1, "skill": "SKILL_A", "created_at": "2024-03-22T09:24:09.697Z", "updated_at": "2024-03-22T09:24:09.697Z" }, { "id": 2, "skill": "skill_b", "created_at": "2024-03-22T09:24:22.458Z", "updated_at": "2024-03-22T09:24:22.458Z" }, { "id": 3, "skill": "skill_c", "created_at": "2024-03-22T09:24:27.064Z", "updated_at": "2024-03-22T09:24:27.064Z" } ] } ] }
+        this.all_skills = data.message;
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
 
 
 }}).mount('#app');
