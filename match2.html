@@ -57,15 +57,72 @@
 <body>
     <div id="app">
         <div>
+            <!-- input text skill_str -->
+            <input type="text" v-model="skill_str" placeholder="Enter skill">
+            <!-- fetch skill_str -->
+            <button @click="fetch_add_skill_str">fetch_add_skill_str</button>
+
+            {{ web_data }}
+
+            <!-- web_dataの中身をeachする -->
+            <!--         // { "result": "success", "status": 200, "message": [ { "user_data_id": 1, "user_name": "a", "weight_num": 1, "user_type": "company", "offline_online": 0, "skills_id_array": "1,2,3", "skills": [ { "id": 1, "skill": "SKILL_A", "created_at": "2024-03-22T09:24:09.697Z", "updated_at": "2024-03-22T09:24:09.697Z" }, { "id": 2, "skill": "skill_b", "created_at": "2024-03-22T09:24:22.458Z", "updated_at": "2024-03-22T09:24:22.458Z" }, { "id": 3, "skill": "skill_c", "created_at": "2024-03-22T09:24:27.064Z", "updated_at": "2024-03-22T09:24:27.064Z" } ] } ] } -->
+            <!--
+                massage
+                user_name
+                weight_num
+                user_type
+                offline_online
+                skills_id_array
+            -->
+<!-- each web_data.message -->
+<!-- v-if -->
+<div v-if="web_data">
+<div v-if="web_data.message">
+            <div v-for="a, a_idx in web_data.message">
+                <div>
+                    <div>user_name: {{a.user_name}}</div>
+                    <div>weight_num: {{a.weight_num}}</div>
+                    <div>user_type: {{a.user_type}}</div>
+                    <div>offline_online: {{a.offline_online}}</div>
+                    <div>skills_id_array: {{a.skills_id_array}}</div>
+                    <div>skills: </div>
+                    <div v-for="b, b_idx in a.skills">
+                        <div>{{b.skill}}</div>
+                    </div>
+                </div>
+            </div>
+</div>
+</div>
+
+
+
+
+
+            <!-- fetch_read_user_datas_skills buton -->
+        <button @click="fetch_read_user_datas_skills">fetch_read_user_datas_skills</button>
         <!-- Add User Data -->
         <input type="text" v-model="userName" placeholder="Enter user name">
         <input type="text" v-model="weightNum" placeholder="Enter weight num">
         <input type="text" v-model="userType" placeholder="Enter user type">
         <input type="text" v-model="onlineOffline" placeholder="Enter 0 for offline, 1 for online">
-        <button @click="addUserData">Add User Data</button>
+        <!-- <button @click="addUserData">Add User Data</button> -->
+        <button @click="fetch_add_user_data">fetch_add_user_data</button>
+
 
         <!-- Add Skills -->
-        <input type="text" v-model="skills" placeholder="Enter skills">
+        <!-- skillsをeach -->
+        <ul>
+            <li v-for="skill, skill_idx in skills">{{skill}}</li>
+        </ul>
+
+        <!-- <input type="text" v-model="skills" placeholder="Enter skills"> -->
+        <input type="button" @click="skill_num_add_to_user(1)" value="Add Skills to user 1">
+        <input type="button" @click="skill_num_add_to_user(2)" value="Add Skills to user 2">
+        <input type="button" @click="skill_num_add_to_user(3)" value="Add Skills to user 3">
+        <input type="button" @click="skill_num_add_to_user(4)" value="Add Skills to user 4">
+        <input type="button" @click="skill_num_add_to_user(5)" value="Add Skills to user 5">
+
+
         <button @click="addSkills">Add Skills</button>
         </div>
         <!-- input peer id a, length 200 chars -->
@@ -205,12 +262,15 @@
 const app = Vue.createApp({
 data() {
 return {
+    endpoint: 'http://localhost:8000',
+    // endpoint: 'https://cotton-concrete-catsup.glitch.me',
+
     web_data: null,
     userName: '',
     weightNum: '',
     userType: '',
     onlineOffline: '',
-    skills: '',
+    skills: [1,2,3],
 
     other_side_data_link: '',
     own_side_data_lin: '',
@@ -263,6 +323,14 @@ mounted() {
     // this.make_LIST();
     this.list_filter();
     this.login_as();
+    // userName,weightNum,userType,onlineOfflineの初期値を設定する
+    this.userName = "a";
+    this.weightNum = 1;
+    this.userType = "company";
+    this.onlineOffline = 0;
+
+    this.fetch_read_user_datas_skills();
+
 },
 beforeUpdated() {
 },
@@ -550,7 +618,14 @@ parse_url(){
     }
 },
 
-async fetch_addUserData() {
+
+skill_num_add_to_user(skill_num){
+    this.skills.push(skill_num);
+    // this.skillsが重複していたら削除しsortする
+    this.skills = Array.from(new Set(this.skills)).sort((a, b) => a - b);
+},
+
+async fetch_add_user_data() {
 // 以下に従ってvalidationして
 // // error_check_user_name 1 to 24 length string not null
 // error_check_user_name === undefined || error_check_user_name === null || error_check_user_name.length === 0 || error_check_user_name.length > 24 || error_check_user_name.includes(' ') || error_check_user_name.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
@@ -563,35 +638,32 @@ async fetch_addUserData() {
 // // error_check_skills_id_array JSON string, It's only num morethan 1 [1,2,3] or [1,3,5] not null
 // error_check_skills_id_array === undefined || error_check_skills_id_array === null || !Array.isArray(JSON.parse(error_check_skills_id_array)) || JSON.parse(error_check_skills_id_array).length < 1 || JSON.parse(error_check_skills_id_array).some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
 try {
-    // error_check_user_name 1 to 24 length string not null
-    this.userName === undefined || this.userName === null || this.userName.length === 0 || this.userName.length > 24 || this.userName.includes(' ') || this.userName.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
-    // error_check_weight_num 1 to 1000 integer not null
-    this.weightNum === undefined || this.weightNum === null || this.weightNum < 1 || this.weightNum > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
-    // error_check_user_type 'company' or 'customer' not null
-    this.userType === undefined || this.userType === null || this.userType !== 'company' && this.userType !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
-    // error_check_offline_online 0 or 1 not null
-    this.onlineOffline === undefined || this.onlineOffline === null || this.onlineOffline !== 0 && this.onlineOffline !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
-    // error_check_skills_id_array JSON string, It's only num morethan 1 [1,2,3] or [1,3,5] not null
-    this.skills === undefined || this.skills === null || !Array.isArray(JSON.parse(this.skills)) || JSON.parse(this.skills).length < 1 || JSON.parse(this.skills).some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
-    // user_listに追加
-    const new_data = {
-        id: this.user_list.length + 1,
-        online_status: {start: null, until:null, on_off: this.onlineOffline === 1 ? "on" : "off"},
-        name: this.userName,
-        user_type_list_id: this.userType === 'company' ? 1 : 2,
-        keyword_list: JSON.parse(this.skills),
-        weight: this.weightNum,
-    };
-    // new_dataを./server.jsのapp.post('/insert_user_datas', (req, res) => {でfetchする
-    //         res.status(200)
-    //    .json({result: 'success',
-    //                status: 200,
-    //                message: RESULT
-    //            }); を受け取る
-    // RESULTが"success"であれば以下を実行
+    console.log(JSON.stringify({
+        user_name: this.userName,
+        weight_num: this.weightNum,
+        user_type: this.userType,
+        offline_online: this.onlineOffline,
+        skills_id_array: this.skills,
+    }));
+    const [error_check_user_name, error_check_weight_num, error_check_user_type, error_check_offline_online, error_check_skills_id_array] =
+        [this.userName, this.weightNum, this.userType, this.onlineOffline, this.skills].map((val) => JSON.parse(JSON.stringify(val)));
 
-    const res = await fetch('localhost:3000/insert_user_datas', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify(new_data),
+error_check_user_name === undefined || error_check_user_name === null || error_check_user_name.length === 0 || error_check_user_name.length > 24 || error_check_user_name.includes(' ') || error_check_user_name.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
+error_check_weight_num === undefined || error_check_weight_num === null || error_check_weight_num < 1 || error_check_weight_num > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
+// this.userType === undefined || this.userType === null || this.userType !== 'company' && this.userType !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
+error_check_user_type === undefined || error_check_user_type === null || error_check_user_type !== 'company' && error_check_user_type !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
+// this.onlineOffline === undefined || this.onlineOffline === null || this.onlineOffline !== 0 && this.onlineOffline !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
+error_check_offline_online === undefined || error_check_offline_online === null || error_check_offline_online !== 0 && error_check_offline_online !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
+// this.skills === undefined || this.skills === null || !Array.isArray(JSON.parse(this.skills)) || JSON.parse(this.skills).length < 1 || JSON.parse(this.skills).some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
+error_check_skills_id_array === undefined || error_check_skills_id_array === null || !Array.isArray(error_check_skills_id_array) || error_check_skills_id_array.length < 1 || error_check_skills_id_array.some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
+    const res = await fetch(this.endpoint + '/insert_user_datas', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        body: JSON.stringify({
+            user_name: this.userName,
+            weight_num: this.weightNum,
+            user_type: this.userType,
+            offline_online: this.onlineOffline,
+            skills_id_array: this.skills,
+        }),
     });
     const data = await res.json(); console.log(data);
     this.ERROR_MESSAGE = "";
@@ -599,32 +671,57 @@ try {
         this.ERROR_MESSAGE = error.message;
     }
 },
-async fetch_addSkills() {
-// 以下に沿ってvalidationして
-// error_check_skill 1 to 24 length string not null
-// error_check_skill === undefined || error_check_skill === null || error_check_skill.length === 0 || error_check_skill.length > 24 || error_check_skill.includes(' ') || error_check_skill.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
+async fetch_add_skill_str() {
+// 以下に沿ってfetchして
+// app.post('/insert_skills', (req, res) => {
+//     try {
+//         const [error_check_skill] = [req.body.skill] = [req.body.skill];
+//         error_check_skill === undefined || error_check_skill === null || error_check_skill.length === 0 || error_check_skill.length > 24 || error_check_skill.includes(' ') || error_check_skill.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
+//         const escaped_skill = encodeURIComponent(req.body.skill);
+//         const RESULT = db.prepare(`
+//         INSERT INTO skills (skill, created_at, updated_at)
+//             VALUES (
+//                 @skill,
+//                 @created_at,
+//                 @updated_at
+//             )
+//         `).run({
+//             skill: escaped_skill,
+//             created_at: now(),
+//             updated_at: now(),
+//         })
+//         ? 'OK'
+//         : (()=>{throw new Error('skillsにレコードを挿入できませんでした')})();
+
+//         res.status(200)
+//             .json({result: 'success',
+//                 status: 200,
+//                 message: RESULT
+//             });
+//     } catch (error) {
+//         res.status(400).json({status: 400, result: 'fail', message: error.message});
+//     }
+// });
+
 try {
-    // error_check_skill 1 to 24 length string not null
-    this.skills === undefined || this.skills === null || this.skills.length === 0 || this.skills.length > 24 || this.skills.includes(' ') || this.skills.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
-    // keyword_listに追加
-    const new_data = {
-        id: this.keyword_list.length + 1,
-        keyword: this.skills,
-    };
-    const res = await fetch('localhost:3000/insert_skills', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify(new_data),
+    console.log(JSON.stringify({skill: this.skill_str}));
+    this.skill_str === undefined || this.skill_str === null || this.skill_str.length === 0 || this.skill_str.length > 24 || this.skill_str.includes(' ') || this.skill_str.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
+    const res = await fetch(this.endpoint + '/insert_skills', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        body: JSON.stringify({ skill: this.skill_str,}),
     });
     const data = await res.json(); console.log(data);
-    this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
 }
 },
 async fetch_read_user_datas_skills() {
     try {
-        const res = await fetch('localhost:3000/read_user_datas_skills', {method: 'GET',headers: {'Content-Type': 'application/json',},
+        const res = await fetch(this.endpoint + '/read_user_datas_skills', {method: 'GET',headers: {'Content-Type': 'application/json',},
         });
         const data = await res.json(); console.log(data);
+
+        // dataのフォーマットをhtml用に変換する
+        // { "result": "success", "status": 200, "message": [ { "user_data_id": 1, "user_name": "a", "weight_num": 1, "user_type": "company", "offline_online": 0, "skills_id_array": "1,2,3", "skills": [ { "id": 1, "skill": "SKILL_A", "created_at": "2024-03-22T09:24:09.697Z", "updated_at": "2024-03-22T09:24:09.697Z" }, { "id": 2, "skill": "skill_b", "created_at": "2024-03-22T09:24:22.458Z", "updated_at": "2024-03-22T09:24:22.458Z" }, { "id": 3, "skill": "skill_c", "created_at": "2024-03-22T09:24:27.064Z", "updated_at": "2024-03-22T09:24:27.064Z" } ] } ] }
         this.web_data = data;
         this.ERROR_MESSAGE = "";
     } catch (error) {

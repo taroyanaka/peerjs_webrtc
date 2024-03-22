@@ -23,6 +23,7 @@ CREATE TABLE user_datas (
   weight_num INTEGER NOT NULL,
   user_type TEXT NOT NULL, -- 'company', 'customer'
   offline_online INTEGER NOT NULL, -- 0 for offline, 1 for online
+  skills_id_array TEXT NOT NULL, -- JSON string
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL
   -- FOREIGN KEY (user_id) REFERENCES users(id)
@@ -30,11 +31,9 @@ CREATE TABLE user_datas (
 
 CREATE TABLE skills (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  user_data_id INTEGER NOT NULL,
   skill TEXT NOT NULL, -- 24 length string
   created_at DATETIME NOT NULL,
-  updated_at DATETIME NOT NULL,
-  FOREIGN KEY (user_data_id) REFERENCES user_datas(id)
+  updated_at DATETIME NOT NULL
 );
 
 

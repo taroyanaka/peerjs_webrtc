@@ -36,324 +36,6 @@ const collect_value_for_test = (Prop, Val) => {
 }
 
 
-// CREATE TABLE user_datas (
-//     id INTEGER PRIMARY KEY AUTOINCREMENT,
-//     user_name TEXT NOT NULL, -- 24 length string
-//     weight_num INTEGER NOT NULL,
-//     user_type TEXT NOT NULL, -- 'company', 'customer'
-//     offline_online INTEGER NOT NULL, -- 0 for offline, 1 for online
-//     skills_id_array TEXT NOT NULL, -- JSON string [1,2,3] or [1,3,5]
-//     created_at DATETIME NOT NULL,
-//     updated_at DATETIME NOT NULL
-//     -- FOREIGN KEY (user_id) REFERENCES users(id)
-// );
-  
-// CREATE TABLE skills (
-//     id INTEGER PRIMARY KEY AUTOINCREMENT,
-//     skill TEXT NOT NULL, -- 24 length string
-//     created_at DATETIME NOT NULL,
-//     updated_at DATETIME NOT NULL,
-//     FOREIGN KEY (user_data_id) REFERENCES user_datas(id)
-// );
-
-
-// user_datasテーブルにデータを挿入するエンドポイント
-app.post('/insert_user_datas', (req, res) => {
-    try {
-        const [error_check_user_name, error_check_weight_num, error_check_user_type, error_check_offline_online, error_check_skills_id_array] = [req.body.user_name, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array] = [req.body.user_name, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array];
-        // error_check_user_name 1 to 24 length string not null
-        error_check_user_name === undefined || error_check_user_name === null || error_check_user_name.length === 0 || error_check_user_name.length > 24 || error_check_user_name.includes(' ') || error_check_user_name.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
-        // error_check_weight_num 1 to 1000 integer not null
-        error_check_weight_num === undefined || error_check_weight_num === null || error_check_weight_num < 1 || error_check_weight_num > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
-        // error_check_user_type 'company' or 'customer' not null
-        error_check_user_type === undefined || error_check_user_type === null || error_check_user_type !== 'company' && error_check_user_type !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
-        // error_check_offline_online 0 or 1 not null
-        error_check_offline_online === undefined || error_check_offline_online === null || error_check_offline_online !== 0 && error_check_offline_online !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
-        // error_check_skills_id_array JSON string, It's only num morethan 1 [1,2,3] or [1,3,5] not null
-        error_check_skills_id_array === undefined || error_check_skills_id_array === null || !Array.isArray(JSON.parse(error_check_skills_id_array)) || JSON.parse(error_check_skills_id_array).length < 1 || JSON.parse(error_check_skills_id_array).some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
-        // req.body.user_name,
-        // req.body.weight_num,
-        // req.body.user_type,
-        // req.body.offline_online,
-        // req.body.skills_id_array,を全てencodeURIComponent()でエスケープする
-        const escaped_all_data = {
-            user_name: encodeURIComponent(req.body.user_name),
-            weight_num: encodeURIComponent(req.body.weight_num),
-            user_type: encodeURIComponent(req.body.user_type),
-            offline_online: encodeURIComponent(req.body.offline_online),
-            skills_id_array: encodeURIComponent(req.body.skills_id_array),
-        };
-        const RESULT = db.prepare(`
-        INSERT INTO user_datas (user_name, weight_num, user_type, offline_online, skills_id_array, created_at, updated_at)
-            VALUES (
-                @user_name,
-                @weight_num,
-                @user_type,
-                @offline_online,
-                @skills_id_array,
-                @created_at,
-                @updated_at
-            )
-        `).run({
-            user_name: escaped_all_data['user_name'],
-            weight_num: escaped_all_data['weight_num'],
-            user_type: escaped_all_data['user_type'],
-            offline_online: escaped_all_data['offline_online'],
-            skills_id_array: escaped_all_data['skills_id_array'],
-            // user_name: req.body.user_name,
-            // weight_num: req.body.weight_num,
-            // user_type: req.body.user_type,
-            // offline_online: req.body.offline_online,
-            // skills_id_array: req.body.skills_id_array,
-            created_at: now(),
-            updated_at: now(),
-        })
-        ? 'OK'
-        : (()=>{throw new Error('user_datasにレコードを挿入できませんでした')})();
-
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-});
-
-// skillsテーブルにデータを挿入するエンドポイント
-app.post('/insert_skills', (req, res) => {
-    try {
-        const [error_check_skill] = [req.body.skill] = [req.body.skill];
-        // error_check_skill 1 to 24 length string not null
-        error_check_skill === undefined || error_check_skill === null || error_check_skill.length === 0 || error_check_skill.length > 24 || error_check_skill.includes(' ') || error_check_skill.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
-        // req.body.skillをencodeURIComponent()でエスケープする
-        const escaped_skill = encodeURIComponent(req.body.skill);
-        const RESULT = db.prepare(`
-        INSERT INTO skills (skill, created_at, updated_at)
-            VALUES (
-                @skill,
-                @created_at,
-                @updated_at
-            )
-        `).run({
-            skill: escaped_skill,
-            // skill: req.body.skill,
-            created_at: now(),
-            updated_at: now(),
-        })
-        ? 'OK'
-        : (()=>{throw new Error('skillsにレコードを挿入できませんでした')})();
-
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-});
-
-// user_datasテーブルとskillsテーブルを結合してデータを取得するgetのエンドポイント
-app.get('/read_user_datas_skills', (req, res) => {
-    try {
-        const RESULT = db.prepare(`
-        SELECT user_datas.id AS user_data_id, user_datas.user_name AS user_name, user_datas.weight_num AS weight_num, user_datas.user_type AS user_type, user_datas.offline_online AS offline_online, user_datas.skills_id_array AS skills_id_array, skills.skill AS skill
-        FROM user_datas
-        LEFT JOIN skills ON user_datas.skills_id_array = skills.id
-        `).all()
-        ? db.prepare(`
-        SELECT user_datas.id AS user_data_id, user_datas.user_name AS user_name, user_datas.weight_num AS weight_num, user_datas.user_type AS user_type, user_datas.offline_online AS offline_online, user_datas.skills_id_array AS skills_id_array, skills.skill AS skill
-        FROM user_datas
-        LEFT JOIN skills ON user_datas.skills_id_array = skills.id
-        `).all()
-        : (()=>{throw new Error('user_datasとskillsを結合してデータを取得できませんでした')})();
-
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-});
-
-// user_datasテーブルのweight_numを更新するエンドポイント
-app.post('/update_user_datas_weight_num', (req, res) => {
-    try {
-        const [error_check_user_data_id, error_check_weight_num] = [req.body.user_data_id, req.body.weight_num] = [req.body.user_data_id, req.body.weight_num];
-        // error_check_user_data_id 1 to 1000 integer not null
-        error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
-        // error_check_weight_num 1 to 1000 integer not null
-        error_check_weight_num === undefined || error_check_weight_num === null || error_check_weight_num < 1 || error_check_weight_num > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
-        // req.body.user_data_id,
-        // req.body.weight_num,を全てencodeURIComponent()でエスケープする
-        const escaped_all_data = {
-            user_data_id: encodeURIComponent(req.body.user_data_id),
-            weight_num: encodeURIComponent(req.body.weight_num),
-        };
-        const RESULT = db.prepare(`
-        UPDATE user_datas
-        SET weight_num = @weight_num
-        WHERE id = @id
-        `).run({
-            id: escaped_all_data['user_data_id'],
-            weight_num: escaped_all_data['weight_num'],
-        })
-        ? 'OK'
-        : (()=>{throw new Error('user_datasのweight_numを更新できませんでした')})();
-
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-});
-// user_datasテーブルのonline_offlineを更新するエンドポイント
-app.post('/update_user_datas_online_offline', (req, res) => {
-    try {
-        const [error_check_user_data_id, error_check_offline_online] = [req.body.user_data_id, req.body.offline_online] = [req.body.user_data_id, req.body.offline_online];
-        // error_check_user_data_id 1 to 1000 integer not null
-        error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
-        // error_check_offline_online 0 or 1 not null
-        error_check_offline_online === undefined || error_check_offline_online === null || error_check_offline_online !== 0 && error_check_offline_online !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
-        // req.body.user_data_id,
-        // req.body.offline_online,を全てencodeURIComponent()でエスケープする
-        const escaped_all_data = {
-            user_data_id: encodeURIComponent(req.body.user_data_id),
-            offline_online: encodeURIComponent(req.body.offline_online),
-        };
-        const RESULT = db.prepare(`
-        UPDATE user_datas
-        SET offline_online = @offline_online
-        WHERE id = @id
-        `).run({
-            id: escaped_all_data['user_data_id'],
-            offline_online: escaped_all_data['offline_online'],
-        })
-        ? 'OK'
-        : (()=>{throw new Error('user_datasのoffline_onlineを更新できませんでした')})();
-
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-});
-
-// skillsテーブルにskillを追加するエンドポイント
-app.post('/insert_skills', (req, res) => {
-    try {
-        const [error_check_skill] = [req.body.skill] = [req.body.skill];
-        // error_check_skill 1 to 24 length string not null
-        error_check_skill === undefined || error_check_skill === null || error_check_skill.length === 0 || error_check_skill.length > 24 || error_check_skill.includes(' ') || error_check_skill.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
-        // req.body.skillをencodeURIComponent()でエスケープする
-        const escaped_skill = encodeURIComponent(req.body.skill);
-        const RESULT = db.prepare(`
-        INSERT INTO skills (skill, created_at, updated_at)
-            VALUES (
-                @skill,
-                @created_at,
-                @updated_at
-            )
-        `).run({
-            skill: escaped_skill,
-            created_at: now(),
-            updated_at: now(),
-        })
-        ? 'OK'
-        : (()=>{throw new Error('skillsにレコードを挿入できませんでした')})();
-
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-});
-// user_datasテーブルのskills_id_arrayにskillのidを追加するエンドポイント
-app.post('/update_user_datas_skills_id_array', (req, res) => {
-    try {
-        const [error_check_user_data_id, error_check_skill_id] = [req.body.user_data_id, req.body.skill_id] = [req.body.user_data_id, req.body.skill_id];
-        // error_check_user_data_id 1 to 1000 integer not null
-        error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
-        // error_check_skill_id 1 to 1000 integer not null
-        error_check_skill_id === undefined || error_check_skill_id === null || error_check_skill_id < 1 || error_check_skill_id > 1000 ? (()=>{throw new Error('skill_idが不正です')})() : null;
-        // req.body.user_data_id,
-        // req.body.skill_id,を全てencodeURIComponent()でエスケープする
-        const escaped_all_data = {
-            user_data_id: encodeURIComponent(req.body.user_data_id),
-            skill_id: encodeURIComponent(req.body.skill_id),
-        };
-        const RESULT = db.prepare(`
-        UPDATE user_datas
-        SET skills_id_array = json_insert(skills_id_array, '$[#]', @skill_id)
-        WHERE id = @id
-        `).run({
-            id: escaped_all_data['user_data_id'],
-            skill_id: escaped_all_data['skill_id'],
-        })
-        ? 'OK'
-        : (()=>{throw new Error('user_datasのskills_id_arrayにskill_idを追加できませんでした')})();
-
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-});
-// user_datasテーブルのskills_id_arrayからskillのidを削除するエンドポイント
-app.post('/delete_user_datas_skills_id_array', (req, res) => {
-    try {
-        const [error_check_user_data_id, error_check_skill_id] = [req.body.user_data_id, req.body.skill_id] = [req.body.user_data_id, req.body.skill_id];
-        // error_check_user_data_id 1 to 1000 integer not null
-        error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
-        // error_check_skill_id 1 to 1000 integer not null
-        error_check_skill_id === undefined || error_check_skill_id === null || error_check_skill_id < 1 || error_check_skill_id > 1000 ? (()=>{throw new Error('skill_idが不正です')})() : null;
-        // req.body.user_data_id,
-        // req.body.skill_id,を全てencodeURIComponent()でエスケープする
-        const escaped_all_data = {
-            user_data_id: encodeURIComponent(req.body.user_data_id),
-            skill_id: encodeURIComponent(req.body.skill_id),
-        };
-        const RESULT = db.prepare(`
-        UPDATE user_datas
-        SET skills_id_array = json_remove(skills_id_array, '$[#]')
-        WHERE id = @id
-        `).run({
-            id: escaped_all_data['user_data_id'],
-            skill_id: escaped_all_data['skill_id'],
-        })
-        ? 'OK'
-        : (()=>{throw new Error('user_datasのskills_id_arrayからskill_idを削除できませんでした')})();
-
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-});
-
-
-
-
-
 // const show_collect_value_for_test = () => test_mode() === true ? console.table(collect_value) : null;
 
 
@@ -1461,3 +1143,313 @@ app.post('/get_collect_value_for_test', (req, res) => {
     }
 });
 
+
+
+
+
+// CREATE TABLE user_datas (
+//     id INTEGER PRIMARY KEY AUTOINCREMENT,
+//     user_name TEXT NOT NULL, -- 24 length string
+//     weight_num INTEGER NOT NULL,
+//     user_type TEXT NOT NULL, -- 'company', 'customer'
+//     offline_online INTEGER NOT NULL, -- 0 for offline, 1 for online
+//     skills_id_array TEXT NOT NULL, -- JSON string [1,2,3] or [1,3,5]
+//     created_at DATETIME NOT NULL,
+//     updated_at DATETIME NOT NULL
+//     -- FOREIGN KEY (user_id) REFERENCES users(id)
+// );
+  
+// CREATE TABLE skills (
+//     id INTEGER PRIMARY KEY AUTOINCREMENT,
+//     skill TEXT NOT NULL, -- 24 length string
+//     created_at DATETIME NOT NULL,
+//     updated_at DATETIME NOT NULL,
+//     FOREIGN KEY (user_data_id) REFERENCES user_datas(id)
+// );
+
+
+
+// skillsテーブルにskillを追加するエンドポイント
+app.post('/insert_skills', (req, res) => {
+    console.log(req.body);
+    try {
+        // const skill = JSON.parse(req.body.skill);
+        const skill = req.body.skill;
+        const [error_check_skill] = [skill];
+        error_check_skill === undefined || error_check_skill === null || error_check_skill.length === 0 || error_check_skill.length > 24 || error_check_skill.includes(' ') || error_check_skill.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
+        const escaped_skill = encodeURIComponent(skill);
+        const RESULT = db.prepare(`
+        INSERT INTO skills (skill, created_at, updated_at)
+            VALUES (
+                @skill,
+                @created_at,
+                @updated_at
+            )
+        `).run({
+            skill: escaped_skill,
+            created_at: now(),
+            updated_at: now(),
+        })
+        ? 'OK'
+        : (()=>{throw new Error('skillsにレコードを挿入できませんでした')})();
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
+// user_datasテーブルにデータを挿入するエンドポイント
+app.post('/insert_user_datas', (req, res) => {
+    try {
+        // 全てのreq.bodyの値をJSON.parse()でエスケープする
+        // [req.body.user_name, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array]
+        //     = [req.body.user_name, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array].map((value) => JSON.parse(value));
+        const [error_check_user_name, error_check_weight_num, error_check_user_type, error_check_offline_online, error_check_skills_id_array] =
+            [req.body.user_name, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array] = [req.body.user_name, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array].map((val) => JSON.parse(JSON.stringify(val)));
+        // error_check_user_name 1 to 24 length string not null
+        error_check_user_name === undefined || error_check_user_name === null || error_check_user_name.length === 0 || error_check_user_name.length > 24 || error_check_user_name.includes(' ') || error_check_user_name.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
+        // error_check_weight_num 1 to 1000 integer not null
+        error_check_weight_num === undefined || error_check_weight_num === null || error_check_weight_num < 1 || error_check_weight_num > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
+        // error_check_user_type 'company' or 'customer' not null
+        error_check_user_type === undefined || error_check_user_type === null || error_check_user_type !== 'company' && error_check_user_type !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
+        // error_check_offline_online 0 or 1 not null
+        error_check_offline_online === undefined || error_check_offline_online === null || error_check_offline_online !== 0 && error_check_offline_online !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
+        // error_check_skills_id_array === undefined || error_check_skills_id_array === null || !Array.isArray(error_check_skills_id_array) || error_check_skills_id_array.length < 1 || JSON.parse(error_check_skills_id_array).some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
+
+        // req.body.user_name,
+        // req.body.weight_num,
+        // req.body.user_type,
+        // req.body.offline_online,
+        // req.body.skills_id_array,を全てencodeURIComponent()でエスケープする
+
+        const escaped_all_data = {
+            user_name: encodeURIComponent(req.body.user_name),
+            weight_num: encodeURIComponent(req.body.weight_num),
+            user_type: encodeURIComponent(req.body.user_type),
+            offline_online: encodeURIComponent(req.body.offline_online),
+            skills_id_array: encodeURIComponent(req.body.skills_id_array),
+        };
+        const RESULT = db.prepare(`
+        INSERT INTO user_datas (user_name, weight_num, user_type, offline_online, skills_id_array, created_at, updated_at)
+            VALUES (
+                @user_name,
+                @weight_num,
+                @user_type,
+                @offline_online,
+                @skills_id_array,
+                @created_at,
+                @updated_at
+            )
+        `).run({
+            user_name: escaped_all_data['user_name'],
+            weight_num: escaped_all_data['weight_num'],
+            user_type: escaped_all_data['user_type'],
+            offline_online: escaped_all_data['offline_online'],
+            skills_id_array: escaped_all_data['skills_id_array'],
+            created_at: now(),
+            updated_at: now(),
+        })
+        ? 'OK'
+        : (()=>{throw new Error('user_datasにレコードを挿入できませんでした')})();
+        console.log(
+            "escaped_all_data",
+            escaped_all_data,
+            RESULT
+        )
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
+// user_datasテーブルとskillsテーブルを結合してデータを取得するgetのエンドポイント
+app.get('/read_user_datas_skills', (req, res) => {
+    try {
+
+        // skill table result
+        const skill_result = db.prepare(`SELECT * FROM skills`).all()
+        ? db.prepare(`SELECT * FROM skills`).all()        
+        : (()=>{throw new Error('skillsテーブルからデータを取得できませんでした')})();
+
+        // user_datasテーブルとskillsテーブルを結合してデータを取得する
+        // skills_id_arrayに含まれるidを元にskillsテーブルからskillを取得する
+        // skill_resultと組み合わせて返す
+        const RESULT = db.prepare(`
+        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
+        FROM user_datas`).all()
+        ? db.prepare(`
+        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
+        FROM user_datas`).all()
+        : (()=>{throw new Error('user_datasテーブルからデータを取得できませんでした')})();
+        // RESULTのskills_id_arrayをJSON.parse()して配列に変換する
+        let new_RESULT = RESULT.map((result) => {
+            result.skills_id_array = decodeURIComponent(result.skills_id_array);
+            return result;
+        });
+
+        // new_RESULTとskill_resultを組み合わせて返す
+        const final_RESULT = new_RESULT.map((result) => {
+            return {
+                user_data_id: result.user_data_id,
+                user_name: result.user_name,
+                weight_num: result.weight_num,
+                user_type: result.user_type,
+                offline_online: result.offline_online,
+                skills_id_array: result.skills_id_array,
+                skills: result.skills_id_array.split(',').map((id) => skill_result.find((skill) => skill.id == id))
+            };
+        });
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: final_RESULT
+                // message: skill_result
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
+// user_datasテーブルのweight_numを更新するエンドポイント
+app.post('/update_user_datas_weight_num', (req, res) => {
+    try {
+        const [error_check_user_data_id, error_check_weight_num] = [req.body.user_data_id, req.body.weight_num] = [req.body.user_data_id, req.body.weight_num];
+        // error_check_user_data_id 1 to 1000 integer not null
+        error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
+        // error_check_weight_num 1 to 1000 integer not null
+        error_check_weight_num === undefined || error_check_weight_num === null || error_check_weight_num < 1 || error_check_weight_num > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
+        // req.body.user_data_id,
+        // req.body.weight_num,を全てencodeURIComponent()でエスケープする
+        const escaped_all_data = {
+            user_data_id: encodeURIComponent(req.body.user_data_id),
+            weight_num: encodeURIComponent(req.body.weight_num),
+        };
+        const RESULT = db.prepare(`
+        UPDATE user_datas
+        SET weight_num = @weight_num
+        WHERE id = @id
+        `).run({
+            id: escaped_all_data['user_data_id'],
+            weight_num: escaped_all_data['weight_num'],
+        })
+        ? 'OK'
+        : (()=>{throw new Error('user_datasのweight_numを更新できませんでした')})();
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
+// user_datasテーブルのonline_offlineを更新するエンドポイント
+app.post('/update_user_datas_online_offline', (req, res) => {
+    try {
+        const [error_check_user_data_id, error_check_offline_online] = [req.body.user_data_id, req.body.offline_online] = [req.body.user_data_id, req.body.offline_online];
+        // error_check_user_data_id 1 to 1000 integer not null
+        error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
+        // error_check_offline_online 0 or 1 not null
+        error_check_offline_online === undefined || error_check_offline_online === null || error_check_offline_online !== 0 && error_check_offline_online !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
+        // req.body.user_data_id,
+        // req.body.offline_online,を全てencodeURIComponent()でエスケープする
+        const escaped_all_data = {
+            user_data_id: encodeURIComponent(req.body.user_data_id),
+            offline_online: encodeURIComponent(req.body.offline_online),
+        };
+        const RESULT = db.prepare(`
+        UPDATE user_datas
+        SET offline_online = @offline_online
+        WHERE id = @id
+        `).run({
+            id: escaped_all_data['user_data_id'],
+            offline_online: escaped_all_data['offline_online'],
+        })
+        ? 'OK'
+        : (()=>{throw new Error('user_datasのoffline_onlineを更新できませんでした')})();
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
+// user_datasテーブルのskills_id_arrayにskillのidを追加するエンドポイント
+app.post('/update_user_datas_skills_id_array', (req, res) => {
+    try {
+        const [error_check_user_data_id, error_check_skill_id] = [req.body.user_data_id, req.body.skill_id] = [req.body.user_data_id, req.body.skill_id];
+        // error_check_user_data_id 1 to 1000 integer not null
+        error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
+        // error_check_skill_id 1 to 1000 integer not null
+        error_check_skill_id === undefined || error_check_skill_id === null || error_check_skill_id < 1 || error_check_skill_id > 1000 ? (()=>{throw new Error('skill_idが不正です')})() : null;
+        // req.body.user_data_id,
+        // req.body.skill_id,を全てencodeURIComponent()でエスケープする
+        const escaped_all_data = {
+            user_data_id: encodeURIComponent(req.body.user_data_id),
+            skill_id: encodeURIComponent(req.body.skill_id),
+        };
+        const RESULT = db.prepare(`
+        UPDATE user_datas
+        SET skills_id_array = json_insert(skills_id_array, '$[#]', @skill_id)
+        WHERE id = @id
+        `).run({
+            id: escaped_all_data['user_data_id'],
+            skill_id: escaped_all_data['skill_id'],
+        })
+        ? 'OK'
+        : (()=>{throw new Error('user_datasのskills_id_arrayにskill_idを追加できませんでした')})();
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
+// user_datasテーブルのskills_id_arrayからskillのidを削除するエンドポイント
+app.post('/delete_user_datas_skills_id_array', (req, res) => {
+    try {
+        const [error_check_user_data_id, error_check_skill_id] = [req.body.user_data_id, req.body.skill_id] = [req.body.user_data_id, req.body.skill_id];
+        // error_check_user_data_id 1 to 1000 integer not null
+        error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
+        // error_check_skill_id 1 to 1000 integer not null
+        error_check_skill_id === undefined || error_check_skill_id === null || error_check_skill_id < 1 || error_check_skill_id > 1000 ? (()=>{throw new Error('skill_idが不正です')})() : null;
+        // req.body.user_data_id,
+        // req.body.skill_id,を全てencodeURIComponent()でエスケープする
+        const escaped_all_data = {
+            user_data_id: encodeURIComponent(req.body.user_data_id),
+            skill_id: encodeURIComponent(req.body.skill_id),
+        };
+        const RESULT = db.prepare(`
+        UPDATE user_datas
+        SET skills_id_array = json_remove(skills_id_array, '$[#]')
+        WHERE id = @id
+        `).run({
+            id: escaped_all_data['user_data_id'],
+            skill_id: escaped_all_data['skill_id'],
+        })
+        ? 'OK'
+        : (()=>{throw new Error('user_datasのskills_id_arrayからskill_idを削除できませんでした')})();
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
