@@ -12,17 +12,17 @@
 </style>
 <body>
     <div id="app">
+        <!-- passed_players_indexに0が含まれていない時だけhuman_passを表示 -->
+        <button v-if="!passed_players_index.includes(0)" @click="human_pass">human_pass</button>
+
+
         <button @click="ai_play_card(this.current_player_index_num)">play_last</button>
-        <!-- testing switch button -->
-        <button @click="testing = !testing">testing button</button>
-        {{ testing }}
         <button @click="revolution = !revolution">revolution button</button>
         <h2>revolution: {{ revolution }}</h2>
+        played_player_index: {{ played_player_index }}
         passed_players_index: {{ passed_players_index }}
         winner_player_ary: {{ winner_player_ary }}
-        <!-- <button @click="human_pass(0)">pass</button> -->
         {{this.current_player_index_num}}
-
         <h2 v-for="(player, player_idx) in player_name">{{ player }}: {{ player_card[player_idx].length }}</h2>
         <button @click="startGame">ゲーム開始</button>
         <div v-for="card in field_card">
@@ -33,11 +33,8 @@
             <div v-for="card in player_card[player_idx]">
                 <h2>
                     {{ card }}
-                    <!-- <button @click="playCard(player_idx, card.id)">use</button> -->
-                    <!-- <button @click="all_player_play(player_idx, card.id)">all_player_play</button> -->
-                    <!-- ifでhumanの時だけボタン表示 -->
-                    <span v-if="player_idx === 0" @click="human_play_card(player_idx, card.id)">
-                    <button @click="human_player_play(player_idx, card.id)">human_player_play</button>
+                    <span v-if="player_idx === 0">
+                        <button @click="human_player_play(player_idx, card.id)">human_player_play</button>
                     </span>
                 </h2>
             </div>
@@ -55,6 +52,8 @@
 const app = Vue.createApp({
 data() {
     return {
+        test_ary: [],
+
         winner_player_ary: [],
         passed_players_index: [],
         played_player_index: [],
@@ -71,6 +70,14 @@ data() {
 mounted() {
     this.startGame();
 },
+watch: {
+    played_player_index: {
+            handler(new_val, old_val) {
+        },
+        deep: true
+    },
+},
+
 methods: {
     getCardIdx(cardIdx) {
         return this.current_card_idx = cardIdx;
@@ -98,8 +105,9 @@ methods: {
         }
         this.player_card = this.player_card.map(cards => cards.sort((a, b) => a.rank - b.rank));
     },
+
+
     can_and_exe(playerIdx, playerCard, card) {
-        console.log("can_and_exe");
         const playerName = this.player_name[playerIdx];
         const is_can = (playerIdx, playerCard, card, playerName) => {
             if (this.can_play_card(card.rank)) {
@@ -115,7 +123,15 @@ methods: {
         }
         is_can(playerIdx, playerCard, card, playerName);
     },
+    human_pass(){
+        this.manage_turn(true, 0, 0);
+        // passed_players_indexに0が含まれていない残りのaiにplayさせる
+        this.check_pass();
+
+
+    },
     human_play_card(playerIdx, cardId, pass=false) {
+        console.log("human_play_card");
         const playerCard = this.player_card[playerIdx];
         if (this.winner_player_ary.includes(playerIdx)) {
             return;
@@ -127,80 +143,79 @@ methods: {
             throw new Error("fieldに出せないカードを出そうとした");
         }
     },
-    human_pass() {
-        this.manage_turn(true, 0, 0);
-        this.check_pass();
-    },
     human_player_play(playerIdx, cardId, pass=false) {
+        console.log("human_player_play");
         if(this.field_card.length !== 0 && this.field_card[this.field_card.length - 1].rank > this.player_card[playerIdx].find(c => c.id === cardId).rank ) {
             console.log("rankが低いのでfield_cardに出せるカードでは無い");
             return;
         }
-
         this.human_play_card(playerIdx, cardId, pass);
-        this.manage_turn(pass, playerIdx);
-        this.ai_player_play();
+        this.all_ai_play();
     },
-    ai_player_play(start_idx) {
-        // start_idxから始まる配列を作成
-        start_idx = start_idx || 5;
-        const start_idx_ary = this.player_name.slice(start_idx).map((_, idx) => idx + start_idx);
-        console.log("START_IDX_ARY", start_idx_ary);
-
-        // start_idx_aryの先頭から順にai_play_cardを実行
-        start_idx_ary.forEach(i => {
-            this.ai_play_card(i, this.player_name[i]);
-        })
-        if(start_idx_ary.length !== 0){
-            return;
-        }
-        // 全てのstart_idx_aryを実行した場合はreturn
-
-
-
-        // human以外のwinner_player_aryに含まれていないaiプレイヤー
-        for (let i = 1; i < this.player_name.length; i++) {
-            // winner以外
-            if (!this.winner_player_ary.includes(i)) {
+    all_ai_play(start_idx) {
+        console.log("all_ai_play");
+        if(start_idx){
+            start_idx = start_idx || 5;
+            const start_idx_ary = this.player_name.slice(start_idx).map((_, idx) => idx + start_idx);
+            start_idx_ary.forEach(i => {
                 this.ai_play_card(i, this.player_name[i]);
+            })
+            // this.test(["all_ai_play",[{start_idx: start_idx},{start_idx_ary: start_idx_ary},]]);
+            if(start_idx_ary.length !== 0){
+                return;
+            }
+            console.log("hoge");
+        }
+        // humang以外のplayer_nameのindexを取得
+        const get_without_human_ary = () => {
+            return this.player_name.filter((_, idx) => idx !== 0);
+        }
+        console.log("get_without_human_ary", get_without_human_ary());
+        for (let i = 0; i < get_without_human_ary().length; i++) {
+            if (!this.winner_player_ary.includes(i)) {
+                console.log(i);
+                // console.log(this.passed_players_index);
+                // this.catch_double_zero();
+                this.ai_play_card(i+1, this.player_name[i]);
             }
         }
     },
-    // passが特定のプレイヤー以外一巡したか確認する関数
     check_pass() {
-        // pass確認関数:check_fnはwinner_player_aryに含まれていないlast_played_player_idx以外のプレイヤーが全員passしたらtrueを返す関数
         const all_player_passed_check_fn = () => {
-            console.log("this.passed_players_index.length, this.player_name.length");
-            console.log(this.passed_players_index.length, this.player_name.length);
             if (this.passed_players_index.length === this.player_name.length - 1) {
-            // if (this.passed_players_index.length === this.player_name.length - this.winner_player_ary.length - 1) {
                 return true;
             }
             return false;
         }
         if (all_player_passed_check_fn() === true) {
-            console.log("ALL PLAYER PASSED");
             this.field_card = [];
             this.passed_players_index = [];
             this.current_player_index_num = this.last_played_player_idx;
             if(this.last_played_player_idx !== 0) {
-                // this.ai_play_card(this.last_played_player_idx);
-                this.ai_player_play(this.last_played_player_idx);
+                this.all_ai_play(this.last_played_player_idx);
             }
         }
         if (all_player_passed_check_fn() === false) {
-            console.log("all_player_passed_check_fn() === false");
-            // 残りのpassしていないplayerにターンを渡して、残り全員passならfield_cardとpassed_players_indexを初期化して、fieldで最後にカードを出したplayerにターンを渡す
-            const remaining_player_idx = this.player_name.filter((_, idx) => !this.passed_players_index.includes(idx));
-            // remaining_player_idxを配列に変換
-            const remaining_player_idx_ary = this.player_name_to_index_ary(remaining_player_idx);
-            console.log(remaining_player_idx_ary);
-            console.log(this.last_played_player_idx);
-            // remaining_player_idx_aryが空でない場合remaining_player_idx_aryの先頭のプレイヤーにターンを渡す
-            if (remaining_player_idx_ary.length !== 0) {
-                this.current_player_index_num = remaining_player_idx_ary[0];
-            }
+            // const remaining_player_idx = this.player_name.filter((_, idx) => !this.passed_players_index.includes(idx));
+            // const remaining_player_idx_ary = this.player_name_to_index_ary(remaining_player_idx);
+            // if (remaining_player_idx_ary.length !== 0) {
+            //     this.current_player_index_num = remaining_player_idx_ary[0];
+            // }
+            // played_player_indexとpassed_players_indexを一つの配列にして、全てのplayerがplayedかpassedした場合は、played_player_indexの末尾の数字のplayerが次のplayerになる
+            const played_and_passed_player_idx = this.played_player_index.concat(this.passed_players_index);
+            console.log("played_and_passed_player_idx", played_and_passed_player_idx);
+            if (played_and_passed_player_idx.length === this.player_name.length) {
+                console.log("played_and_passed_player_idx.length", played_and_passed_player_idx.length);
+                console.log("this.player_name.length", this.player_name.length);
+                this.current_player_index_num = this.played_player_index[this.played_player_index.length - 1];
+                console.log("this.current_player_index_num", this.current_player_index_num);
+                // this.current_player_index_numがaiの場合は、ai_play_cardを実行
+                if (this.current_player_index_num !== 0) {
+                    console.log("this.current_player_index_num !== 0");
+                    this.all_ai_play(this.current_player_index_num);
+                }
 
+            }
 
         }
     },
@@ -211,33 +226,19 @@ methods: {
         return false;
     },
     ai_play_card(AI_PLAYER_IDX=1) {
-        // AI_PLAYER_IDXが0の時はhuman_pass(0)を実行して終了
         if (AI_PLAYER_IDX === 0) {
-            this.human_pass();
             return;
         }
-
-        console.log("ai_play_card", AI_PLAYER_IDX);
         if (this.winner_player_ary.includes(AI_PLAYER_IDX)) {return};
         const playerCard = this.player_card[AI_PLAYER_IDX];
-        // field_cardが空の場合はランダムにカードを出す
-        // field_cardに出せるカードがある場合はその中からランダムにカードを出す
         const card = this.is_field_card_nothing() ? playerCard[Math.floor(Math.random() * playerCard.length)] : playerCard.filter(c => this.can_play_card(c.rank))[Math.floor(Math.random() * playerCard.filter(c => this.can_play_card(c.rank)).length)];
-        this.testing === true ? console.log("this.is_field_card_nothing()", this.is_field_card_nothing()) : null;
-        // cardがundefinedの場合はpassする
         const pass = card === undefined;
-
-
-        this.testing === true ? console.log("playerCard.filter(c => this.can_play_card(c.rank)).length === 0", playerCard.filter(c => this.can_play_card(c.rank)).length === 0) : null;
-        this.testing === true ? console.log("card", card) : null;
-        this.testing === true ? console.log("pass", pass) : null;
-        // pass ? (this.check_pass(), this.passed_players_index.push(AI_PLAYER_IDX)) : this.can_and_exe(AI_PLAYER_IDX, playerCard, card);
+        // this.test(["ai_play_card",[{AI_PLAYER_IDX: AI_PLAYER_IDX},{playerCard: this.to_ary(playerCard)},{card: this.to_ary(card)},{pass: pass},]]);
         pass ? (this.manage_turn(true, 0, AI_PLAYER_IDX), this.check_pass()) : this.can_and_exe(AI_PLAYER_IDX, playerCard, card);
     },
     is_field_card_nothing() {
         return this.field_card.length === 0;
     },
-    // turnを管理する関数(passed_players_indexとplayed_player_indexとwinner_player_aryによってcurrent_player_index_numを更新する)
     manage_turn(pass=false, played_player=0, passed_player=0) {
         if(pass === true) {
             this.passed_players_index.push(passed_player);
@@ -246,15 +247,46 @@ methods: {
             this.last_played_player_idx = played_player;
             this.played_player_index.push(played_player);
         }
+        this.test(["manage_turn",[{pass: pass},{last_played_player_idx: this.last_played_player_idx},{played_player_index: this.played_player_index},{played_player: played_player},{passed_player: passed_player},]]);
+
     },
-    // player_nameをindexの数字の配列に変換する関数
     player_name_to_index_ary(player_name_ary){
-        // player_name_aryは['human1', 'ai1', 'ai2', 'ai3', 'ai4', 'ai5', 'ai6', 'ai7', 'ai9']のような配列
+        // this.test(["can_and_exe", 123])
         return player_name_ary.map(player_name => this.player_name.indexOf(player_name));
     },
+    test(add_ary_param){
+        if(add_ary_param){
+            this.test_ary.push(add_ary_param);
+            const ary = JSON.parse(JSON.stringify(this.test_ary));
+            const test_ary = JSON.parse(JSON.stringify(this.test_ary)).map(V=>V[0]);
+
+test_ary.includes("can_and_exe") ? console.log(ary.filter(V=>V[0]==="can_and_exe")[1]) : null;
+test_ary.includes("human_play_card") ? console.log(ary.filter(V=>V[0]==="human_play_card")[1]) : null;
+test_ary.includes("human_pass") ? console.log(ary.filter(V=>V[0]==="human_pass")[1]) : null;
+test_ary.includes("human_player_play") ? console.log(ary.filter(V=>V[0]==="human_player_play")[1]) : null;
+test_ary.includes("all_ai_play") ? console.log(ary.filter(V=>V[0]==="all_ai_play")[1]) : null;
+test_ary.includes("check_pass") ? console.log(ary.filter(V=>V[0]==="check_pass")[1]) : null;
+test_ary.includes("can_play_card") ? console.log(ary.filter(V=>V[0]==="can_play_card")[1]) : null;
+test_ary.includes("ai_play_card") ? console.log(ary.filter(V=>V[0]==="ai_play_card")[1]) : null;
+test_ary.includes("is_field_card_nothing") ? console.log(ary.filter(V=>V[0]==="is_field_card_nothing")[1]) : null;
+test_ary.includes("manage_turn") ? console.log(ary.filter(V=>V[0]==="manage_turn")[1]) : null;
+test_ary.includes("to_ary") ? console.log(ary.filter(V=>V[0]==="to_ary")[1]) : null;
+}
+
+    },
+
+    catch_double_zero(){
+        // played_player_indexに0が複数ある場合
+        if(this.played_player_index.filter(v => v === 0).length > 1){
+            console.log("double zero");
+        }
+    },
+
 
     to_ary(ary_like) {
+        if(ary_like){
         return JSON.parse(JSON.stringify(ary_like));
+        }
     }
 }
 }).mount('#app');
