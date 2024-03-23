@@ -82,10 +82,14 @@
             <!-- fetch_delete_user_datas_skills_id_array -->
             <button @click="fetch_delete_user_datas_skills_id_array(a.user_data_id, b.id)">fetch_delete_user_datas_skills_id_array</button>
         </div>
+        <!-- all_skillからselect optionでuserにall_skillからひとつ追加するボタン -->
+        <select v-model="selected_keyword">
+            <option v-for="all_skills_one, all_skills_one_idx in all_skills" :value="all_skills_one.id" :key="all_skills_one_idx">{{all_skills_one.skill}}</option>
+        </select>
+<!-- fetch_update_user_datas_skills_id_array でselected_keywordを追加する -->
+        <button @click="fetch_update_user_datas_skills_id_array(a.user_data_id, selected_keyword)">fetch_update_user_datas_skills_id_array</button>
 
-        <!-- <span v-for="skill_num in [1,2,3,4,5]">
-        <button @click="fetch_update_user_datas_skills_id_array(a.user_data_id, skill_num)">skill add {{skill_num}}</button>
-        </span> -->
+
 
     </div>
 </div>
