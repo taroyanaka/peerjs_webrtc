@@ -235,6 +235,7 @@ const app = express();
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
 const cors = require('cors');
+const { type } = require('os');
 app.use(cors());
 const port = 8000;
 app.listen(port, "0.0.0.0", () => console.log(`App listening!! at http://localhost:${port}`) );
@@ -1407,11 +1408,10 @@ app.post('/update_user_datas_skills_id_array', (req, res) => {
         error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
         // error_check_skill_id 1 to 1000 integer not null
         error_check_skill_id === undefined || error_check_skill_id === null || error_check_skill_id < 1 || error_check_skill_id > 1000 ? (()=>{throw new Error('skill_idが不正です')})() : null;
-        // req.body.user_data_id,
         // req.body.skill_id,を全てencodeURIComponent()でエスケープする
         const escaped_all_data = {
             user_data_id: encodeURIComponent(req.body.user_data_id),
-            // skill_id: encodeURIComponent(req.body.skill_id),
+            skill_id: encodeURIComponent(req.body.skill_id),
         };
 
         // skill_idがskillsテーブルに存在しない場合はエラー
@@ -1419,23 +1419,29 @@ app.post('/update_user_datas_skills_id_array', (req, res) => {
         console.log(skill);
         skill === undefined ? (()=>{throw new Error('skill_idが不正です')})() : null;
 
-// Fetch the current skills_id_array from the database
-const userData = db.prepare('SELECT skills_id_array FROM user_datas WHERE id = ?').get(escaped_all_data['user_data_id']);
-console.log(userData);
-const skillsIdArray_str = decodeURIComponent(userData.skills_id_array);
-console.log(skillsIdArray_str);
-console.log(typeof skillsIdArray_str);
-const skillsIdArray = skillsIdArray_str.split(',');
-console.log(skillsIdArray);
-console.log(typeof skillsIdArray);
-// if (index !== -1) {
-    // 指定したskill_idを追加する
-    // const new_skillsIdArray = skillsIdArray.concat(escaped_all_data['skill_id']);
-    const new_skillsIdArray = skillsIdArray.concat(req.body.skill_id);
-    db.prepare('UPDATE user_datas SET skills_id_array = ? WHERE id = ?').run(encodeURIComponent(new_skillsIdArray.join(',')), escaped_all_data['user_data_id'])
-    ? 'OK'
-    : (()=>{throw new Error('user_datasのskills_id_arrayにskill_idを追加できませんでした')})();
-// }
+        // Fetch the current skills_id_array from the database
+        const userData = db.prepare('SELECT skills_id_array FROM user_datas WHERE id = ?').get(escaped_all_data['user_data_id']);
+        const skillsIdArray_str = decodeURIComponent(userData.skills_id_array);
+        const skillsIdArray = skillsIdArray_str.split(',');
+
+        console.log(
+            skillsIdArray, // string array ['1', '2', '3']
+            req.body.skill_id, // string
+            typeof skillsIdArray[0],
+            typeof req.body.skill_id,
+            escaped_all_data['skill_id'], // string
+            typeof escaped_all_data['skill_id'],
+        )
+        // 追加しようとするskill_idが既にskills_id_arrayに存在する場合はエラー()
+        skillsIdArray.includes(escaped_all_data['skill_id']) ? (()=>{throw new Error('skills_id_arrayに同じskill_idが既に存在します')})() : null;
+
+        const new_skillsIdArray = skillsIdArray.concat(req.body.skill_id);
+
+
+        db.prepare('UPDATE user_datas SET skills_id_array = ? WHERE id = ?').run(encodeURIComponent(new_skillsIdArray.join(',')), escaped_all_data['user_data_id'])
+            ? 'OK'
+            : (()=>{throw new Error('user_datasのskills_id_arrayにskill_idを追加できませんでした')})();
+
 
         res.status(200)
             .json({result: 'success',

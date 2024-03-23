@@ -1,5 +1,3 @@
-<!-- statusをuserに追加してonline状態の相手とだけマッチする -->
-<!-- start_chatボタンを追加してpeerJSでチャットを開始 -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -52,6 +50,10 @@
             /* offlineの場合は灰色 */
             color: gray;
         }
+        .new_user_insert{
+            /* 新規ユーザー追加のフォーム */
+            margin-top: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -61,9 +63,9 @@
     <input type="text" v-model="skill_str" placeholder="Enter skill">
     <button @click="fetch_add_skill_str">fetch_add_skill_str</button>
 <div v-if="web_data">
-    {{web_data}}
-<div v-if="web_data.message">
-    <div v-for="a, a_idx in web_data.message">
+<!-- {{web_data}} -->
+<div v-if="web_data.message" class="chat-container">
+    <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'">
         <div>user_name: {{a.user_name}}</div>
         <div>weight_num: {{a.weight_num}}
             <!-- fetch_update_user_datas_weight_num -->
@@ -86,25 +88,29 @@
         <select v-model="selected_keyword">
             <option v-for="all_skills_one, all_skills_one_idx in all_skills" :value="all_skills_one.id" :key="all_skills_one_idx">{{all_skills_one.skill}}</option>
         </select>
-<!-- fetch_update_user_datas_skills_id_array でselected_keywordを追加する -->
+        <!-- fetch_update_user_datas_skills_id_array でselected_keywordを追加する -->
         <button @click="fetch_update_user_datas_skills_id_array(a.user_data_id, selected_keyword)">fetch_update_user_datas_skills_id_array</button>
-
-
-
     </div>
 </div>
 </div>
-    <button @click="fetch_read_user_datas_skills">fetch_read_user_datas_skills</button>
-    <!-- Add User Data -->
-    <input type="text" v-model="userName" placeholder="Enter user name">
-    <input type="text" v-model="weightNum" placeholder="Enter weight num">
-    <input type="text" v-model="userType" placeholder="Enter user type">
-    <input type="text" v-model="onlineOffline" placeholder="Enter 0 for offline, 1 for online">
-    <!-- <button @click="addUserData">Add User Data</button> -->
-    <button @click="fetch_add_user_data">fetch_add_user_data</button>
-    <ul>
-        <li v-for="all_skills_one, all_skills_one_idx in all_skills">{{all_skills_one}}</li>
-    </ul>
+<!-- <button @click="fetch_read_user_datas_skills">fetch_read_user_datas_skills</button> -->
+
+    <div class="new_user_insert">
+        <div>userName: <input type="text" v-model="userName" placeholder="Enter user name"></div>
+        <div>weightNum: <input type="text" v-model="weightNum" placeholder="Enter weight num"></div>
+        <div><select v-model="userType">
+            <option v-for="user_type_one, user_type_one_idx in user_type_list" :value="user_type_one.customer_type" :key="user_type_one_idx">{{user_type_one.customer_type}}</option>
+        </select></div>
+        <div><select v-model="onlineOffline">
+            <option value="0">offline</option>
+            <option value="1">online</option>
+        </select></div>
+
+        <div><button @click="fetch_add_user_data">fetch_add_user_data</button></div>
+        <div><ul>
+            <li v-for="all_skills_one, all_skills_one_idx in all_skills">{{all_skills_one}}</li>
+        </ul></div>
+    </div>
 
 
 </div>
@@ -472,44 +478,16 @@ parse_url(){
 
 
 async fetch_add_user_data() {
-// 以下に従ってvalidationして
-// // error_check_user_name 1 to 24 length string not null
-// error_check_user_name === undefined || error_check_user_name === null || error_check_user_name.length === 0 || error_check_user_name.length > 24 || error_check_user_name.includes(' ') || error_check_user_name.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
-// // error_check_weight_num 1 to 1000 integer not null
-// error_check_weight_num === undefined || error_check_weight_num === null || error_check_weight_num < 1 || error_check_weight_num > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
-// // error_check_user_type 'company' or 'customer' not null
-// error_check_user_type === undefined || error_check_user_type === null || error_check_user_type !== 'company' && error_check_user_type !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
-// // error_check_offline_online 0 or 1 not null
-// error_check_offline_online === undefined || error_check_offline_online === null || error_check_offline_online !== 0 && error_check_offline_online !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
-// // error_check_skills_id_array JSON string, It's only num morethan 1 [1,2,3] or [1,3,5] not null
-// error_check_skills_id_array === undefined || error_check_skills_id_array === null || !Array.isArray(JSON.parse(error_check_skills_id_array)) || JSON.parse(error_check_skills_id_array).length < 1 || JSON.parse(error_check_skills_id_array).some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
-try {
-    console.log(JSON.stringify({
-        user_name: this.userName,
-        weight_num: this.weightNum,
-        user_type: this.userType,
-        offline_online: this.onlineOffline,
-        skills_id_array: this.skills,
-    }));
+    try {
     const [error_check_user_name, error_check_weight_num, error_check_user_type, error_check_offline_online, error_check_skills_id_array] =
         [this.userName, this.weightNum, this.userType, this.onlineOffline, this.skills].map((val) => JSON.parse(JSON.stringify(val)));
-
-error_check_user_name === undefined || error_check_user_name === null || error_check_user_name.length === 0 || error_check_user_name.length > 24 || error_check_user_name.includes(' ') || error_check_user_name.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
-error_check_weight_num === undefined || error_check_weight_num === null || error_check_weight_num < 1 || error_check_weight_num > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
-// this.userType === undefined || this.userType === null || this.userType !== 'company' && this.userType !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
-error_check_user_type === undefined || error_check_user_type === null || error_check_user_type !== 'company' && error_check_user_type !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
-// this.onlineOffline === undefined || this.onlineOffline === null || this.onlineOffline !== 0 && this.onlineOffline !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
-error_check_offline_online === undefined || error_check_offline_online === null || error_check_offline_online !== 0 && error_check_offline_online !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
-// this.skills === undefined || this.skills === null || !Array.isArray(JSON.parse(this.skills)) || JSON.parse(this.skills).length < 1 || JSON.parse(this.skills).some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
-error_check_skills_id_array === undefined || error_check_skills_id_array === null || !Array.isArray(error_check_skills_id_array) || error_check_skills_id_array.length < 1 || error_check_skills_id_array.some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
+    error_check_user_name === undefined || error_check_user_name === null || error_check_user_name.length === 0 || error_check_user_name.length > 24 || error_check_user_name.includes(' ') || error_check_user_name.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
+    error_check_weight_num === undefined || error_check_weight_num === null || error_check_weight_num < 1 || error_check_weight_num > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
+    error_check_user_type === undefined || error_check_user_type === null || error_check_user_type !== 'company' && error_check_user_type !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
+    error_check_offline_online === undefined || error_check_offline_online === null || error_check_offline_online !== 0 && error_check_offline_online !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
+    error_check_skills_id_array === undefined || error_check_skills_id_array === null || !Array.isArray(error_check_skills_id_array) || error_check_skills_id_array.length < 1 || error_check_skills_id_array.some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
     const res = await fetch(this.endpoint + '/insert_user_datas', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({
-            user_name: this.userName,
-            weight_num: this.weightNum,
-            user_type: this.userType,
-            offline_online: this.onlineOffline,
-            skills_id_array: this.skills,
-        }),
+        body: JSON.stringify({user_name: this.userName,weight_num: this.weightNum,user_type: this.userType,offline_online: this.onlineOffline,skills_id_array: this.skills,}),
     });
     const data = await res.json(); console.log(data);
     this.ERROR_MESSAGE = "";
@@ -518,47 +496,33 @@ error_check_skills_id_array === undefined || error_check_skills_id_array === nul
     }
 },
 async fetch_add_skill_str() {
-// 以下に沿ってfetchして
-// app.post('/insert_skills', (req, res) => {
-//     try {
-//         const [error_check_skill] = [req.body.skill] = [req.body.skill];
-//         error_check_skill === undefined || error_check_skill === null || error_check_skill.length === 0 || error_check_skill.length > 24 || error_check_skill.includes(' ') || error_check_skill.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
-//         const escaped_skill = encodeURIComponent(req.body.skill);
-//         const RESULT = db.prepare(`
-//         INSERT INTO skills (skill, created_at, updated_at)
-//             VALUES (
-//                 @skill,
-//                 @created_at,
-//                 @updated_at
-//             )
-//         `).run({
-//             skill: escaped_skill,
-//             created_at: now(),
-//             updated_at: now(),
-//         })
-//         ? 'OK'
-//         : (()=>{throw new Error('skillsにレコードを挿入できませんでした')})();
+    try {
+        console.log(JSON.stringify({skill: this.skill_str}));
+        this.skill_str === undefined || this.skill_str === null || this.skill_str.length === 0 || this.skill_str.length > 24 || this.skill_str.includes(' ') || this.skill_str.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
+        const res = await fetch(this.endpoint + '/insert_skills', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({ skill: this.skill_str,}),
+        });
+        const data = await res.json(); console.log(data);
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_read_skills() {
+    try {
+        const res = await fetch(this.endpoint + '/read_skills', {method: 'GET',headers: {'Content-Type': 'application/json',},
+        });
+        const data = await res.json(); console.log(data);
 
-//         res.status(200)
-//             .json({result: 'success',
-//                 status: 200,
-//                 message: RESULT
-//             });
-//     } catch (error) {
-//         res.status(400).json({status: 400, result: 'fail', message: error.message});
-//     }
-// });
+        // dataのフォーマットをhtml用に変換する
+        // { "result": "success", "status": 200, "message": [ { "user_data_id": 1, "user_name": "a", "weight_num": 1, "user_type": "company", "offline_online": 0, "skills_id_array": "1,2,3", "skills": [ { "id": 1, "skill": "SKILL_A", "created_at": "2024-03-22T09:24:09.697Z", "updated_at": "2024-03-22T09:24:09.697Z" }, { "id": 2, "skill": "skill_b", "created_at": "2024-03-22T09:24:22.458Z", "updated_at": "2024-03-22T09:24:22.458Z" }, { "id": 3, "skill": "skill_c", "created_at": "2024-03-22T09:24:27.064Z", "updated_at": "2024-03-22T09:24:27.064Z" } ] } ] }
+        this.all_skills = data.message;
+        // all_skillsをidでdecでソートする
+        this.all_skills = this.all_skills.sort((a, b) => a.id - b.id).reverse();
 
-try {
-    console.log(JSON.stringify({skill: this.skill_str}));
-    this.skill_str === undefined || this.skill_str === null || this.skill_str.length === 0 || this.skill_str.length > 24 || this.skill_str.includes(' ') || this.skill_str.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
-    const res = await fetch(this.endpoint + '/insert_skills', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({ skill: this.skill_str,}),
-    });
-    const data = await res.json(); console.log(data);
-} catch (error) {
-    this.ERROR_MESSAGE = error.message;
-}
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
 },
 async fetch_read_user_datas_skills() {
     try {
@@ -574,11 +538,6 @@ async fetch_read_user_datas_skills() {
         this.ERROR_MESSAGE = error.message;
     }
 },
-
-
-
-// update_user_datas_online_offline
-// パラメーターはuser_data_id, offline_online
 async fetch_update_user_datas_online_offline(Id) {
     try {
         console.log(JSON.stringify({user_data_id: Id}));
@@ -591,11 +550,6 @@ async fetch_update_user_datas_online_offline(Id) {
         this.ERROR_MESSAGE = error.message;
     }
 },
-
-
-
-// update_user_datas_weight_num
-// パラメーターはuser_data_id, weight_num
 async fetch_update_user_datas_weight_num(Id, Weight_Num, Plus_Minus="+") {
     try {
         console.log(JSON.stringify({user_data_id: Id, weight_num: Weight_Num}));
@@ -609,11 +563,6 @@ async fetch_update_user_datas_weight_num(Id, Weight_Num, Plus_Minus="+") {
         this.ERROR_MESSAGE = error.message;
     }
 },
-
-
-// user_datasテーブルのskills_id_arrayにskillのidを追加するエンドポイント
-// update_user_datas_skills_id_array
-// パラメーターはuser_data_id, skill_id
 async fetch_update_user_datas_skills_id_array(Id, Skill_Id) {
     try {
         console.log
@@ -627,9 +576,6 @@ async fetch_update_user_datas_skills_id_array(Id, Skill_Id) {
         this.ERROR_MESSAGE = error.message;
     }
 },
-
-// delete_user_datas_skills_id_array
-// パラメーターはuser_data_id, skill_id
 async fetch_delete_user_datas_skills_id_array(Id, Skill_Id) {
     try {
         console.log(JSON.stringify({user_data_id: Id, skill_id: Skill_Id}));
@@ -637,38 +583,6 @@ async fetch_delete_user_datas_skills_id_array(Id, Skill_Id) {
             body: JSON.stringify({user_data_id: Id, skill_id: Skill_Id}),
         });
         const data = await res.json(); console.log(data);
-        this.ERROR_MESSAGE = "";
-    } catch (error) {
-        this.ERROR_MESSAGE = error.message;
-    }
-},
-
-
-
-// skillsテーブルを取得するgetのエンドポイント
-// app.get('/read_skills', (req, res) => {
-//     try {
-//         const RESULT = db.prepare(`SELECT * FROM skills`).all()
-//         ? db.prepare(`SELECT * FROM skills`).all()
-//         : (()=>{throw new Error('skillsテーブルからデータを取得できませんでした')})();
-//         res.status(200)
-//             .json({result: 'success',
-//                 status: 200,
-//                 message: RESULT
-//             });
-//     } catch (error) {
-//         res.status(400).json({status: 400, result: 'fail', message: error.message});
-//     }
-// });
-async fetch_read_skills() {
-    try {
-        const res = await fetch(this.endpoint + '/read_skills', {method: 'GET',headers: {'Content-Type': 'application/json',},
-        });
-        const data = await res.json(); console.log(data);
-
-        // dataのフォーマットをhtml用に変換する
-        // { "result": "success", "status": 200, "message": [ { "user_data_id": 1, "user_name": "a", "weight_num": 1, "user_type": "company", "offline_online": 0, "skills_id_array": "1,2,3", "skills": [ { "id": 1, "skill": "SKILL_A", "created_at": "2024-03-22T09:24:09.697Z", "updated_at": "2024-03-22T09:24:09.697Z" }, { "id": 2, "skill": "skill_b", "created_at": "2024-03-22T09:24:22.458Z", "updated_at": "2024-03-22T09:24:22.458Z" }, { "id": 3, "skill": "skill_c", "created_at": "2024-03-22T09:24:27.064Z", "updated_at": "2024-03-22T09:24:27.064Z" } ] } ] }
-        this.all_skills = data.message;
         this.ERROR_MESSAGE = "";
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
