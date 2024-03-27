@@ -1168,12 +1168,76 @@ app.post('/get_collect_value_for_test', (req, res) => {
 //     FOREIGN KEY (user_data_id) REFERENCES user_datas(id)
 // );
 
+// user_datasテーブルとskillsテーブルを結合してデータを取得するgetのエンドポイント
+app.get('/read_user_datas_skills', (req, res) => {
+    try {
+        // skill table result
+        const skill_result = db.prepare(`SELECT * FROM skills`).all()
+        ? db.prepare(`SELECT * FROM skills`).all()        
+        : (()=>{throw new Error('skillsテーブルからデータを取得できませんでした')})();
 
+        // user_datasテーブルとskillsテーブルを結合してデータを取得する
+        // skills_id_arrayに含まれるidを元にskillsテーブルからskillを取得する
+        // skill_resultと組み合わせて返す
+        const RESULT = db.prepare(`
+        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
+        FROM user_datas`).all()
+        ? db.prepare(`
+        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
+FROM user_datas`).all()
+        : (()=>{throw new Error('user_datasテーブルからデータを取得できませんでした')})();
+        // RESULTのskills_id_arrayをJSON.parse()して配列に変換する
+        let new_RESULT = RESULT.map((result) => {
+            result.skills_id_array = decodeURIComponent(result.skills_id_array);
+            return result;
+        });
 
+        // new_RESULTとskill_resultを組み合わせて返す
+        const final_RESULT = new_RESULT.map((result) => {
+            return {
+                user_data_id: result.user_data_id,
+                user_name: result.user_name,
+                weight_num: result.weight_num,
+                user_type: result.user_type,
+                offline_online: result.offline_online,
+                skills_id_array: result.skills_id_array,
+                skills: result.skills_id_array.split(',').map((id) => skill_result.find((skill) => skill.id == id))
+            };
+        });
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: final_RESULT
+                // message: skill_result
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
+// skillsテーブルを取得するgetのエンドポイント
+app.get('/read_skills', (req, res) => {
+    try {
+        const RESULT = db.prepare(`SELECT * FROM skills`).all()
+        ? db.prepare(`SELECT * FROM skills`).all()
+        : (()=>{throw new Error('skillsテーブルからデータを取得できませんでした')})();
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
 // skillsテーブルにskillを追加するエンドポイント
 app.post('/insert_skills', (req, res) => {
     console.log(req.body);
     try {
+        // 同じskillが存在する場合はエラーを返す
+        const skill_exists = db.prepare(`SELECT * FROM skills WHERE skill = ?`).get(req.body.skill);
+        skill_exists ? (()=>{throw new Error('同じskillが存在します')})() : null;
+
         // const skill = JSON.parse(req.body.skill);
         const skill = req.body.skill;
         const [error_check_skill] = [skill];
@@ -1270,70 +1334,6 @@ app.post('/insert_user_datas', (req, res) => {
         res.status(400).json({status: 400, result: 'fail', message: error.message});
     }
 });
-// user_datasテーブルとskillsテーブルを結合してデータを取得するgetのエンドポイント
-app.get('/read_user_datas_skills', (req, res) => {
-    try {
-
-        // skill table result
-        const skill_result = db.prepare(`SELECT * FROM skills`).all()
-        ? db.prepare(`SELECT * FROM skills`).all()        
-        : (()=>{throw new Error('skillsテーブルからデータを取得できませんでした')})();
-
-        // user_datasテーブルとskillsテーブルを結合してデータを取得する
-        // skills_id_arrayに含まれるidを元にskillsテーブルからskillを取得する
-        // skill_resultと組み合わせて返す
-        const RESULT = db.prepare(`
-        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
-        FROM user_datas`).all()
-        ? db.prepare(`
-        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
-        FROM user_datas`).all()
-        : (()=>{throw new Error('user_datasテーブルからデータを取得できませんでした')})();
-        // RESULTのskills_id_arrayをJSON.parse()して配列に変換する
-        let new_RESULT = RESULT.map((result) => {
-            result.skills_id_array = decodeURIComponent(result.skills_id_array);
-            return result;
-        });
-
-        // new_RESULTとskill_resultを組み合わせて返す
-        const final_RESULT = new_RESULT.map((result) => {
-            return {
-                user_data_id: result.user_data_id,
-                user_name: result.user_name,
-                weight_num: result.weight_num,
-                user_type: result.user_type,
-                offline_online: result.offline_online,
-                skills_id_array: result.skills_id_array,
-                skills: result.skills_id_array.split(',').map((id) => skill_result.find((skill) => skill.id == id))
-            };
-        });
-
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: final_RESULT
-                // message: skill_result
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-});
-// skillsテーブルを取得するgetのエンドポイント
-app.get('/read_skills', (req, res) => {
-    try {
-        const RESULT = db.prepare(`SELECT * FROM skills`).all()
-        ? db.prepare(`SELECT * FROM skills`).all()
-        : (()=>{throw new Error('skillsテーブルからデータを取得できませんでした')})();
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-});
-
 // user_datasテーブルのweight_numを更新するエンドポイント
 app.post('/update_user_datas_weight_num', (req, res) => {
     try {
@@ -1416,9 +1416,7 @@ app.post('/update_user_datas_skills_id_array', (req, res) => {
 
         // skill_idがskillsテーブルに存在しない場合はエラー
         const skill = db.prepare('SELECT id FROM skills WHERE id = ?').get(req.body.skill_id);
-        console.log(skill);
         skill === undefined ? (()=>{throw new Error('skill_idが不正です')})() : null;
-
         // Fetch the current skills_id_array from the database
         const userData = db.prepare('SELECT skills_id_array FROM user_datas WHERE id = ?').get(escaped_all_data['user_data_id']);
         const skillsIdArray_str = decodeURIComponent(userData.skills_id_array);
@@ -1434,15 +1432,10 @@ app.post('/update_user_datas_skills_id_array', (req, res) => {
         )
         // 追加しようとするskill_idが既にskills_id_arrayに存在する場合はエラー()
         skillsIdArray.includes(escaped_all_data['skill_id']) ? (()=>{throw new Error('skills_id_arrayに同じskill_idが既に存在します')})() : null;
-
         const new_skillsIdArray = skillsIdArray.concat(req.body.skill_id);
-
-
         db.prepare('UPDATE user_datas SET skills_id_array = ? WHERE id = ?').run(encodeURIComponent(new_skillsIdArray.join(',')), escaped_all_data['user_data_id'])
             ? 'OK'
             : (()=>{throw new Error('user_datasのskills_id_arrayにskill_idを追加できませんでした')})();
-
-
         res.status(200)
             .json({result: 'success',
                 status: 200,
@@ -1495,3 +1488,92 @@ app.post('/delete_user_datas_skills_id_array', (req, res) => {
         res.status(400).json({status: 400, result: 'fail', message: error.message});
     }
 });
+// skillsテーブルのskillを削除するエンドポイント
+app.post('/delete_skills', (req, res) => {
+    try {
+        const [error_check_skill_id] = [req.body.skill_id];
+        // error_check_skill_id 1 to 1000 integer not null
+        error_check_skill_id === undefined || error_check_skill_id === null || error_check_skill_id < 1 || error_check_skill_id > 1000 ? (()=>{throw new Error('skill_idが不正です')})() : null;
+        // req.body.skill_id,を全てencodeURIComponent()でエスケープする
+        const escaped_all_data = {
+            skill_id: encodeURIComponent(req.body.skill_id),
+        };
+        // skill_idがskillsテーブルに存在しない場合はエラー
+        const skill = db.prepare('SELECT id FROM skills WHERE id = ?').get(req.body.skill_id);
+        skill === undefined ? (()=>{throw new Error('skill_idが不正です')})() : null;
+        const RESULT = db.prepare('DELETE FROM skills WHERE id = ?').run(escaped_all_data['skill_id'])
+        ? 'OK'
+        : (()=>{throw new Error('skillsテーブルのskillを削除できませんでした')})();
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
+
+// companyでoffline_onlineがonline(1)かつskills_id_arrayの内同じskill_idが含まれるユーザーを取得するエンドポイント
+// company1つに対してcustomer複数を取得する
+app.post('/read_company_1_customers_n', (req, res) => {
+    try {
+        const [error_check_user_data_id, error_check_skill_id]
+            = [req.body.user_data_id, req.body.skill_id];
+        // error_check_user_data_id 1 to 1000 integer not null
+        error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
+        // error_check_skill_id 1 to 1000 integer not null
+        error_check_skill_id === undefined || error_check_skill_id === null || error_check_skill_id < 1 || error_check_skill_id > 1000 ? (()=>{throw new Error('skill_idが不正です')})() : null;
+        // req.body.user_data_id,
+        // req.body.skill_id,を全てencodeURIComponent()でエスケープする
+        const escaped_all_data = {
+            user_data_id: encodeURIComponent(req.body.user_data_id),
+            skill_id: encodeURIComponent(req.body.skill_id),
+        };
+        // skill_idがskillsテーブルに存在しない場合はエラー
+        const skill = db.prepare('SELECT id FROM skills WHERE id = ?').get(req.body.skill_id);
+        skill === undefined ? (()=>{throw new Error('skill_idが不正です')})() : null;
+        // user_data_idがuser_datasテーブルに存在しない場合はエラー
+        const userData = db.prepare('SELECT id, user_name, weight_num, user_type, offline_online, skills_id_array FROM user_datas WHERE id = ?').get(escaped_all_data['user_data_id']);
+        userData === undefined ? (()=>{throw new Error('user_data_idが不正です')})() : null;
+        // user_typeがcompanyでない場合はエラー
+        userData.user_type !== 'company' ? (()=>{throw new Error('user_typeが不正です')}
+        )() : null;
+        // offline_onlineがonlineでない場合はエラー
+        userData.offline_online !== 1 ? (()=>{throw new Error('offline_onlineを1(onlineに変更してください)')})() : null;
+        // skills_id_arrayがskill_idを含まない場合はエラー
+        const skillsIdArray_str = decodeURIComponent(userData.skills_id_array);
+        const skillsIdArray = skillsIdArray_str.split(',');
+        skillsIdArray.includes(escaped_all_data['skill_id']) ? null : (()=>{throw new Error('skills_id_arrayが不正です')})();
+        // companyのcustomerを取得する
+        const RESULT = db.prepare(`
+        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
+        FROM user_datas
+        WHERE user_datas.user_type = 'customer'
+        AND user_datas.offline_online = 1
+        AND user_datas.skills_id_array LIKE '%${escaped_all_data['skill_id']}%'
+        `).all()
+        ? db.prepare(`
+        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
+        FROM user_datas
+        WHERE user_datas.user_type = 'customer'
+        AND user_datas.offline_online = 1
+        AND user_datas.skills_id_array LIKE '%${escaped_all_data['skill_id']}%'
+        `).all()
+        : (()=>{throw new Error('companyのcustomerを取得できませんでした')})();
+
+        // RESULTのmessageのarrayが空の場合は以下のエラーメッセージを返す
+        // 「マッチするuserがいません。マッチするcustomerが存在しないか、存在していても、それらのcustomerは全てofflineです」
+        RESULT.length === 0 ? (()=>{throw new Error('マッチするuserがいません。マッチするcustomerが存在しないか、存在していても、それらのcustomerは全てofflineです')})() : null;
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+}
+);

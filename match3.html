@@ -58,6 +58,10 @@
 </head>
 <body>
 <div id="app">
+    {{ERROR_MESSAGE}}
+    <!-- button click fetch_read_company_1_customers_n -->
+    <button @click="fetch_read_company_1_customers_n">fetch_read_company_1_customers_n</button>
+
 <div>
     <!-- input text skill_str -->
     <input type="text" v-model="skill_str" placeholder="Enter skill">
@@ -108,7 +112,12 @@
 
         <div><button @click="fetch_add_user_data">fetch_add_user_data</button></div>
         <div><ul>
-            <li v-for="all_skills_one, all_skills_one_idx in all_skills">{{all_skills_one}}</li>
+            <li v-for="all_skills_one, all_skills_one_idx in all_skills">
+                {{all_skills_one}}
+                <!-- fetch_delete_skills -->
+                <button @click="fetch_delete_skills(all_skills_one.id)">fetch_delete_skills</button>
+            </li>
+
         </ul></div>
     </div>
 
@@ -120,13 +129,13 @@
 
 
 <input type="text" value="peer_id_a" id="peer_id_a" style="width: 200rem;">
-{{ERROR_MESSAGE}}
 </div>
 </body>
 <script>
 const app = Vue.createApp({
 data() {
 return {
+    tmp_data: null,
     endpoint: 'http://localhost:8000',
     // endpoint: 'https://cotton-concrete-catsup.glitch.me',
 
@@ -135,7 +144,8 @@ return {
     weightNum: '',
     userType: '',
     onlineOffline: '',
-    skills: [1,2,3],
+    // skills: [1,2,3],
+    skills: [],
     all_skills: [],
 
     other_side_data_link: '',
@@ -479,6 +489,9 @@ parse_url(){
 
 async fetch_add_user_data() {
     try {
+    // this.skillsが空の場合はall_skillsの最初の要素のidをセットする
+    this.skills.length === 0 ? this.skills.push(this.all_skills[0].id) : null;
+
     const [error_check_user_name, error_check_weight_num, error_check_user_type, error_check_offline_online, error_check_skills_id_array] =
         [this.userName, this.weightNum, this.userType, this.onlineOffline, this.skills].map((val) => JSON.parse(JSON.stringify(val)));
     error_check_user_name === undefined || error_check_user_name === null || error_check_user_name.length === 0 || error_check_user_name.length > 24 || error_check_user_name.includes(' ') || error_check_user_name.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
@@ -588,7 +601,46 @@ async fetch_delete_user_datas_skills_id_array(Id, Skill_Id) {
         this.ERROR_MESSAGE = error.message;
     }
 },
+async fetch_delete_skills(Skill_Id) {
+    try {
+        console.log(JSON.stringify({skill_id: Skill_Id}));
+        const res = await fetch(this.endpoint + '/delete_skills', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({skill_id: Skill_Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
 
+// companyでoffline_onlineがonline(1)かつskills_id_arrayの内同じskill_idが含まれるユーザーを取得するエンドポイント
+// company1つに対してcustomer複数を取得する
+// app.post('/read_company_1_customers_n', (req, res) => {
+//     try {
+//         const [error_check_user_data_id, error_check_skill_id]
+//             = [req.body.user_data_id, req.body.skill_id];
+async fetch_read_company_1_customers_n() {
+    try {
+        // test_user_data_id: 最初のユーザーのid
+        // test_skill_id: 最初のスキルのid
+        const test_user_data_id = this.web_data.message[0].user_data_id;
+        const test_skill_id = this.web_data.message[0].skills[0].id;
+
+        console.log(JSON.stringify({user_data_id: test_user_data_id, skill_id: test_skill_id}));
+        const res = await fetch(this.endpoint + '/read_company_1_customers_n', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: test_user_data_id, skill_id: test_skill_id}),
+        });
+        const data = await res.json(); console.log(data);
+        // dataのstatusが200でない場合はエラースローしmessageをerror.messageにセットする
+        data.status !== 200 ? (()=>{throw new Error(data.message)})() : null;
+
+        this.tmp_data = data;
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
 
 }}).mount('#app');
 
