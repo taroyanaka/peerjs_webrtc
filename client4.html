@@ -27,13 +27,14 @@
     <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
     <p>参考にしたコードは https://glitch.com/~peerjs-video</p>
     <button onclick="exe_connection()">exe_connection</button>
-    <button onclick="send_text()">send_text</button>
+    <button @click="send_text()">send_text</button>
     <div class="random_message"></div>
     <p>このURL(https://taroyanaka.github.io/peerjs_webrtc/client3.html)2枚のタブで別々に開く。片方に表示されたpeer id Aの英数文字列を、もう片方のタブのPeer ID BのinputにコピペしてConnect Bをクリック</p>
     peer id A<input class="result" type="text">
     <input id="connect-to-peer" type="text" placeholder="Peer ID B">
     <!-- <button onclick="connect_to_peer_for_call()">Connect B</button> -->
     <!-- <video autoplay></video> -->
+    <a href="" class="link_for_chat" style="display: none;">チャット用URL</a>
 </body>
 <script>
 let global_conn = null;
@@ -159,8 +160,17 @@ let connect_to_peer_for_call = async () => {
 }
 };
 peer.on('open', (id) => {
+    // get paramを足したURLを表示する
+    function make_url_to_a_href(Peer_Id){
+        // link_for_chatに表示する
+        document.querySelector('.link_for_chat').href = (new URL(window.location.href)) + '?peer_id_b=' + Peer_Id;
+        // displayをblockにする
+        document.querySelector('.link_for_chat').style.display = 'block';
+    }
+
     document.querySelector('.result').value = id;
     set_url_with_peer_id();
+    make_url_to_a_href(id);
 });
 peer.on('connection', function(conn) {
     conn.on('data', function(data){
@@ -176,23 +186,39 @@ peer.on('connection', function(conn) {
 function sendMessage(message) {conn.send(message)}
 sendMessage('Hello, peer!');
 });
+
+
+let peer_id = null;
+// get_paramでpeer_idが存在する場合exe_connectionを実行(get_paramを#connect-to-peerに代入してからexe_connectionを実行)
+function get_param(){
+    peer_id = new URL(window.location.href).searchParams.get('peer_id_b');
+    document.querySelector('#connect-to-peer').value = peer_id;
+    if (peer_id){
+        document.querySelector('#connect-to-peer').value = peer_id;
+        exe_connection();
+    }
+}
+// onloadでget_paramを実行
+window.onload = get_param;
+
 function exe_connection(){
-    let peerId = document.querySelector('#connect-to-peer').value;
+    peer_id = new URL(window.location.href).searchParams.get('peer_id_b');
+    document.querySelector('#connect-to-peer').value = peer_id;
     if (!peerId) {
         console.error('Peer ID is not specified.');
         return;
     }
-    let conn = peer.connect(peerId);
-    conn.on('open', function() {
+    const local_conn = peer.connect(peerId);
+    local_conn.on('open', function() {
         try {
-            conn.send('Hello, peer! with exe_connection()');
+            local_conn.send('Hello, peer! with exe_connection()');
             // openに成功したらresultのAの値をconn.sendする
-            conn.send({anoter_peer_id: document.querySelector('.result').value});
+            // local_conn.send({anoter_peer_id: document.querySelector('.result').value});
         } catch (err) {
             console.error('Failed to send message:', err);
         }
     });
-    conn.on('error', function(err) {
+    local_connection.on('error', function(err) {
         console.error('Connection error:', err);
     });
 };
