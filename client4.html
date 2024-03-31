@@ -10,12 +10,11 @@
 </head>
 <!-- <script src="./main.js"></script> -->
 <body>
-    <div id="app">
-        <div v-for="keyword, keyword_idx in ary_1" class="block_2">
-            <div>
-                {{keyword}}
-                <button @click="test_fn(keyword_idx)">test_fn</button>
-            </div>
+<div id="app">
+    <div v-for="keyword, keyword_idx in ary_1" class="block_2">
+        <div>
+            {{keyword}}
+            <button @click="test_fn(keyword_idx)">test_fn</button>
         </div>
     </div>
     <!-- <p>qrcode</p> -->
@@ -26,8 +25,12 @@
     <a href="" id="url_with_peer_id">通話用URL</a>
     <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
     <p>参考にしたコードは https://glitch.com/~peerjs-video</p>
-    <button onclick="exe_connection()">exe_connection</button>
-    <button @click="send_text()">send_text</button>
+    <!-- <button onclick="exe_connection()">exe_connection</button> -->
+    <!-- send_text_fn button -->
+    <button @click="send_text_fn()">send_text_fn param sample</button>
+    <button @click="send_text_fn('FOOOOOOOOOOOO')">send_text_fn my text</button>
+    <!-- <button @click="hoge('hogehgoe')">hoge</button> -->
+
     <div class="random_message"></div>
     <p>このURL(https://taroyanaka.github.io/peerjs_webrtc/client3.html)2枚のタブで別々に開く。片方に表示されたpeer id Aの英数文字列を、もう片方のタブのPeer ID BのinputにコピペしてConnect Bをクリック</p>
     peer id A<input class="result" type="text">
@@ -35,6 +38,7 @@
     <!-- <button onclick="connect_to_peer_for_call()">Connect B</button> -->
     <!-- <video autoplay></video> -->
     <a href="" class="link_for_chat" style="display: none;">チャット用URL</a>
+</div>
 </body>
 <script>
 let global_conn = null;
@@ -56,29 +60,14 @@ mounted() {},
 beforeUpdated() {},
 updated() {},
 methods: {
-send_text(TEXT="abcdefgABCDEFG"){
-    function send_text_fn(){
-        let peerId = document.querySelector('#connect-to-peer').value;
-        if (!peerId) {
-            console.error('Peer ID is not specified.');
-            return;
-        }
-        global_conn = peer.connect(peerId);
-        global_conn.on('open', function() {
-            try {
-                global_conn.send('Hello, peer! with send_text_fn()');
-                // abcdefからランダムに選んでglobal_conn.sendする
-                // global_conn.send({random_message: abcdef[Math.floor(Math.random() * abcdef.length)]});
-                global_conn.send({random_message: TEXT});
-            } catch (err) {
-                console.error('Failed to send message:', err);
-            }
-        });
-        global_conn.on('error', function(err) {
-            console.error('Connection error:', err);
-        });
-    }
-    send_text_fn();
+    hoge(text="init"){
+        console.log("hoge");
+        console.log(text);
+    },
+
+send_text_fn(Text="sample_text"){
+    console.log("send_text_fn");
+    send_text(Text);
 },
 test_fn(ary_idx){
     console.log("test_fn", ary_idx);
@@ -101,15 +90,17 @@ parse_url(){
     }
 },
 }}).mount('#app');
+
+
 const text_to_qr = () => {
-    const Text = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
+    const Text = url_with_peer_id + '?peer_id_b=' + document.querySelector('.result').value;
     console.log("text_to_qr", Text);
     new QRCode(document.getElementById("qrcode"), Text);
     
 }
 let url_with_peer_id = new URL(window.location.href);
 const set_url_with_peer_id = () => {
-    document.getElementById('url_with_peer_id').href = url_with_peer_id + '?peer_id=' + document.querySelector('.result').value;
+    document.getElementById('url_with_peer_id').href = url_with_peer_id + '?peer_id_b=' + document.querySelector('.result').value;
 }
 const get_peer_id = () => {
     const url = new URL(window.location.href);
@@ -196,32 +187,65 @@ function get_param(){
     if (peer_id){
         document.querySelector('#connect-to-peer').value = peer_id;
         exe_connection();
+        // app.send_text(peer_id);
     }
 }
 // onloadでget_paramを実行
-window.onload = get_param;
+// window.onload = get_param;
 
 function exe_connection(){
     peer_id = new URL(window.location.href).searchParams.get('peer_id_b');
     document.querySelector('#connect-to-peer').value = peer_id;
+    if (!peer_id) {
+        console.error('Peer ID is not specified.');
+        return;
+    }
+    // const local_conn = peer.connect(peer_id);
+    global_conn = peer.connect(peer_id);
+    // global_conn.on('open', function() {
+    //     try {
+    //         global_conn.send('Hello, peer! with exe_connection()');
+    //         local_conn.send({anoter_peer_id: document.querySelector('.result').value});
+    //     } catch (err) {
+    //         console.error('Failed to send message:', err);
+    //     }
+    // });
+    // global_conn.on('error', function(err) {
+    //     console.error('Connection error:', err);
+    // });
+};
+
+
+
+function send_text(Text="sample_text"){
+    console.log("send_text");
+    let abcdef = ["a", "b", "c", "d", "e", "f"];
+    // let peerId = document.querySelector('#connect-to-peer').value;
+    document.querySelector('#connect-to-peer').value = (new URL(window.location.href).searchParams.get('peer_id_b'));
+    if(new URL(window.location.href).searchParams.get('peer_id_b')){
+        peerId = new URL(window.location.href).searchParams.get('peer_id_b');
+    }
     if (!peerId) {
         console.error('Peer ID is not specified.');
         return;
     }
-    const local_conn = peer.connect(peerId);
-    local_conn.on('open', function() {
+
+    let conn2 = peer.connect(peerId);
+
+    conn2.on('open', function() {
         try {
-            local_conn.send('Hello, peer! with exe_connection()');
-            // openに成功したらresultのAの値をconn.sendする
-            // local_conn.send({anoter_peer_id: document.querySelector('.result').value});
+            // conn2.send('Hello, peer! with send_text()');
+            // abcdefからランダムに選んでconn2.sendする
+            // conn2.send({random_message: abcdef[Math.floor(Math.random() * abcdef.length)]});
+            conn2.send({random_message: Text});
         } catch (err) {
             console.error('Failed to send message:', err);
         }
     });
-    local_connection.on('error', function(err) {
+
+    conn2.on('error', function(err) {
         console.error('Connection error:', err);
     });
-};
-let abcdef = ["a", "b", "c", "d", "e", "f"];
+}
 </script>    
 </html>
