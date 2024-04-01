@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS matches;
+
+CREATE TABLE matches (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  match_data TEXT NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL
+);

@@ -58,7 +58,15 @@
 </head>
 <body>
 <div id="app">
+
+    <!-- if match_url -->
+    <!-- <div v-if="match_url"> -->
+        <a :href="match_url">{{ match_url }}</a>
+    <!-- </div> -->
+
     {{ERROR_MESSAGE}}
+
+
     <!-- button click fetch_read_company_1_customers_n -->
     <button @click="fetch_read_company_1_customers_n">fetch_read_company_1_customers_n</button>
 
@@ -135,8 +143,10 @@
 const app = Vue.createApp({
 data() {
 return {
+    match_url: '',
     tmp_data: null,
     endpoint: 'http://localhost:8000',
+    // endpoint: 'http://127.0.0.1:3000',
     // endpoint: 'https://cotton-concrete-catsup.glitch.me',
 
     web_data: null,
@@ -149,7 +159,7 @@ return {
     all_skills: [],
 
     other_side_data_link: '',
-    own_side_data_lin: '',
+    own_side_data_link: '',
     match_result: [],
     ERROR_MESSAGE: "",
     selected_user: 1,
@@ -525,13 +535,8 @@ async fetch_read_skills() {
         const res = await fetch(this.endpoint + '/read_skills', {method: 'GET',headers: {'Content-Type': 'application/json',},
         });
         const data = await res.json(); console.log(data);
-
-        // dataのフォーマットをhtml用に変換する
-        // { "result": "success", "status": 200, "message": [ { "user_data_id": 1, "user_name": "a", "weight_num": 1, "user_type": "company", "offline_online": 0, "skills_id_array": "1,2,3", "skills": [ { "id": 1, "skill": "SKILL_A", "created_at": "2024-03-22T09:24:09.697Z", "updated_at": "2024-03-22T09:24:09.697Z" }, { "id": 2, "skill": "skill_b", "created_at": "2024-03-22T09:24:22.458Z", "updated_at": "2024-03-22T09:24:22.458Z" }, { "id": 3, "skill": "skill_c", "created_at": "2024-03-22T09:24:27.064Z", "updated_at": "2024-03-22T09:24:27.064Z" } ] } ] }
         this.all_skills = data.message;
-        // all_skillsをidでdecでソートする
         this.all_skills = this.all_skills.sort((a, b) => a.id - b.id).reverse();
-
         this.ERROR_MESSAGE = "";
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
@@ -636,6 +641,27 @@ try {
     data.status !== 200 ? (()=>{throw new Error(data.message)})() : null;
 
     this.tmp_data = data;
+    // tmp_dataにskillsを追加する
+    this.tmp_data.message = this.tmp_data.message.map(user => {
+        if(user.skills_id_array){
+            // decodeURIComponent(app.tmp_data.message[0].skills_id_array).split(",").map(V=>Number(V))
+            user.skills = decodeURIComponent(user.skills_id_array).split(",").map(V=>Number(V)).map(skill => {
+                return this.all_skills.find(all_skill => all_skill.id === skill);
+            });
+        }
+        return user;
+    });
+    
+
+
+    const local_url = 'http://127.0.0.1:3000';
+    // http://127.0.0.1:3000/client5.html に get paramで own=JSON_STRING(this.web_data.message[0])&another=JSON_STRING(this.tmp_data.message[0])をつける
+    // match_urlに入れる
+    this.match_url = local_url + '/client5.html' + '?own=' + JSON.stringify(this.web_data.message[0]) + '&another=' + JSON.stringify(this.tmp_data.message[0]);
+
+
+    
+
     this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
