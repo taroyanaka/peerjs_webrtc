@@ -61,7 +61,8 @@
 
     <!-- if match_url -->
     <!-- <div v-if="match_url"> -->
-        <a :href="match_url">{{ match_url }}</a>
+<a :href="match_url" @click="fetch_insert_matches('match')">{{ match_url }}</a>
+
     <!-- </div> -->
 
     {{ERROR_MESSAGE}}
@@ -655,9 +656,9 @@ try {
 
 
     const local_url = 'http://127.0.0.1:3000';
-    // http://127.0.0.1:3000/client5.html に get paramで own=JSON_STRING(this.web_data.message[0])&another=JSON_STRING(this.tmp_data.message[0])をつける
+    // http://127.0.0.1:3000/client6.html に get paramで own=JSON_STRING(this.web_data.message[0])&another=JSON_STRING(this.tmp_data.message[0])をつける
     // match_urlに入れる
-    this.match_url = local_url + '/client5.html' + '?own=' + JSON.stringify(this.web_data.message[0]) + '&another=' + JSON.stringify(this.tmp_data.message[0]);
+    this.match_url = local_url + '/client6.html' + '?own=' + JSON.stringify(this.web_data.message[0]) + '&another=' + JSON.stringify(this.tmp_data.message[0]);
 
 
     
@@ -667,6 +668,36 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
+
+
+
+// 以下をfetchする関数
+// const response = db2.prepare(`
+//             INSERT INTO matches (match_data, receive_id, send_id, created_at, updated_at)
+//                 VALUES (@match_data, @receive_id, @send_id, @created_at, @updated_at
+//             )
+//         `).run({
+//             match_data: escaped_match_data,
+//             send_id: req.body.send_id,
+//             receive_id: req.body.receive_id,
+//             created_at: now(),
+//             updated_at: now()
+//         });
+async fetch_insert_matches(When_To_Send="match") {
+try {
+    console.log(JSON.stringify({match_data: this.tmp_data.message[0], send_id: this.web_data.message[0].user_data_id, receive_id: this.tmp_data.message[0].user_data_id, when_to_send: When_To_Send}));
+    const res = await fetch(this.endpoint + '/insert_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        body: JSON.stringify({match_data: this.tmp_data.message[0], send_id: this.web_data.message[0].user_data_id, receive_id: this.tmp_data.message[0].user_data_id, when_to_send: When_To_Send}),
+    });
+    const data = await res.json(); console.log(data);
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+
+
+
 
 }}).mount('#app');
 
