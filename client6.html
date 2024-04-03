@@ -60,6 +60,8 @@
 <script>
 let global_conn = null;
 let global_peerId = null;
+let hoge = null;
+let fuga = null;
 
 const app = Vue.createApp({
 data() {
@@ -144,12 +146,22 @@ async read_matches(){
     const response = await fetch(this.endpoint + '/read_matches');
     const data = await response.json();
     console.log(data);
-    this.matched = data;
+    // data.messageが存在するなら実行する
+    if(data.message){
+        // data.messageのmatch_dataはJSON.parseしてmatchedに代入する
+        // hoge = data.message.match_data = JSON.parse(data.message.match_data);
+        // data.message[0].match_dataをdecodeuricomponentしてmatchedに代入する
+        hoge = data.message[0];
+        fuga = decodeURIComponent(hoge.match_data);
+        // hoge = decodeURIComponent(data.message[0].match_data);
+        // hoge = JSON.parse(hoge);
+        console.log("data.message", data.message);
+        this.matched = data.message;
+    }
     return data;
 },
 
 }}).mount('#app');
-
 
 
 let url_with_peer_id = window.location.href;

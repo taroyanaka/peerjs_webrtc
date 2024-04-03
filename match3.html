@@ -692,13 +692,13 @@ try {
 async fetch_insert_matches(When_To_Send="match") {
 try {
     console.log(
-            "match_data", this.tmp_data.message[0],
-            "send_id", this.web_data.message[0].user_data_id,
-            "receive_id", this.tmp_data.message[0].user_data_id,
-            "when_to_send", When_To_Send
+        "match_data", this.match_url,
+        "send_id", this.web_data.message[0].user_data_id,
+        "receive_id", this.tmp_data.message[0].user_data_id,
+        "when_to_send", When_To_Send
     );
     const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({match_data: this.tmp_data.message[0], send_id: this.web_data.message[0].user_data_id, receive_id: this.tmp_data.message[0].user_data_id, when_to_send: When_To_Send}),
+        body: JSON.stringify({match_data: this.match_url, send_id: this.web_data.message[0].user_data_id, receive_id: this.tmp_data.message[0].user_data_id, when_to_send: When_To_Send}),
 
     });
     // const data = await res.json(); console.log(data);

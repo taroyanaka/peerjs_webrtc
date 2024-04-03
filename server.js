@@ -1612,12 +1612,15 @@ try {
     db.prepare('SELECT id FROM user_datas WHERE id = ?').get(req.body.send_id) ? null : (()=>{throw new Error('send_idが不正です')})();
     // receive_idがdbにuser_data_idが存在するかチェック
     db.prepare('SELECT id FROM user_datas WHERE id = ?').get(req.body.receive_id) ? null : (()=>{throw new Error('receive_idが不正です')})();
+
     const escaped_match_data = encodeURIComponent(match_data);
+
     const response = db2.prepare(`
         INSERT INTO matches (match_data, send_id, receive_id, when_to_send, created_at, updated_at)
             VALUES (@match_data, @send_id, @receive_id, @when_to_send, @created_at, @updated_at)
     `).run({
         match_data: escaped_match_data,
+        // match_data: match_data,
         send_id: req.body.send_id,
         receive_id: req.body.receive_id,
         when_to_send: req.body.when_to_send,
