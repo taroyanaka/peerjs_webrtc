@@ -16,6 +16,7 @@
 <!-- <script src="./main.js"></script> -->
 <body>
 <div id="app">
+    {{ matched }}
     <!-- this.ownの中身を表示 -->
     <div>
         <div class="own">own</div>
@@ -63,6 +64,7 @@ let global_peerId = null;
 const app = Vue.createApp({
 data() {
 return {
+    matched: null,
     other_side_data_link: '',
     endpoint: 'http://localhost:8000',
     // endpoint: 'https://cotton-concrete-catsup.glitch.me',
@@ -102,6 +104,7 @@ watch: {
 },
 mounted() {
     this.get_param();
+    this.read_matches();
 },
 beforeUpdated() {},
 updated() {},
@@ -135,12 +138,14 @@ get_param(){
     // this.another = new URL(window.location.href).searchParams.get('another');
     // this.own = decodeURIComponent(new URL(window.location.href).searchParams.get('own'));
     this.another = JSON.parse(new URL(window.location.href).searchParams.get('another'));
-
-
-
-
-
-
+},
+// read_matchesをfetchする関数
+async read_matches(){
+    const response = await fetch(this.endpoint + '/read_matches');
+    const data = await response.json();
+    console.log(data);
+    this.matched = data;
+    return data;
 },
 
 }}).mount('#app');

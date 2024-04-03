@@ -59,9 +59,15 @@
 <body>
 <div id="app">
 
-    <!-- if match_url -->
-    <!-- <div v-if="match_url"> -->
-<a :href="match_url" @click="fetch_insert_matches('match')">{{ match_url }}</a>
+
+
+<!--  @click="fetch_insert_matches('match')" button -->
+<!-- if web_messageとtmp_dataがある場合は表示する -->
+<div v-if="web_data && tmp_data">
+    <button @click="fetch_insert_matches('match')">fetch_insert_matches('match')</button>
+</div>
+<a :href="match_url">{{ match_url }}</a>
+
 
     <!-- </div> -->
 
@@ -685,11 +691,17 @@ try {
 //         });
 async fetch_insert_matches(When_To_Send="match") {
 try {
-    console.log(JSON.stringify({match_data: this.tmp_data.message[0], send_id: this.web_data.message[0].user_data_id, receive_id: this.tmp_data.message[0].user_data_id, when_to_send: When_To_Send}));
-    const res = await fetch(this.endpoint + '/insert_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
+    console.log(
+            "match_data", this.tmp_data.message[0],
+            "send_id", this.web_data.message[0].user_data_id,
+            "receive_id", this.tmp_data.message[0].user_data_id,
+            "when_to_send", When_To_Send
+    );
+    const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
         body: JSON.stringify({match_data: this.tmp_data.message[0], send_id: this.web_data.message[0].user_data_id, receive_id: this.tmp_data.message[0].user_data_id, when_to_send: When_To_Send}),
+
     });
-    const data = await res.json(); console.log(data);
+    // const data = await res.json(); console.log(data);
     this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;

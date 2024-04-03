@@ -1592,54 +1592,47 @@ const db2 = test_mode() === true ? new sqlite('./.data/match.sqlite3') : new sql
 // );
 
 app.post('/insert_match', (req, res) => {
-    try {
-        req.body.when_to_send === "match" ? null : (()=>{throw new Error('when_to_sendが不正です')})();
-        req.body.when_to_send === "recieve" ? null : (()=>{throw new Error('when_to_sendが不正です')})();
-        // when_to_sendは必須。空文字列の場合はエラー。matchかrecieveのみ許可
-        req.body.when_to_send === undefined || req.body.when_to_send === null || req.body.when_to_send.length === 0 ? (()=>{throw new Error('when_to_sendが空です')})() : null;
-        req.body.when_to_send === 'match' || req.body.when_to_send === 'recieve' ? null : (()=>{throw new Error('when_to_sendはmatchかrecieveのみ許可されています')})();
+try {
+    // when_to_sendは必須。空文字列の場合はエラー。matchかrecieveのみ許可
+    req.body.when_to_send === undefined || req.body.when_to_send === null || req.body.when_to_send.length === 0 ? (()=>{throw new Error('when_to_sendが空です3')})() : null;
+    req.body.when_to_send === 'match' || req.body.when_to_send === 'recieve' ? null : (()=>{throw new Error('when_to_sendはmatchかrecieveのみ許可されています4')})();
 
-        // エラーチェックmatch_dataは必須。空文字列の場合はエラー。エスケープして保存
-        const match_data = req.body.match_data;
-        const error_check_match_data = match_data;
-        error_check_match_data === undefined || error_check_match_data === null || error_check_match_data.length === 0 ? (()=>{throw new Error('match_dataが空です')})() : null;
-        // 1000文字以上の場合はエラー
-        error_check_match_data.length > 1000 ? (()=>{throw new Error('match_dataが1000文字を超えています')})() : null;
-        // send_idとreceive_idは必須。空文字列の場合はエラー。エスケープして保存。整数で1以上の場合のみ許可
-        const error_check_send_id = req.body.send_id;
-        const error_check_receive_id = req.body.receive_id;
-        error_check_send_id === undefined || error_check_send_id === null || error_check_send_id.length === 0 || error_check_send_id > 0 ? (()=>{throw new Error('send_idが空です')})() : null;
-        error_check_receive_id === undefined || error_check_receive_id === null || error_check_receive_id.length === 0 || error_check_receive_id > 0 ? (()=>{throw new Error('receive_idが空です')})() : null;
-
-        // send_idがdbにuser_data_idが存在するかチェック
-        db.prepare('SELECT id FROM user_datas WHERE id = ?').get(req.body.send_id) ? null : (()=>{throw new Error('send_idが不正です')})();
-        // receive_idがdbにuser_data_idが存在するかチェック
-        db.prepare('SELECT id FROM user_datas WHERE id = ?').get(req.body.receive_id) ? null : (()=>{throw new Error('receive_idが不正です')})();
-
-
-
-        const escaped_match_data = encodeURIComponent(match_data);
-        const response = db2.prepare(`
-            INSERT INTO matches (match_data, receive_id, send_id, when_to_send, created_at, updated_at)
-                VALUES (@match_data, @receive_id, @send_id, @when_to_send, @created_at, @updated_at
-            )
-        `).run({
-            match_data: escaped_match_data,
-            send_id: req.body.send_id,
-            receive_id: req.body.receive_id,
-            when_to_send: req.body.when_to_send,
-            created_at: now(),
-            updated_at: now()
+    // エラーチェックmatch_dataは必須。空文字列の場合はエラー。エスケープして保存
+    const match_data = req.body.match_data;
+    const error_check_match_data = match_data;
+    error_check_match_data === undefined || error_check_match_data === null || error_check_match_data.length === 0 ? (()=>{throw new Error('match_dataが空です')})() : null;
+    // 1000文字以上の場合はエラー
+    error_check_match_data.length > 1000 ? (()=>{throw new Error('match_dataが1000文字を超えています')})() : null;
+    // send_idとreceive_idは必須。空文字列の場合はエラー。エスケープして保存。整数で1以上の場合のみ許可
+    const error_check_send_id = req.body.send_id;
+    const error_check_receive_id = req.body.receive_id;
+    error_check_send_id === undefined || error_check_send_id === null || typeof error_check_send_id !== 'number' || error_check_send_id < 1 ? (()=>{throw new Error('send_idが不正です')})() : null;
+    error_check_receive_id === undefined || error_check_receive_id === null || typeof error_check_receive_id !== 'number' || error_check_receive_id < 1 ? (()=>{throw new Error('receive_idが不正です')})() : null;
+    // send_idがdbにuser_data_idが存在するかチェック
+    db.prepare('SELECT id FROM user_datas WHERE id = ?').get(req.body.send_id) ? null : (()=>{throw new Error('send_idが不正です')})();
+    // receive_idがdbにuser_data_idが存在するかチェック
+    db.prepare('SELECT id FROM user_datas WHERE id = ?').get(req.body.receive_id) ? null : (()=>{throw new Error('receive_idが不正です')})();
+    const escaped_match_data = encodeURIComponent(match_data);
+    const response = db2.prepare(`
+        INSERT INTO matches (match_data, send_id, receive_id, when_to_send, created_at, updated_at)
+            VALUES (@match_data, @send_id, @receive_id, @when_to_send, @created_at, @updated_at)
+    `).run({
+        match_data: escaped_match_data,
+        send_id: req.body.send_id,
+        receive_id: req.body.receive_id,
+        when_to_send: req.body.when_to_send,
+        created_at: now(),
+        updated_at: now()
+    });
+    res.status(200)
+        .json({result: 'success'
+            ,status: 200
+            ,message: response.lastInsertRowid
         });
-        res.status(200)
-            .json({result: 'success'
-                ,status: 200
-                ,message: response.lastInsertRowid
-            });
-    } catch (error) {
-        console.log(error.message);
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
+} catch (error) {
+    console.log(error.message);
+    res.status(400).json({status: 400, result: 'fail', message: error.message});
+}
 }
 );
 
