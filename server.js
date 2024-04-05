@@ -1517,9 +1517,11 @@ app.post('/delete_skills', (req, res) => {
 
 // companyでoffline_onlineがonline(1)かつskills_id_arrayの内同じskill_idが含まれるユーザーを取得するエンドポイント
 // company1つに対してcustomer複数を取得する
-app.post('/read_company_1_customers_n', (req, res) => {
+app.post('/read_1_who_find_n_companies_or_n_customers_by_1_skill', (req, res) => {
     try {
-        const [error_check_user_data_id, error_check_skill_id]
+        // console.log("read_1_who_find_n_companies_or_n_customers_by_1_skill 1");
+        // company_find_customer customer_find_company
+        const [error_check_user_data_id, error_check_skill_id, error_check_who_find]
             = [req.body.user_data_id, req.body.skill_id];
         // error_check_user_data_id 1 to 1000 integer not null
         error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
@@ -1532,14 +1534,18 @@ app.post('/read_company_1_customers_n', (req, res) => {
             skill_id: encodeURIComponent(req.body.skill_id),
         };
         // skill_idがskillsテーブルに存在しない場合はエラー
-        const skill = db.prepare('SELECT id FROM skills WHERE id = ?').get(req.body.skill_id);
-        skill === undefined ? (()=>{throw new Error('skill_idが不正です')})() : null;
+        const skill_id = db.prepare('SELECT id FROM skills WHERE id = ?').get(req.body.skill_id);
+        skill_id === undefined ? (()=>{throw new Error('skill_idが不正です')})() : null;
         // user_data_idがuser_datasテーブルに存在しない場合はエラー
         const userData = db.prepare('SELECT id, user_name, weight_num, user_type, offline_online, skills_id_array FROM user_datas WHERE id = ?').get(escaped_all_data['user_data_id']);
         userData === undefined ? (()=>{throw new Error('user_data_idが不正です')})() : null;
-        // user_typeがcompanyでない場合はエラー
-        userData.user_type !== 'company' ? (()=>{throw new Error('user_typeが不正です')}
-        )() : null;
+        // user_typeがcompanyかcustomerでない場合はエラー
+        // console.log("read_1_who_find_n_companies_or_n_customers_by_1_skill 2");
+        // console.log(userData);
+        // console.log(userData.user_type);
+        // console.log(skill_id);
+        userData.user_type !== 'company' && userData.user_type !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
+        console.log("read_1_who_find_n_companies_or_n_customers_by_1_skill 3");
         // offline_onlineがonlineでない場合はエラー
         userData.offline_online !== 1 ? (()=>{throw new Error('offline_onlineを1(onlineに変更してください)')})() : null;
         // skills_id_arrayがskill_idを含まない場合はエラー
@@ -1547,7 +1553,9 @@ app.post('/read_company_1_customers_n', (req, res) => {
         const skillsIdArray = skillsIdArray_str.split(',');
         skillsIdArray.includes(escaped_all_data['skill_id']) ? null : (()=>{throw new Error('skills_id_arrayが不正です')})();
         // companyのcustomerを取得する
-        const RESULT = db.prepare(`
+        let RESULT = null;
+        if(userData.user_type === 'company' ){
+        RESULT = db.prepare(`
         SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
         FROM user_datas
         WHERE user_datas.user_type = 'customer'
@@ -1562,6 +1570,24 @@ app.post('/read_company_1_customers_n', (req, res) => {
         AND user_datas.skills_id_array LIKE '%${escaped_all_data['skill_id']}%'
         `).all()
         : (()=>{throw new Error('companyのcustomerを取得できませんでした')})();
+        }
+        if(userData.user_type === 'customer' ){
+        RESULT = db.prepare(`
+        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
+        FROM user_datas
+        WHERE user_datas.user_type = 'company'
+        AND user_datas.offline_online = 1
+        AND user_datas.skills_id_array LIKE '%${escaped_all_data['skill_id']}%'
+        `).all()
+        ? db.prepare(`
+        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
+        FROM user_datas
+        WHERE user_datas.user_type = 'company'
+        AND user_datas.offline_online = 1
+        AND user_datas.skills_id_array LIKE '%${escaped_all_data['skill_id']}%'
+        `).all()
+        : (()=>{throw new Error('customerのcompanyを取得できませんでした')})();
+        }
 
         // RESULTのmessageのarrayが空の場合は以下のエラーメッセージを返す
         // 「マッチするuserがいません。マッチするcustomerが存在しないか、存在していても、それらのcustomerは全てofflineです」

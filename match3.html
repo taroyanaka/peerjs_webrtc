@@ -83,6 +83,9 @@
             <div>skills: </div>
             <div v-for="b, b_idx in current_user.skills">
                 <span>{{b.skill}}</span>
+                <!-- skill idによってfetch_read_1_who_find_n_companies_or_n_customers_by_1_skillを行う -->
+                <button @click="fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(b.id)">fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill</button>
+
                 <!-- fetch_delete_user_datas_skills_id_array -->
                 <button @click="fetch_delete_user_datas_skills_id_array(current_user.user_data_id, b.id)">fetch_delete_user_datas_skills_id_array</button>
             </div>
@@ -110,8 +113,8 @@
     {{ERROR_MESSAGE}}
 
 
-    <!-- button click fetch_read_company_1_customers_n -->
-    <button @click="fetch_read_company_1_customers_n">fetch_read_company_1_customers_n</button>
+
+
 
 <div>
     <!-- input text skill_str -->
@@ -673,17 +676,20 @@ async fetch_delete_skills(Skill_Id) {
 //     try {
 //         const [error_check_user_data_id, error_check_skill_id]
 //             = [req.body.user_data_id, req.body.skill_id];
-async fetch_read_company_1_customers_n() {
+async fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(Skill_Id) {
 try {
     // test_user_data_id: 最初のユーザーのid
-    // test_skill_id: 最初のスキルのid
-    const test_user_data_id = this.web_data.message[0].user_data_id;
-    const test_skill_id = this.web_data.message[0].skills[0].id;
+    // skill_id: 最初のスキルのid
+    const test_user_data_id = this.login_id_name.id;
+    // Skill_Idがundefinedやnullや0や整数ではない数字の場合はエラースロー
+    if(Skill_Id === undefined || Skill_Id === null || Skill_Id === 0 || typeof Skill_Id !== 'number') throw new Error('skill_idが不正です');
+    const skill_id = Skill_Id;
 
-    console.log(JSON.stringify({user_data_id: test_user_data_id, skill_id: test_skill_id}));
-    const res = await fetch(this.endpoint + '/read_company_1_customers_n', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({user_data_id: test_user_data_id, skill_id: test_skill_id}),
-    });
+    // console.log(JSON.stringify({user_data_id: test_user_data_id, skill_id: skill_id}));
+    const res = await fetch(this.endpoint + '/read_1_who_find_n_companies_or_n_customers_by_1_skill', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: test_user_data_id, skill_id: skill_id}),
+        });
+
     const data = await res.json(); console.log(data);
     // dataのstatusが200でない場合はエラースローしmessageをerror.messageにセットする
     data.status !== 200 ? (()=>{throw new Error(data.message)})() : null;
