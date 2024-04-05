@@ -1654,3 +1654,64 @@ app.get('/read_matches', (req, res) => {
     }
 }
 );
+
+app.get('/read_matches_and_request_match_data', (req, res) => {
+    // recieve_idが自分のuser_data_idで、when_to_sendがmatchのものを取得する
+    try {
+        const user_id = req.body.user_id;
+        const error_check_user_id = user_id;
+        // user_idは1以上の整数でuser_datasに存在するidであることをチェック
+        error_check_user_id === undefined || error_check_user_id === null || typeof error_check_user_id !== 'number' || error_check_user_id < 1 ? (()=>{throw new Error('user_idが不正です1')})() : null;
+        db.prepare('SELECT id FROM user_datas WHERE id = ?').get(user_id) ? null : (()=>{throw new Error('user_idが不正です2')})();
+        const RESULT = db2.prepare(`
+        SELECT * FROM matches
+        WHERE receive_id = ?
+        AND when_to_send = 'match'
+        `).all(user_id)
+        ? db2.prepare(`
+        SELECT * FROM matches
+        WHERE receive_id = ?
+        AND when_to_send = 'match'
+        `).all(user_id)
+        : (()=>{throw new Error('matchesテーブルからデータを取得できませんでした')})();
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+
+}
+);
+
+
+// /read_matches_and_request_match_dataで取得が完了したらwhen_to_sendをrecieveに変更するエンドポイント
+app.get('/update_when_to_send_recieve', (req, res) => {
+    try {
+        const user_id = req.body.user_id;
+        const error_check_user_id = user_id;
+        // user_idは1以上の整数でuser_datasに存在するidであることをチェック
+        error_check_user_id === undefined || error_check_user_id === null || typeof error_check_user_id !== 'number' || error_check_user_id < 1 ? (()=>{throw new Error('user_idが不正です1')})() : null;
+        db.prepare('SELECT id FROM user_datas WHERE id = ?').get(user_id) ? null : (()=>{throw new Error('user_idが不正です2')})();
+
+        const RESULT = db2.prepare(`
+        UPDATE matches
+        SET when_to_send = 'recieve'
+        WHERE receive_id = ?
+        AND when_to_send = 'match'
+        `).run(user_id)
+        ? 'OK'
+        : (()=>{throw new Error('matchesテーブルのwhen_to_sendを更新できませんでした')})();
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+
+}
+);

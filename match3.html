@@ -58,12 +58,48 @@
 </head>
 <body>
 <div id="app">
+    <!-- login_as button -->
+    <button @click="login_as()">login_as</button>
+    <button @click="login_as({id: 7, name: 'C'})">login_as({id: 7, name: 'C'})</button>
+    <!-- login_as(Id_Name={id: 1, name: "a"}){ -->
+        {{login_id_name}}
+        <!-- <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'"> -->
+
+
+<div v-if="web_data && current_user" :class="current_user.user_type === 'company' ? 'message message-right' : 'message message-left'">
+            <div>user_data_id: {{current_user.user_data_id}}</div>
+            <div>user_name: {{current_user.user_name}}</div>
+            <div>weight_num: {{current_user.weight_num}}
+                <!-- fetch_update_user_datas_weight_num -->
+                <button @click="fetch_update_user_datas_weight_num(current_user.user_data_id, current_user.weight_num, '+')">+ fetch_update_user_datas_weight_num</button>
+                <button @click="fetch_update_user_datas_weight_num(current_user.user_data_id, current_user.weight_num, '-')">- fetch_update_user_datas_weight_num</button>
+            </div>
+            <div>user_type: {{current_user.user_type}}</div>
+            <div>offline_online: {{current_user.offline_online}}
+                <!-- fetch_update_user_datas_online_offline -->
+                <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">fetch_update_user_datas_online_offline</button>
+            </div>
+            <div>skills_id_array: {{current_user.skills_id_array}}</div>
+            <div>skills: </div>
+            <div v-for="b, b_idx in current_user.skills">
+                <span>{{b.skill}}</span>
+                <!-- fetch_delete_user_datas_skills_id_array -->
+                <button @click="fetch_delete_user_datas_skills_id_array(current_user.user_data_id, b.id)">fetch_delete_user_datas_skills_id_array</button>
+            </div>
+            <!-- all_skillからselect optionでuserにall_skillからひとつ追加するボタン -->
+            <select v-model="selected_keyword">
+                <option v-for="all_skills_one, all_skills_one_idx in all_skills" :value="all_skills_one.id" :key="all_skills_one_idx">{{all_skills_one.skill}}</option>
+            </select>
+            <!-- fetch_update_user_datas_skills_id_array でselected_keywordを追加する -->
+            <button @click="fetch_update_user_datas_skills_id_array(a.user_data_id, selected_keyword)">fetch_update_user_datas_skills_id_array</button>
+</div>
+
 
 
 
 <!--  @click="fetch_insert_matches('match')" button -->
-<!-- if web_messageとtmp_dataがある場合は表示する -->
-<div v-if="web_data && tmp_data">
+<!-- if web_messageとmatched_data_aryがある場合は表示する -->
+<div v-if="web_data && matched_data_ary">
     <button @click="fetch_insert_matches('match')">fetch_insert_matches('match')</button>
 </div>
 <a :href="match_url">{{ match_url }}</a>
@@ -85,6 +121,8 @@
 <!-- {{web_data}} -->
 <div v-if="web_data.message" class="chat-container">
     <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'">
+        <!-- id -->
+        <div>user_data_id: {{a.user_data_id}}</div>
         <div>user_name: {{a.user_name}}</div>
         <div>weight_num: {{a.weight_num}}
             <!-- fetch_update_user_datas_weight_num -->
@@ -150,8 +188,16 @@
 const app = Vue.createApp({
 data() {
 return {
+    login_id_name: {id: 1, name: "a"},
+    text_id_ary: [
+        {id: 0, text: "今通話可能", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
+        {id: 1, text: "通話OK", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
+        {id: 2, text: "こんにちは", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
+        {id: 3, text: "今NG", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
+    ],
+    now_checking_match: false,
     match_url: '',
-    tmp_data: null,
+    matched_data_ary: null,
     endpoint: 'http://localhost:8000',
     // endpoint: 'http://127.0.0.1:3000',
     // endpoint: 'https://cotton-concrete-catsup.glitch.me',
@@ -233,79 +279,81 @@ updated() {
     
 },
 methods: {
-    update_online_status(){
-        // selected_user_LISTのonline_statusを更新(startをutfの日時、untilをstartの10分後、on_offを"on"に変更)
-        this.selected_user_LIST[0].online_status.start = new Date().toISOString();
-        this.selected_user_LIST[0].online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
-        this.selected_user_LIST[0].online_status.on_off = "on";
-    },
-    // 全てのuserのonline_statusを初期化する関数
-    reset_all_online_status(){
-        this.user_list = this.user_list.map(user => {
+login_as(Id_Name={id: 5, name: "a"}){
+    // login_id_nameを元にweb_dataからaを作る
+    if(this.web_data){
+        this.current_user = this.web_data.message.find(user => user.user_data_id === Id_Name.id);
+    }
+    console.log(Id_Name);
+    this.login_id_name = Id_Name;
+},
+update_online_status(){
+    // selected_user_LISTのonline_statusを更新(startをutfの日時、untilをstartの10分後、on_offを"on"に変更)
+    this.selected_user_LIST[0].online_status.start = new Date().toISOString();
+    this.selected_user_LIST[0].online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
+    this.selected_user_LIST[0].online_status.on_off = "on";
+},
+// 全てのuserのonline_statusを初期化する関数
+reset_all_online_status(){
+    this.user_list = this.user_list.map(user => {
+        user.online_status.start = null;
+        user.online_status.until = null;
+        user.online_status.on_off = "off";
+        return user;
+    });
+},
+// 指定したuserのonline_statusを初期化する関数
+reset_selected_user_online_status(Id){
+    this.user_list = this.user_list.map(user => {
+        if (user.id === Id){
             user.online_status.start = null;
             user.online_status.until = null;
             user.online_status.on_off = "off";
-            return user;
-        });
-    },
-    // 指定したuserのonline_statusを初期化する関数
-    reset_selected_user_online_status(Id){
-        this.user_list = this.user_list.map(user => {
-            if (user.id === Id){
-                user.online_status.start = null;
-                user.online_status.until = null;
-                user.online_status.on_off = "off";
-            }
-            return user;
-        });
-    },
-    // 指定したuserのonline_statusをonにする関数
-    set_selected_user_online_status(Id){
-        this.user_list = this.user_list.map(user => {
-            if (user.id === Id){
-                user.online_status.start = new Date().toISOString();
-                user.online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
-                user.online_status.on_off = "on";
-            }
-            return user;
-        });
-    },
-    on_off(Id){
-        this.reset_other_user_online_status(Id);
-        this.set_selected_user_online_status(Id);
-    },
-
-// 全てのuserのonline_statusをonにする関数
-    set_all_online_status(){
-        this.user_list = this.user_list.map(user => {
+        }
+        return user;
+    });
+},
+// 指定したuserのonline_statusをonにする関数
+set_selected_user_online_status(Id){
+    this.user_list = this.user_list.map(user => {
+        if (user.id === Id){
             user.online_status.start = new Date().toISOString();
             user.online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
             user.online_status.on_off = "on";
-            return user;
-        });
-    },
-    // 指定したuser以外は全て初期化する関数
-    reset_other_user_online_status(Id){
-        this.user_list = this.user_list.map(user => {
-            if (user.id !== Id){
-                user.online_status.start = null;
-                user.online_status.until = null;
-                user.online_status.on_off = "off";
-            }
-            return user;
-        });
-    },
-
-
-
-
-    list_filter(){
-        console.log("list_filter", this.selected_user);
-        this.make_LIST();
-        this.selected_user_LIST = this.LIST.filter(user => user.id === this.selected_user);
-        this.update_online_status();
-    },
-
+        }
+        return user;
+    });
+},
+on_off(Id){
+    this.reset_other_user_online_status(Id);
+    this.set_selected_user_online_status(Id);
+},
+// 全てのuserのonline_statusをonにする関数
+set_all_online_status(){
+    this.user_list = this.user_list.map(user => {
+        user.online_status.start = new Date().toISOString();
+        user.online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
+        user.online_status.on_off = "on";
+        return user;
+    });
+},
+// 指定したuser以外は全て初期化する関数
+reset_other_user_online_status(Id){
+    this.user_list = this.user_list.map(user => {
+        if (user.id !== Id){
+            user.online_status.start = null;
+            user.online_status.until = null;
+            user.online_status.on_off = "off";
+        }
+        return user;
+    });
+},
+list_filter(){
+    console.log("list_filter", this.selected_user);
+    this.make_LIST();
+    this.selected_user_LIST = this.LIST.filter(user => user.id === this.selected_user);
+    this.update_online_status();
+},
 make_LIST(){
     this.LIST = this.user_list.map(user => {
         return {
@@ -459,13 +507,6 @@ match_exe(){
 
 },
 
-login_as(){
-    // userをget paramで受け取って、そのidをselected_userにセットする
-    // get param
-    const url = new URL(window.location.href);
-    const user = url.searchParams.get('user');
-
-},
 start_chat(other_side_id, own_side_id){
     // other_side_id, own_side_idがnullやundefinedでない場合はchatを開始する
             // other_side_idがあるかfindする
@@ -647,11 +688,11 @@ try {
     // dataのstatusが200でない場合はエラースローしmessageをerror.messageにセットする
     data.status !== 200 ? (()=>{throw new Error(data.message)})() : null;
 
-    this.tmp_data = data;
-    // tmp_dataにskillsを追加する
-    this.tmp_data.message = this.tmp_data.message.map(user => {
+    this.matched_data_ary = data;
+    // matched_data_aryにskillsを追加する
+    this.matched_data_ary.message = this.matched_data_ary.message.map(user => {
         if(user.skills_id_array){
-            // decodeURIComponent(app.tmp_data.message[0].skills_id_array).split(",").map(V=>Number(V))
+            // decodeURIComponent(app.matched_data_ary.message[0].skills_id_array).split(",").map(V=>Number(V))
             user.skills = decodeURIComponent(user.skills_id_array).split(",").map(V=>Number(V)).map(skill => {
                 return this.all_skills.find(all_skill => all_skill.id === skill);
             });
@@ -660,11 +701,14 @@ try {
     });
     
 
-
+    
     const local_url = 'http://127.0.0.1:3000';
-    // http://127.0.0.1:3000/client6.html に get paramで own=JSON_STRING(this.web_data.message[0])&another=JSON_STRING(this.tmp_data.message[0])をつける
+    // http://127.0.0.1:3000/client6.html に get paramで own=JSON_STRING(this.web_data.message[0])&another=JSON_STRING(this.matched_data_ary.message[0])をつける
     // match_urlに入れる
-    this.match_url = local_url + '/client6.html' + '?own=' + JSON.stringify(this.web_data.message[0]) + '&another=' + JSON.stringify(this.tmp_data.message[0]);
+    this.match_url = local_url + '/client6.html'
+        + '?own=' + JSON.stringify(this.web_data.message[0])
+        + '&another=' + JSON.stringify(this.matched_data_ary.message[0])
+        + '&login_id_name=' + JSON.stringify(this.login_id_name);
 
 
     
@@ -693,12 +737,14 @@ async fetch_insert_matches(When_To_Send="match") {
 try {
     console.log(
         "match_data", this.match_url,
-        "send_id", this.web_data.message[0].user_data_id,
-        "receive_id", this.tmp_data.message[0].user_data_id,
+        // "send_id", this.web_data.message[0].user_data_id,
+        // "send_id"はlogin_as(Id_Name={id: 1, name: "a"}){ login_id_nameのid
+        "send_id", this.login_id_name.id,
+        "receive_id", this.matched_data_ary.message[0].user_data_id,
         "when_to_send", When_To_Send
     );
     const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({match_data: this.match_url, send_id: this.web_data.message[0].user_data_id, receive_id: this.tmp_data.message[0].user_data_id, when_to_send: When_To_Send}),
+        body: JSON.stringify({match_data: this.match_url, send_id: this.web_data.message[0].user_data_id, receive_id: this.matched_data_ary.message[0].user_data_id, when_to_send: When_To_Send}),
 
     });
     // const data = await res.json(); console.log(data);
@@ -712,100 +758,5 @@ try {
 
 
 }}).mount('#app');
-
-// const sequence_of_peer = () =>{
-    let peer_id_a = "";
-    let peer_id_b = "";
-
-    let peer = new Peer({
-        host: 'cypress-serious-bird.glitch.me',
-        secure: true,
-        path: '/peerjs/myapp'
-    });
-
-const set_url = () =>{
-    const url = new URL(window.location.href);
-    // const other_side_data_str = url.searchParams.get('other_side_data_str');
-    let all_params = new URLSearchParams(window.location.search);
-    // 全てのget_paramを#peer_id_aにセットする
-    document.querySelector("#peer_id_a").value = all_params.toString();
-
-    // 三項演算子でget_paramからother_side_data_strを取得、nullの場合は実行しない
-    LIST_1 = get_other_side_data_str() ? get_other_side_data_str() : LIST_1;
-    // 三項演算子でget_paramからown_side_data_strを取得、nullの場合は実行しない
-    LIST_2 = get_own_side_data_str() ? get_own_side_data_str() : LIST_2;
-
-    // chat_aryをアップデートする
-    // {date_time: get_iso8601(), id: 0, my_user_list: LIST_1, another_user_list: LIST_2, name:"a", type:"company", text_id: 0, text: "今通話可能"},
-    // {date_time: get_iso8601(), id: 1, my_user_list: LIST_2, another_user_list: LIST_1, name:"b", type:"customer", text_id: 1, text: "通話OK"},
-    chat_ary.push(
-        {date_time: get_iso8601(), id: 0, my_user_list: LIST_1, another_user_list: LIST_2, name:"a", type:"company", text_id: 0, text: "今通話可能"},
-    )
-    chat_ary.push(
-        {date_time: get_iso8601(), id: 1, my_user_list: LIST_2, another_user_list: LIST_1, name:"b", type:"customer", text_id: 1, text: "通話OK"},
-    )
-
-
-}
-
-    // peer idを発行する関数(peer_id_aとpeer_id_b、それぞれ別のidを発行してそれぞれを変数に代入)
-    // function get_peer_id(){
-        peer.on('open', (id) => {
-            peer_id_a = id;
-        });
-        // peer_id_bの方が後からopenされるためmake_url_str_a()とmake_url_str_b()を実行する
-        peer.on('open', (id) => {
-            peer_id_b = id;
-            set_url();
-        });
-    // }
-
-    // let url = "http://127.0.0.1:3000/client4.html"
-    let url = "http://127.0.0.1:3000/match2.html"
-
-    let LIST_1 = {};
-    let LIST_2 = {};
-// get_paramからother_side_data_strを取得する関数
-const get_other_side_data_str = () => {
-    const url = new URL(window.location.href);
-    const other_side_data_str = url.searchParams.get('other_side_data_str');
-    if (other_side_data_str){
-        console.log("other_side_data_str", other_side_data_str);
-        console.log(JSON.parse(other_side_data_str));
-    }
-    return JSON.parse(other_side_data_str);
-}
-
-// get_paramからown_side_data_strを取得する関数
-const get_own_side_data_str = () => {
-    const url = new URL(window.location.href);
-    const own_side_data_str = url.searchParams.get('own_side_data_str');
-    if (own_side_data_str){
-        console.log("own_side_data_str", own_side_data_str);
-        console.log(JSON.stringify(own_side_data_str));
-    }
-    return JSON.parse(own_side_data_str);
-}
-
-let url_str_a = "";
-let url_str_b = "";
-// aには対向のbを、bには対向のaをセットする、それぞれ用の2つの関数
-
-const text_id_ary = [
-        {id: 0, text: "今通話可能", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
-        {id: 1, text: "通話OK", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
-        {id: 2, text: "こんにちは", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
-        {id: 3, text: "今NG", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
-    ];
-// iso8601形式の日時を返す関数
-const get_iso8601 = () => {
-    const date = new Date();
-    return date.toISOString();
-}
-let chat_ary = [];
-
-
-
-
 </script>
 </html>
