@@ -105,7 +105,13 @@
 <div v-if="web_data && matched_data_ary">
     <button @click="fetch_insert_matches('match')">fetch_insert_matches('match')</button>
 </div>
-<a :href="match_url">{{ match_url }}</a>
+    <!-- this.match_url_array を each -->
+    <div v-for="match_url, match_url_idx in match_url_array">
+        <!-- redirectするボタン -->
+        <button @click="redirect_and_fetch_insert_matches(match_url)">redirect_and_fetch_insert_matches</button>
+        <button @click="toggle_show_full_url">toggle_show_full_url</button>
+        <div v-show="show_full_url">{{ match_url }}</div>
+    </div>
 
 
     <!-- </div> -->
@@ -191,6 +197,7 @@
 const app = Vue.createApp({
 data() {
 return {
+    show_full_url: false,
     login_id_name: {id: 1, name: "a"},
     text_id_ary: [
         {id: 0, text: "今通話可能", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
@@ -199,7 +206,7 @@ return {
         {id: 3, text: "今NG", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
     ],
     now_checking_match: false,
-    match_url: '',
+    match_url_array: [],
     matched_data_ary: null,
     endpoint: 'http://localhost:8000',
     // endpoint: 'http://127.0.0.1:3000',
@@ -264,7 +271,6 @@ watch: {
 mounted() {
     // this.make_LIST();
     this.list_filter();
-    this.login_as();
     // userName,weightNum,userType,onlineOfflineの初期値を設定する
     this.userName = "a";
     this.weightNum = 1;
@@ -274,6 +280,7 @@ mounted() {
     this.fetch_read_skills();
     this.fetch_read_user_datas_skills();
 
+    this.login_as();
 },
 beforeUpdated() {
 },
@@ -708,15 +715,18 @@ try {
     
 
     
-    const local_url = 'http://127.0.0.1:3000';
-    // http://127.0.0.1:3000/client6.html に get paramで own=JSON_STRING(this.web_data.message[0])&another=JSON_STRING(this.matched_data_ary.message[0])をつける
-    // match_urlに入れる
-    this.match_url = local_url + '/client6.html'
-        + '?own=' + JSON.stringify(this.web_data.message[0])
-        + '&another=' + JSON.stringify(this.matched_data_ary.message[0])
-        + '&login_id_name=' + JSON.stringify(this.login_id_name);
-
-
+    this.match_url_array = [];
+    this.matched_data_ary.message.forEach(matched_data=>{
+        const local_url = 'http://127.0.0.1:3000';
+        // http://127.0.0.1:3000/client6.html に get paramで own=JSON_STRING(this.web_data.message[0])&another=JSON_STRING(this.matched_data_ary.message[0])をつける
+        // match_urlに入れる
+        this.match_url_array.push(
+            local_url + '/client6.html'
+                + '?own=' + JSON.stringify(this.web_data.message[0])
+                + '&another=' + JSON.stringify(matched_data)
+                + '&login_id_name=' + JSON.stringify(this.login_id_name)
+        );
+    });
     
 
     this.ERROR_MESSAGE = "";
@@ -742,7 +752,7 @@ try {
 async fetch_insert_matches(When_To_Send="match") {
 try {
     console.log(
-        "match_data", this.match_url,
+        "match_data", this.match_url_array[0],
         // "send_id", this.web_data.message[0].user_data_id,
         // "send_id"はlogin_as(Id_Name={id: 1, name: "a"}){ login_id_nameのid
         "send_id", this.login_id_name.id,
@@ -750,7 +760,7 @@ try {
         "when_to_send", When_To_Send
     );
     const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({match_data: this.match_url, send_id: this.web_data.message[0].user_data_id, receive_id: this.matched_data_ary.message[0].user_data_id, when_to_send: When_To_Send}),
+        body: JSON.stringify({match_data: this.match_url_array[0], send_id: this.web_data.message[0].user_data_id, receive_id: this.matched_data_ary.message[0].user_data_id, when_to_send: When_To_Send}),
 
     });
     // const data = await res.json(); console.log(data);
@@ -760,7 +770,22 @@ try {
 }
 },
 
+redirect_and_fetch_insert_matches(match_url){
+    this.fetch_insert_matches('match');
+    // fetch_insert_matchesがエラーの場合はredirectせずにエラーメッセージを表示するのみ(redirectしない)
+    if(this.ERROR_MESSAGE){
+        return;
+    }
+    // a hrefをクリックしたの同様の挙動をする
+    window.location.href = match_url;
+},
 
+
+
+
+toggle_show_full_url() {
+      this.show_full_url = !this.show_full_url;
+},
 
 
 }}).mount('#app');

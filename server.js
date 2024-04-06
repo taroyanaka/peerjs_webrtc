@@ -1460,6 +1460,8 @@ app.post('/delete_user_datas_skills_id_array', (req, res) => {
             user_data_id: encodeURIComponent(req.body.user_data_id),
             skill_id: encodeURIComponent(req.body.skill_id),
         };
+
+
         // Fetch the current skills_id_array from the database
         const userData = db.prepare('SELECT skills_id_array FROM user_datas WHERE id = ?').get(escaped_all_data['user_data_id']);
         console.log(userData);
@@ -1471,6 +1473,10 @@ app.post('/delete_user_datas_skills_id_array', (req, res) => {
         console.log(typeof skillsIdArray);
         const index = skillsIdArray.indexOf(escaped_all_data['skill_id']);
         console.log(index);
+                // user_datasのレコードのskills_id_arrayが空になる場合はエラー(最低1つのskillが必要)
+        if (skillsIdArray.length === 1) {
+            (()=>{throw new Error('skills_id_arrayが空になる場合はエラー(最低1つのskillが必要)')})();
+        }
         if (index !== -1) {
             // 指定したskill_idを削除する
             const new_skillsIdArray = skillsIdArray.filter((id) => id !== escaped_all_data['skill_id']);
@@ -1540,12 +1546,7 @@ app.post('/read_1_who_find_n_companies_or_n_customers_by_1_skill', (req, res) =>
         const userData = db.prepare('SELECT id, user_name, weight_num, user_type, offline_online, skills_id_array FROM user_datas WHERE id = ?').get(escaped_all_data['user_data_id']);
         userData === undefined ? (()=>{throw new Error('user_data_idが不正です')})() : null;
         // user_typeがcompanyかcustomerでない場合はエラー
-        // console.log("read_1_who_find_n_companies_or_n_customers_by_1_skill 2");
-        // console.log(userData);
-        // console.log(userData.user_type);
-        // console.log(skill_id);
         userData.user_type !== 'company' && userData.user_type !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
-        console.log("read_1_who_find_n_companies_or_n_customers_by_1_skill 3");
         // offline_onlineがonlineでない場合はエラー
         userData.offline_online !== 1 ? (()=>{throw new Error('offline_onlineを1(onlineに変更してください)')})() : null;
         // skills_id_arrayがskill_idを含まない場合はエラー
@@ -1590,9 +1591,7 @@ app.post('/read_1_who_find_n_companies_or_n_customers_by_1_skill', (req, res) =>
         }
 
         // RESULTのmessageのarrayが空の場合は以下のエラーメッセージを返す
-        // 「マッチするuserがいません。マッチするcustomerが存在しないか、存在していても、それらのcustomerは全てofflineです」
         RESULT.length === 0 ? (()=>{throw new Error('マッチするuserがいません。マッチするcustomerが存在しないか、存在していても、それらのcustomerは全てofflineです')})() : null;
-
         res.status(200)
             .json({result: 'success',
                 status: 200,
