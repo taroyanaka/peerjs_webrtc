@@ -58,109 +58,89 @@
 </head>
 <body>
 <div id="app">
-    <!-- login_as button -->
-    <button @click="login_as()">login_as</button>
-    <button @click="login_as({id: 7, name: 'C'})">login_as({id: 7, name: 'C'})</button>
-    <!-- login_as(Id_Name={id: 1, name: "a"}){ -->
-        {{login_id_name}}
-        <!-- <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'"> -->
-
-
+            <!-- this block for debug -->
+            <div v-if="match_url_array && login_id_name && matched_data_ary && matched_data_ary.message[0] && matched_data_ary.message[0].user_data_id">
+                {{ 
+                matched_data_ary.message
+                    .map((a, IDX) => {
+                    return [
+                    "send_id", login_id_name.id,
+                    "receive_id", matched_data_ary.message[ IDX ].user_data_id,
+                    ]
+                    })
+                }}
+            </div>
+<button @click="login_as()">login_as</button>
+<button @click="login_as({id: 7, name: 'C'})">login_as({id: 7, name: 'C'})</button>
+<div>{{login_id_name}}</div>
+<div v-if="web_data && matched_data_ary">
+    <div v-for="match_url, match_url_idx in match_url_array">
+        <button @click="redirect_and_fetch_insert_matches(match_url, match_url_idx)">redirect_and_fetch_insert_matches</button>
+        <button @click="toggle_show_full_url">toggle_show_full_url</button>
+        <div v-show="show_full_url">{{ match_url }}</div>
+    </div>
+</div>
+{{ERROR_MESSAGE}}
 <div v-if="web_data && current_user" :class="current_user.user_type === 'company' ? 'message message-right' : 'message message-left'">
             <div>user_data_id: {{current_user.user_data_id}}</div>
             <div>user_name: {{current_user.user_name}}</div>
             <div>weight_num: {{current_user.weight_num}}
-                <!-- fetch_update_user_datas_weight_num -->
-                <button @click="fetch_update_user_datas_weight_num(current_user.user_data_id, current_user.weight_num, '+')">+ fetch_update_user_datas_weight_num</button>
-                <button @click="fetch_update_user_datas_weight_num(current_user.user_data_id, current_user.weight_num, '-')">- fetch_update_user_datas_weight_num</button>
+                <button @click="fetch_update_user_datas_weight_num(current_user.user_data_id, current_user.weight_num, '+')">+</button>
+                <button @click="fetch_update_user_datas_weight_num(current_user.user_data_id, current_user.weight_num, '-')">-</button>
             </div>
             <div>user_type: {{current_user.user_type}}</div>
             <div>offline_online: {{current_user.offline_online}}
-                <!-- fetch_update_user_datas_online_offline -->
-                <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">fetch_update_user_datas_online_offline</button>
+                <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">1isOne</button>
             </div>
             <div>skills_id_array: {{current_user.skills_id_array}}</div>
             <div>skills: </div>
             <div v-for="b, b_idx in current_user.skills">
                 <span>{{b.skill}}</span>
-                <!-- skill idによってfetch_read_1_who_find_n_companies_or_n_customers_by_1_skillを行う -->
-                <button @click="fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(b.id)">fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill</button>
-
-                <!-- fetch_delete_user_datas_skills_id_array -->
-                <button @click="fetch_delete_user_datas_skills_id_array(current_user.user_data_id, b.id)">fetch_delete_user_datas_skills_id_array</button>
+                <button @click="fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(b.id)">match</button>
+                <button @click="fetch_delete_user_datas_skills_id_array(current_user.user_data_id, b.id)">|</button>
             </div>
-            <!-- all_skillからselect optionでuserにall_skillからひとつ追加するボタン -->
             <select v-model="selected_keyword">
                 <option v-for="all_skills_one, all_skills_one_idx in all_skills" :value="all_skills_one.id" :key="all_skills_one_idx">{{all_skills_one.skill}}</option>
             </select>
-            <!-- fetch_update_user_datas_skills_id_array でselected_keywordを追加する -->
             <button @click="fetch_update_user_datas_skills_id_array(a.user_data_id, selected_keyword)">fetch_update_user_datas_skills_id_array</button>
 </div>
 
-
-
-
-<!--  @click="fetch_insert_matches('match')" button -->
-<!-- if web_messageとmatched_data_aryがある場合は表示する -->
-<div v-if="web_data && matched_data_ary">
-    <button @click="fetch_insert_matches('match')">fetch_insert_matches('match')</button>
-</div>
-    <!-- this.match_url_array を each -->
-    <div v-for="match_url, match_url_idx in match_url_array">
-        <!-- redirectするボタン -->
-        <button @click="redirect_and_fetch_insert_matches(match_url)">redirect_and_fetch_insert_matches</button>
-        <button @click="toggle_show_full_url">toggle_show_full_url</button>
-        <div v-show="show_full_url">{{ match_url }}</div>
-    </div>
-
-
-    <!-- </div> -->
-
-    {{ERROR_MESSAGE}}
-
-
-
-
-
 <div>
-    <!-- input text skill_str -->
     <input type="text" v-model="skill_str" placeholder="Enter skill">
     <button @click="fetch_add_skill_str">fetch_add_skill_str</button>
+    <div>
+    <span v-for="all_skills_one, all_skills_one_idx in all_skills">
+        <span>{{all_skills_one.skill}}</span>
+        <button @click="fetch_delete_skills(all_skills_one.id)">fetch_delete_skills</button>
+    </span>
+    </div>
 <div v-if="web_data">
-<!-- {{web_data}} -->
 <div v-if="web_data.message" class="chat-container">
     <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'">
-        <!-- id -->
         <div>user_data_id: {{a.user_data_id}}</div>
         <div>user_name: {{a.user_name}}</div>
         <div>weight_num: {{a.weight_num}}
-            <!-- fetch_update_user_datas_weight_num -->
-            <button @click="fetch_update_user_datas_weight_num(a.user_data_id, a.weight_num, '+')">+ fetch_update_user_datas_weight_num</button>
-            <button @click="fetch_update_user_datas_weight_num(a.user_data_id, a.weight_num, '-')">- fetch_update_user_datas_weight_num</button>
+            <button @click="fetch_update_user_datas_weight_num(a.user_data_id, a.weight_num, '+')">+</button>
+            <button @click="fetch_update_user_datas_weight_num(a.user_data_id, a.weight_num, '-')">-</button>
         </div>
         <div>user_type: {{a.user_type}}</div>
         <div>offline_online: {{a.offline_online}}
-            <!-- fetch_update_user_datas_online_offline -->
-            <button @click="fetch_update_user_datas_online_offline(a.user_data_id)">fetch_update_user_datas_online_offline</button>
+            <button @click="fetch_update_user_datas_online_offline(a.user_data_id)">1isOne</button>
         </div>
         <div>skills_id_array: {{a.skills_id_array}}</div>
         <div>skills: </div>
-        <div v-for="b, b_idx in a.skills">
+        <span v-for="b, b_idx in a.skills">
             <span>{{b.skill}}</span>
-            <!-- fetch_delete_user_datas_skills_id_array -->
-            <button @click="fetch_delete_user_datas_skills_id_array(a.user_data_id, b.id)">fetch_delete_user_datas_skills_id_array</button>
-        </div>
-        <!-- all_skillからselect optionでuserにall_skillからひとつ追加するボタン -->
+            <button @click="fetch_delete_user_datas_skills_id_array(a.user_data_id, b.id)">|</button>
+            <span>{{' '}}</span>
+        </span>
         <select v-model="selected_keyword">
             <option v-for="all_skills_one, all_skills_one_idx in all_skills" :value="all_skills_one.id" :key="all_skills_one_idx">{{all_skills_one.skill}}</option>
         </select>
-        <!-- fetch_update_user_datas_skills_id_array でselected_keywordを追加する -->
         <button @click="fetch_update_user_datas_skills_id_array(a.user_data_id, selected_keyword)">fetch_update_user_datas_skills_id_array</button>
     </div>
 </div>
 </div>
-<!-- <button @click="fetch_read_user_datas_skills">fetch_read_user_datas_skills</button> -->
-
     <div class="new_user_insert">
         <div>userName: <input type="text" v-model="userName" placeholder="Enter user name"></div>
         <div>weightNum: <input type="text" v-model="weightNum" placeholder="Enter weight num"></div>
@@ -171,25 +151,11 @@
             <option value="0">offline</option>
             <option value="1">online</option>
         </select></div>
-
         <div><button @click="fetch_add_user_data">fetch_add_user_data</button></div>
-        <div><ul>
-            <li v-for="all_skills_one, all_skills_one_idx in all_skills">
-                {{all_skills_one}}
-                <!-- fetch_delete_skills -->
-                <button @click="fetch_delete_skills(all_skills_one.id)">fetch_delete_skills</button>
-            </li>
-
-        </ul></div>
+        <div>
+        </div>
     </div>
-
-
 </div>
-
-
-
-
-
 <input type="text" value="peer_id_a" id="peer_id_a" style="width: 200rem;">
 </div>
 </body>
@@ -217,7 +183,6 @@ return {
     weightNum: '',
     userType: '',
     onlineOffline: '',
-    // skills: [1,2,3],
     skills: [],
     all_skills: [],
 
@@ -251,35 +216,23 @@ return {
     ],
     LIST: [],
     selected_user_LIST: [],
-
-    // user_type_listとuser_listを1:Nで結合
-    // user_listとkeyword_listを1:Nで結合(user_listが持つkeword_listは0個でも可)
-
 }
 },
 watch: {
     list_1: {
-     handler(new_val, old_val) {
-        // console.log("list_1", this.to_ary(new_val), this.to_ary(old_val));
-        // this.make_LIST();
-        // this.list_filter();
-        // this.exe();
-     },
-     deep: true
+    handler(new_val, old_val) {
+    },
+    deep: true
    },
 },
 mounted() {
-    // this.make_LIST();
     this.list_filter();
-    // userName,weightNum,userType,onlineOfflineの初期値を設定する
     this.userName = "a";
     this.weightNum = 1;
     this.userType = "company";
     this.onlineOffline = 0;
-    // fetch read
     this.fetch_read_skills();
     this.fetch_read_user_datas_skills();
-
     this.login_as();
 },
 beforeUpdated() {
@@ -290,20 +243,16 @@ updated() {
 },
 methods: {
 login_as(Id_Name={id: 5, name: "a"}){
-    // login_id_nameを元にweb_dataからaを作る
-    if(this.web_data){
-        this.current_user = this.web_data.message.find(user => user.user_data_id === Id_Name.id);
-    }
-    console.log(Id_Name);
-    this.login_id_name = Id_Name;
+if(this.web_data){
+    this.current_user = this.web_data.message.find(user => user.user_data_id === Id_Name.id);
+}
+this.login_id_name = Id_Name;
 },
 update_online_status(){
-    // selected_user_LISTのonline_statusを更新(startをutfの日時、untilをstartの10分後、on_offを"on"に変更)
     this.selected_user_LIST[0].online_status.start = new Date().toISOString();
     this.selected_user_LIST[0].online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
     this.selected_user_LIST[0].online_status.on_off = "on";
 },
-// 全てのuserのonline_statusを初期化する関数
 reset_all_online_status(){
     this.user_list = this.user_list.map(user => {
         user.online_status.start = null;
@@ -312,7 +261,6 @@ reset_all_online_status(){
         return user;
     });
 },
-// 指定したuserのonline_statusを初期化する関数
 reset_selected_user_online_status(Id){
     this.user_list = this.user_list.map(user => {
         if (user.id === Id){
@@ -323,7 +271,6 @@ reset_selected_user_online_status(Id){
         return user;
     });
 },
-// 指定したuserのonline_statusをonにする関数
 set_selected_user_online_status(Id){
     this.user_list = this.user_list.map(user => {
         if (user.id === Id){
@@ -338,7 +285,6 @@ on_off(Id){
     this.reset_other_user_online_status(Id);
     this.set_selected_user_online_status(Id);
 },
-// 全てのuserのonline_statusをonにする関数
 set_all_online_status(){
     this.user_list = this.user_list.map(user => {
         user.online_status.start = new Date().toISOString();
@@ -347,7 +293,6 @@ set_all_online_status(){
         return user;
     });
 },
-// 指定したuser以外は全て初期化する関数
 reset_other_user_online_status(Id){
     this.user_list = this.user_list.map(user => {
         if (user.id !== Id){
@@ -359,7 +304,6 @@ reset_other_user_online_status(Id){
     });
 },
 list_filter(){
-    console.log("list_filter", this.selected_user);
     this.make_LIST();
     this.selected_user_LIST = this.LIST.filter(user => user.id === this.selected_user);
     this.update_online_status();
@@ -375,29 +319,23 @@ make_LIST(){
             keyword_list: user.keyword_list.map(keyword_id => this.keyword_list.find(keyword => keyword.id === keyword_id)),
         }
     });
-
 },
-
 exe(){
     console.log("abc");
 },
 to_ary(from){
     return JSON.parse(JSON.stringify(from));
 },
-
 add_keyword(){
-    try {
-        console.log("add_keyword", this.selected_keyword);
+try {
     const user = this.user_list.find(user => user.id === this.selected_user);
-        // 同じキーワードがある場合は追加しない 
-        // エラースローのワンライナー
-        if (user.keyword_list.some(keyword_id => keyword_id === this.selected_keyword)) throw new Error("すでに追加されています");
+    if (user.keyword_list.some(keyword_id => keyword_id === this.selected_keyword)) throw new Error("すでに追加されています");
     user.keyword_list.push(this.selected_keyword);
     this.list_filter();
     this.ERROR_MESSAGE = "";
-    } catch (error) {
-        this.ERROR_MESSAGE = error.message;
-    }
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
 },
 delete_keyword(keyword_id){
     try {
@@ -436,8 +374,6 @@ add_new_keyword(){
         this.ERROR_MESSAGE = error.message;
     }
 },
-// selected_userとのマッチ機能(companyとcustomerが同じキーワードを持っていたらマッチングしてmatch_resultに追加される(weightが大きい方が優先)
-//         // selected_userがcompanyの場合はresultはcustomerのリスト、selected_userがcustomerの場合はresultはcompanyのリスト
 weight_change(id){
     this.LIST = this.LIST.map(user => {
         if (user.id === id){
@@ -449,13 +385,9 @@ weight_change(id){
 
 },
 match_exe(){
-    // match_resultからstatusがonlineのuserのみを抽出する関数
     const match_result_online = (res) =>{
         return res.filter(user => user.online_status.on_off === "on");
     }
-
-
-    // selected_userがcompanyかcustomerかを判定
     const selected_user = this.user_list.find(user => user.id === this.selected_user);
     let match_result = [];
     if (selected_user.user_type_list_id === 1){
@@ -497,8 +429,6 @@ match_exe(){
             }
         }
     } ;
-    console.log(match_result);
-        // match_resultをweightの降順にソートする関数
     const sort_by_weight = (res) =>{
         return match_result.sort((a, b) => {
             if (a.weight < b.weight) return 1;
@@ -506,17 +436,10 @@ match_exe(){
             return 0;
         });
     }
-
-    // match_result_onlineでfilterする
     match_result = match_result_online(match_result);
-
     this.match_result = sort_by_weight(match_result);
-
     this.match_result = match_result;
-
-
 },
-
 start_chat(other_side_id, own_side_id){
     // other_side_id, own_side_idがnullやundefinedでない場合はchatを開始する
             // other_side_idがあるかfindする
@@ -552,9 +475,6 @@ parse_url(){
         console.log(JSON.parse(own_side_data_str));
     }
 },
-
-
-
 async fetch_add_user_data() {
     try {
     // this.skillsが空の場合はall_skillsの最初の要素のidをセットする
@@ -676,50 +596,28 @@ async fetch_delete_skills(Skill_Id) {
         this.ERROR_MESSAGE = error.message;
     }
 },
-
-// companyでoffline_onlineがonline(1)かつskills_id_arrayの内同じskill_idが含まれるユーザーを取得するエンドポイント
-// company1つに対してcustomer複数を取得する
-// app.post('/read_company_1_customers_n', (req, res) => {
-//     try {
-//         const [error_check_user_data_id, error_check_skill_id]
-//             = [req.body.user_data_id, req.body.skill_id];
 async fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(Skill_Id) {
 try {
-    // test_user_data_id: 最初のユーザーのid
-    // skill_id: 最初のスキルのid
     const test_user_data_id = this.login_id_name.id;
-    // Skill_Idがundefinedやnullや0や整数ではない数字の場合はエラースロー
     if(Skill_Id === undefined || Skill_Id === null || Skill_Id === 0 || typeof Skill_Id !== 'number') throw new Error('skill_idが不正です');
     const skill_id = Skill_Id;
-
-    // console.log(JSON.stringify({user_data_id: test_user_data_id, skill_id: skill_id}));
     const res = await fetch(this.endpoint + '/read_1_who_find_n_companies_or_n_customers_by_1_skill', {method: 'POST',headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({user_data_id: test_user_data_id, skill_id: skill_id}),
-        });
-
+    });
     const data = await res.json(); console.log(data);
-    // dataのstatusが200でない場合はエラースローしmessageをerror.messageにセットする
     data.status !== 200 ? (()=>{throw new Error(data.message)})() : null;
-
     this.matched_data_ary = data;
-    // matched_data_aryにskillsを追加する
     this.matched_data_ary.message = this.matched_data_ary.message.map(user => {
         if(user.skills_id_array){
-            // decodeURIComponent(app.matched_data_ary.message[0].skills_id_array).split(",").map(V=>Number(V))
             user.skills = decodeURIComponent(user.skills_id_array).split(",").map(V=>Number(V)).map(skill => {
                 return this.all_skills.find(all_skill => all_skill.id === skill);
             });
         }
         return user;
     });
-    
-
-    
     this.match_url_array = [];
     this.matched_data_ary.message.forEach(matched_data=>{
         const local_url = 'http://127.0.0.1:3000';
-        // http://127.0.0.1:3000/client6.html に get paramで own=JSON_STRING(this.web_data.message[0])&another=JSON_STRING(this.matched_data_ary.message[0])をつける
-        // match_urlに入れる
         this.match_url_array.push(
             local_url + '/client6.html'
                 + '?own=' + JSON.stringify(this.web_data.message[0])
@@ -727,67 +625,42 @@ try {
                 + '&login_id_name=' + JSON.stringify(this.login_id_name)
         );
     });
-    
-
     this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
 }
 },
-
-
-
-// 以下をfetchする関数
-// const response = db2.prepare(`
-//             INSERT INTO matches (match_data, receive_id, send_id, created_at, updated_at)
-//                 VALUES (@match_data, @receive_id, @send_id, @created_at, @updated_at
-//             )
-//         `).run({
-//             match_data: escaped_match_data,
-//             send_id: req.body.send_id,
-//             receive_id: req.body.receive_id,
-//             created_at: now(),
-//             updated_at: now()
-//         });
-async fetch_insert_matches(When_To_Send="match") {
+async fetch_insert_matches(When_To_Send="match", Match_User_Index=0) {
 try {
     console.log(
-        "match_data", this.match_url_array[0],
-        // "send_id", this.web_data.message[0].user_data_id,
-        // "send_id"はlogin_as(Id_Name={id: 1, name: "a"}){ login_id_nameのid
+        "match_data", this.match_url_array[Match_User_Index],
         "send_id", this.login_id_name.id,
-        "receive_id", this.matched_data_ary.message[0].user_data_id,
+        "receive_id", this.matched_data_ary.message[Match_User_Index].user_data_id,
         "when_to_send", When_To_Send
     );
     const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({match_data: this.match_url_array[0], send_id: this.web_data.message[0].user_data_id, receive_id: this.matched_data_ary.message[0].user_data_id, when_to_send: When_To_Send}),
-
+        body: JSON.stringify({
+            match_data: this.match_url_array[Match_User_Index],
+            send_id: this.web_data.message[0].user_data_id,
+            receive_id: this.matched_data_ary.message[Match_User_Index].user_data_id,
+            when_to_send: When_To_Send
+        }),
     });
-    // const data = await res.json(); console.log(data);
     this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
 }
 },
-
-redirect_and_fetch_insert_matches(match_url){
-    this.fetch_insert_matches('match');
-    // fetch_insert_matchesがエラーの場合はredirectせずにエラーメッセージを表示するのみ(redirectしない)
+redirect_and_fetch_insert_matches(match_url, Match_User_Index=0){
+    this.fetch_insert_matches('match', Match_User_Index);
     if(this.ERROR_MESSAGE){
         return;
     }
-    // a hrefをクリックしたの同様の挙動をする
     window.location.href = match_url;
 },
-
-
-
-
 toggle_show_full_url() {
       this.show_full_url = !this.show_full_url;
 },
-
-
 }}).mount('#app');
 </script>
 </html>
