@@ -58,6 +58,9 @@
 </head>
 <body>
 <div id="app">
+    <!-- fetch_delete_matches button -->
+    <button @click="fetch_delete_matches()">fetch_delete_matches</button>
+
             <!-- this block for debug -->
             <div v-if="match_url_array && login_id_name && matched_data_ary && matched_data_ary.message[0] && matched_data_ary.message[0].user_data_id">
                 {{ 
@@ -651,6 +654,19 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
+async fetch_delete_matches() { // delete_matches // 開発用のAPIエンドポイント。あとで削除する。// sqlite> DELETE FROM matches;のapp.get
+try {
+    const res = await fetch(this.endpoint + '/delete_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        body: null,
+    });
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+
+
+
 redirect_and_fetch_insert_matches(match_url, Match_User_Index=0){
     this.fetch_insert_matches('match', Match_User_Index);
     if(this.ERROR_MESSAGE){

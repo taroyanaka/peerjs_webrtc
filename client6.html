@@ -1,5 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
+<!-- /read_matches_and_request_match_data -->
+<!-- /update_when_to_send_recieve -->
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,48 +15,40 @@
         }
     </style>
 </head>
-<!-- <script src="./main.js"></script> -->
 <body>
 <div id="app">
+    <div>my_user_id: {{ my_user_id }}</div>
+    <input type="number" v-model="my_user_id" placeholder="my_user_id">
+    <!-- fetch_read_matches_and_request_match_dataのbutton -->
+    <button @click="fetch_read_matches_and_request_match_data()">fetch_read_matches_and_request_match_data</button>
+
+
+    <div v-if="receive_matched">
+        receive_matched: {{ receive_matched }}
+    </div>
     {{ matched }}
-    <!-- this.ownの中身を表示 -->
     <div>
         <div class="own">own</div>
         <div v-for="(value, key) in own" :key="key">
             {{ key }}: {{ value }}
         </div>
     </div>
-    <!-- this.anotherの中身を表示 -->
     <div>
         <div class="another">another</div>
         <div v-for="(value, key) in another" :key="key">
             {{ key }}: {{ value }}
         </div>
     </div>
-
-
-
-
-    <!-- <p>qrcode</p> -->
     <div id="qrcode"></div>
-
-    <!-- <button onclick="text_to_qr()">text_to_qr</button> -->
-
     <a href="" id="url_with_peer_id">url_with_peer_id</a>
     <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
     <p>参考にしたコードは https://glitch.com/~peerjs-video</p>
-    <!-- <button onclick="exe_connection()">exe_connection</button> -->
-    <!-- send_text_fn button -->
     <button @click="send_text_fn()">send_text_fn param sample</button>
     <button @click="send_text_fn('FOOOOOOOOOOOO')">send_text_fn my text</button>
-    <!-- <button @click="hoge('hogehgoe')">hoge</button> -->
-
     <div class="random_message"></div>
     <p>このURL(https://taroyanaka.github.io/peerjs_webrtc/client3.html)2枚のタブで別々に開く。片方に表示されたpeer id Aの英数文字列を、もう片方のタブのPeer ID BのinputにコピペしてConnect Bをクリック</p>
     peer id A<input class="result" type="text">
     <input id="connect-to-peer" type="text" placeholder="Peer ID B">
-    <!-- <button onclick="connect_to_peer_for_call()">Connect B</button> -->
-    <!-- <video autoplay></video> -->
 </div>
 </body>
 <script>
@@ -66,6 +60,8 @@ let fuga = null;
 const app = Vue.createApp({
 data() {
 return {
+    my_user_id: null,
+    receive_matched: null,
     matched: null,
     other_side_data_link: '',
     endpoint: 'http://localhost:8000',
@@ -98,15 +94,15 @@ return {
 }
 },
 watch: {
-    // any_array: {
-    //         handler(new_val, old_val) {
-    //     },
-    //     deep: true
-    // },
+// any_array: {
+//         handler(new_val, old_val) {
+//     },
+//     deep: true
+// },
 },
 mounted() {
     this.get_param();
-    this.read_matches();
+    this.fetch_read_matches();
 },
 beforeUpdated() {},
 updated() {},
@@ -142,24 +138,39 @@ get_param(){
     this.another = JSON.parse(new URL(window.location.href).searchParams.get('another'));
 },
 // read_matchesをfetchする関数
-async read_matches(){
+async fetch_read_matches(){
     const response = await fetch(this.endpoint + '/read_matches');
     const data = await response.json();
-    console.log(data);
-    // data.messageが存在するなら実行する
     if(data.message){
-        // data.messageのmatch_dataはJSON.parseしてmatchedに代入する
-        // hoge = data.message.match_data = JSON.parse(data.message.match_data);
-        // data.message[0].match_dataをdecodeuricomponentしてmatchedに代入する
         hoge = data.message[0];
         fuga = decodeURIComponent(hoge.match_data);
-        // hoge = decodeURIComponent(data.message[0].match_data);
-        // hoge = JSON.parse(hoge);
-        console.log("data.message", data.message);
         this.matched = data.message;
     }
     return data;
 },
+// read_matches_and_request_match_dataをfetchする関数
+//         const user_id = req.body.user_id;
+async fetch_read_matches_and_request_match_data(When_To_Send="match"){
+try {
+    // req.body.user_id;
+    console.log("my_user_id", this.my_user_id);
+    // this.my_user_idがnullの場合はエラー
+    this.my_user_id ? null : (()=>{throw new Error('my_user_id is null')})();
+    const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        body: JSON.stringify({
+            user_id: this.my_user_id,
+        }),
+    });
+    // receive_matchedに入れる
+    const data = await res.json(); console.log(data);
+    this.receive_matched = data.message;
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+
+
 
 }}).mount('#app');
 
@@ -169,7 +180,6 @@ const set_url_with_peer_id = () => {
     document.getElementById('url_with_peer_id').href =
         url_with_peer_id
          + '&peer_id_b=' + document.querySelector('.result').value;
-
 }
 const get_peer_id = () => {
     const url = new URL(window.location.href);
@@ -177,8 +187,6 @@ const get_peer_id = () => {
     if (peer_id){
         console.log("get id", peer_id);
         document.querySelector('#connect-to-peer').value = peer_id;
-
-        // exe_connection();
         connect_to_peer_for_call();
     }
 }
@@ -199,7 +207,6 @@ peer.on('error', (error) => {
 peer.on('call', (call) => {
     async function getMedia() {
         try {
-            // const stream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
             const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
             call.on('stream', renderVideo);
         } catch (err) {
@@ -211,12 +218,10 @@ peer.on('call', (call) => {
 let connect_to_peer_for_call = async () => {
     try {
     let peerId = document.querySelector('#connect-to-peer').value;
-//   const stream = await navigator.mediaDevices.getUserMedia({video: false, audio: true});
     const stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
     let call = peer.call(peerId, stream);
     call.on('stream', renderVideo);
 } catch (err) {
-    // エラーハンドリングを行います
 }
 };
 let my_side_global_conn = null;
@@ -225,7 +230,6 @@ peer.on('open', (id) => {
     document.querySelector('.result').value = id;
     my_side_global_conn = id;
     set_url_with_peer_id();
-    // make_url_to_a_href(id);
 });
 peer.on('connection', function(conn) {
     conn.on('data', function(data){
@@ -270,11 +274,7 @@ function send_text(Text="sample_text"){
 
     conn2.on('open', function() {
         try {
-            // conn2.send('Hello, peer! with send_text()');
-            // abcdefからランダムに選んでconn2.sendする
-            // conn2.send({random_message: abcdef[Math.floor(Math.random() * abcdef.length)]});
             if(my_side_global_conn && first_send === true){
-                // conn2.send({another_peer_id: document.querySelector('.result').value});
                 conn2.send({another_peer_id: my_side_global_conn});
                 first_send = false;
             }
@@ -288,12 +288,5 @@ function send_text(Text="sample_text"){
         console.error('Connection error:', err);
     });
 }
-
-
-// const text_to_qr = () => {
-//     const Text = url_with_peer_id + '?peer_id_b=' + document.querySelector('.result').value;
-//     console.log("text_to_qr", Text);
-//     new QRCode(document.getElementById("qrcode"), Text);    
-// }
 </script>    
 </html>
