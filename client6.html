@@ -23,10 +23,36 @@
     <button @click="fetch_read_matches_and_request_match_data()">fetch_read_matches_and_request_match_data</button>
 
 
+    receive_matched:
     <div v-if="receive_matched">
-        receive_matched: {{ receive_matched }}
+        <!-- receive_matchedのidだけ表示するv-for -->
+        <div v-for="(value, key) in receive_matched" :key="key">
+                {{ key }}: 
+                <!-- valueからvalue2をv-for -->
+                <div v-for="(value2, key2) in value" :key="key2">
+                    <div v-if="key2 === 'id'">
+                        {{ key2 }}: {{ value2 }}
+                    </div>
+                </div>
+        </div>
     </div>
-    {{ matched }}
+
+
+    <!-- matchedをv-for -->
+    <div v-if="matched">
+    <div v-for="(value, key) in matched" :key="key">
+        {{ key }} :
+        <!-- valueをv-for -->
+        <div v-for="(value2, key2) in value" :key="key2">
+            <div v-if="key2 !== 'match_data'">
+                {{ key2 }}: {{ value2 }}
+                <!-- key2がidの時はexe_update関数のボタンを表示 -->
+                <button v-if="key2 === 'id'" @click="exe_update(value2)">exe_update</button>
+            </div>
+        </div>
+    </div>
+    </div>
+
     <div>
         <div class="own">own</div>
         <div v-for="(value, key) in own" :key="key">
@@ -148,27 +174,52 @@ async fetch_read_matches(){
     }
     return data;
 },
-// read_matches_and_request_match_dataをfetchする関数
-//         const user_id = req.body.user_id;
-async fetch_read_matches_and_request_match_data(When_To_Send="match"){
+
+async fetch_read_matches_and_request_match_data(){
 try {
-    // req.body.user_id;
-    console.log("my_user_id", this.my_user_id);
-    // this.my_user_idがnullの場合はエラー
-    this.my_user_id ? null : (()=>{throw new Error('my_user_id is null')})();
-    const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({
-            user_id: this.my_user_id,
-        }),
-    });
-    // receive_matchedに入れる
+    console.log("my_user_id1", this.my_user_id);
+    const res = await fetch(this.endpoint + '/read_matches_and_request_match_data', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_id: this.my_user_id}),
+        });
+    console.log("my_user_id1.5", this.my_user_id);
     const data = await res.json(); console.log(data);
+    console.log("my_user_id2", this.my_user_id);
+    // const data = await res.json(); console.log(data);
+    console.log("my_user_id3", this.my_user_id);
     this.receive_matched = data.message;
+    console.log("my_user_id4", this.my_user_id);
     this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
 }
+},    
+
+
+
+
+// exe_update
+// app.post('/update_when_to_send_recieve', (req, res) => {
+        // const match_id = req.body.match_id;
+async exe_update(Match_Id){
+    try {
+        console.log("exe_update1", Match_Id);
+        const res = await fetch(this.endpoint + '/update_when_to_send_recieve', {method: 'POST',headers: {'Content-Type': 'application/json',},
+                body: JSON.stringify({match_id: Match_Id}),
+            });
+        console.log("exe_update2", Match_Id);
+        const data = await res.json(); console.log(data);
+        console.log("exe_update3", Match_Id);
+        // const data = await res.json(); console.log(data);
+        console.log("exe_update4", Match_Id);
+        this.receive_matched = data.message;
+        console.log("exe_update5", Match_Id);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
 },
+
+
 
 
 

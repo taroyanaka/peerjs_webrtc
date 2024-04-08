@@ -1680,18 +1680,26 @@ app.get('/read_matches', (req, res) => {
 }
 );
 
+
+
 // recieve_idが自分のuser_data_idで、when_to_sendがmatchのものを取得する
 app.post('/read_matches_and_request_match_data', (req, res) => {
     try {
+        console.log("1");
+        console.log(req.body.user_id);
         const user_id = req.body.user_id;
         const error_check_user_id = user_id;
         // user_idは1以上の整数でuser_datasに存在するidであることをチェック
         error_check_user_id === undefined || error_check_user_id === null || typeof error_check_user_id !== 'number' || error_check_user_id < 1 ? (()=>{throw new Error('user_idが不正です1')})() : null;
         db.prepare('SELECT id FROM user_datas WHERE id = ?').get(user_id) ? null : (()=>{throw new Error('user_idが不正です2')})();
+        console.log(req.body.user_id, 2);
 
         const RESULT = db2.prepare(`SELECT * FROM matches WHERE receive_id = ? AND when_to_send = 'match'`).all(user_id)
         ? db2.prepare(`SELECT * FROM matches WHERE receive_id = ? AND when_to_send = 'match'`).all(user_id)
         : (()=>{throw new Error('matchesテーブルからデータを取得できませんでした')})();
+
+        console.log(req.body.user_id, 3);
+
         res.status(200)
             .json({result: 'success',
                 status: 200,
