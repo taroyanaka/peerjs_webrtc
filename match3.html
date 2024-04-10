@@ -58,6 +58,52 @@
 </head>
 <body>
 <div id="app">
+    <div class="matcher">
+        <!-- fetch_read_matches button -->
+        <button @click="fetch_read_matches()">fetch_read_matches</button>
+        
+        <div>my_user_id: {{ my_user_id }}</div>
+        <input type="number" v-model="my_user_id" placeholder="my_user_id">
+        <!-- fetch_read_matches_and_request_match_dataのbutton -->
+        <button @click="fetch_read_matches_and_request_match_data()">fetch_read_matches_and_request_match_data</button>
+    
+    
+        receive_matched:
+        <div v-if="receive_matched">
+            <!-- receive_matchedのidだけ表示するv-for -->
+            <div v-for="(value, key) in receive_matched" :key="key">
+                    {{ key }}: 
+                    <!-- valueからvalue2をv-for -->
+                    <div v-for="(value2, key2) in value" :key="key2">
+                        <div v-if="key2 === 'id'">{{ key2 }}: {{ value2 }}
+                            <button @click="update_when_to_send_recieve(value2)">update_when_to_send_recieve</button>
+                        </div>
+                        <div v-if="key2 === 'receive_id'">{{ key2 }}: {{ value2 }}</div>
+                        <div v-if="key2 === 'send_id'">{{ key2 }}: {{ value2 }}</div>
+                        <div v-if="key2 === 'when_to_send'">{{ key2 }}: {{ value2 }}</div>
+                    </div>
+            </div>
+        </div>
+    
+    
+        <!-- matchedをv-for -->
+        <div v-if="matched">
+        <div v-for="(value, key) in matched" :key="key">
+            {{ key }} :
+            <!-- valueをv-for -->
+            <div v-for="(value2, key2) in value" :key="key2">
+                <div v-if="key2 !== 'match_data'">
+                    {{ key2 }}: {{ value2 }}
+                    <!-- key2がidの時はexe_update関数のボタンを表示 -->
+                    <button v-if="key2 === 'id'" @click="exe_update(value2)">exe_update</button>
+                </div>
+            </div>
+        </div>
+        </div>
+
+    </div>
+
+
     <!-- fetch_delete_matches button -->
     <button @click="fetch_delete_matches()">fetch_delete_matches</button>
 
@@ -166,6 +212,10 @@
 const app = Vue.createApp({
 data() {
 return {
+    my_user_id: null,
+    receive_matched: null,
+    matched: null,
+
     show_full_url: false,
     login_id_name: {id: 1, name: "a"},
     text_id_ary: [
@@ -250,6 +300,9 @@ if(this.web_data){
     this.current_user = this.web_data.message.find(user => user.user_data_id === Id_Name.id);
 }
 this.login_id_name = Id_Name;
+    if(Id_Name.id){
+    this.my_user_id = Id_Name.id;
+    }
 },
 update_online_status(){
     this.selected_user_LIST[0].online_status.start = new Date().toISOString();
@@ -635,12 +688,6 @@ try {
 },
 async fetch_insert_matches(When_To_Send="match", Match_User_Index=0) {
 try {
-    console.log(
-        "match_data", this.match_url_array[Match_User_Index],
-        "send_id", this.login_id_name.id,
-        "receive_id", this.matched_data_ary.message[Match_User_Index].user_data_id,
-        "when_to_send", When_To_Send
-    );
     const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
         body: JSON.stringify({
             match_data: this.match_url_array[Match_User_Index],
@@ -656,7 +703,7 @@ try {
 },
 async fetch_delete_matches() { // delete_matches // 開発用のAPIエンドポイント。あとで削除する。// sqlite> DELETE FROM matches;のapp.get
 try {
-    const res = await fetch(this.endpoint + '/delete_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
+    const res = await fetch(this.endpoint + '/delete_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
         body: null,
     });
     this.ERROR_MESSAGE = "";
@@ -664,8 +711,6 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
-
-
 
 redirect_and_fetch_insert_matches(match_url, Match_User_Index=0){
     this.fetch_insert_matches('match', Match_User_Index);
@@ -677,6 +722,49 @@ redirect_and_fetch_insert_matches(match_url, Match_User_Index=0){
 toggle_show_full_url() {
       this.show_full_url = !this.show_full_url;
 },
+
+
+
+async fetch_read_matches_and_request_match_data(){
+try {
+    const res = await fetch(this.endpoint + '/read_matches_and_request_match_data', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_id: this.my_user_id}),
+        });
+    const data = await res.json(); console.log(data);
+    // const data = await res.json(); console.log(data);
+    this.receive_matched = data.message;
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},    
+async exe_update(Match_Id){
+    try {
+        const res = await fetch(this.endpoint + '/update_when_to_send_recieve', {method: 'POST',headers: {'Content-Type': 'application/json',},
+                body: JSON.stringify({match_id: Match_Id}),
+            });
+        const data = await res.json(); console.log(data);
+        // const data = await res.json(); console.log(data);
+        this.receive_matched = data.message;
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+
+// read_matchesをfetchする関数
+async fetch_read_matches(){
+    const response = await fetch(this.endpoint + '/read_matches');
+    const data = await response.json();
+    if(data.message){
+        hoge = data.message[0];
+        fuga = decodeURIComponent(hoge.match_data);
+        this.matched = data.message;
+    }
+    return data;
+},
+
+
 }}).mount('#app');
 </script>
 </html>

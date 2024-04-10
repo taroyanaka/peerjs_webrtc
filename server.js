@@ -1748,18 +1748,18 @@ app.post('/update_when_to_send_recieve', (req, res) => {
 
 // 開発用のAPIエンドポイント。あとで削除する。
 // sqlite> DELETE FROM matches;のapp.get
-app.get('/delete_matches', (req, res) => {
-    try {
-        const RESULT = db2.prepare('DELETE FROM matches').run()
-        ? 'OK'
-        : (()=>{throw new Error('matchesテーブルのデータを削除できませんでした')})();
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
+app.post('/delete_matches', (req, res) => {
+try {
+    const RESULT = db2.prepare('DELETE FROM matches').run()
+    ? 'OK'
+    : (()=>{throw new Error('matchesテーブルのデータを削除できませんでした')})();
+    res.status(200)
+        .json({result: 'success',
+            status: 200,
+            message: RESULT
+        });
+} catch (error) {
+    res.status(400).json({status: 400, result: 'fail', message: error.message});
+}
 }
 );
