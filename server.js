@@ -1712,6 +1712,32 @@ app.post('/read_matches_and_request_match_data', (req, res) => {
 );
 
 
+// 指定したmatchesのidのmatch_dataを取得するエンドポイント
+app.post('/read_match_data', (req, res) => {
+    try {
+        const match_id = req.body.match_id;
+        const error_check_match_id = match_id;
+        // match_idは1以上の整数でmatchesに存在するidであることをチェック
+        error_check_match_id === undefined || error_check_match_id === null || typeof error_check_match_id !== 'number' || error_check_match_id < 1 ? (()=>{throw new Error('match_idが不正です1')})() : null;
+        db2.prepare('SELECT id FROM matches WHERE id = ?').get(match_id) ? null : (()=>{throw new Error('match_idが不正です2')})();
+
+        const RESULT = db2.prepare(`SELECT match_data FROM matches WHERE id = ?`).get(match_id)
+            ? db2.prepare(`SELECT match_data FROM matches WHERE id = ?`).get(match_id)
+            : (()=>{throw new Error('matchesテーブルからデータを取得できませんでした')})();
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+}
+);
+
+
+
 // /read_matches_and_request_match_dataで取得が完了したらwhen_to_sendをrecieveに変更するエンドポイント
 app.post('/update_when_to_send_recieve', (req, res) => {
     try {
@@ -1733,7 +1759,8 @@ app.post('/update_when_to_send_recieve', (req, res) => {
         res.status(200)
             .json({result: 'success',
                 status: 200,
-                message: RESULT
+                message: RESULT,
+                // message: RESULT2,
             });
     } catch (error) {
         res.status(400).json({status: 400, result: 'fail', message: error.message});

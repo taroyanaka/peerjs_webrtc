@@ -76,7 +76,8 @@
                     <!-- valueからvalue2をv-for -->
                     <div v-for="(value2, key2) in value" :key="key2">
                         <div v-if="key2 === 'id'">{{ key2 }}: {{ value2 }}
-                            <button @click="update_when_to_send_recieve(value2)">update_when_to_send_recieve</button>
+                            <!-- <button @click="fetch_update_when_to_send_recieve(value2)">fetch_update_when_to_send_recieve</button> -->
+                            <button @click="fetch_read_match_data(value2)">fetch_read_match_data</button>
                         </div>
                         <div v-if="key2 === 'receive_id'">{{ key2 }}: {{ value2 }}</div>
                         <div v-if="key2 === 'send_id'">{{ key2 }}: {{ value2 }}</div>
@@ -95,7 +96,7 @@
                 <div v-if="key2 !== 'match_data'">
                     {{ key2 }}: {{ value2 }}
                     <!-- key2がidの時はexe_update関数のボタンを表示 -->
-                    <button v-if="key2 === 'id'" @click="exe_update(value2)">exe_update</button>
+                    <!-- <button v-if="key2 === 'id'" @click="exe_update(value2)">exe_update</button> -->
                 </div>
             </div>
         </div>
@@ -212,6 +213,7 @@
 const app = Vue.createApp({
 data() {
 return {
+    sample_data_ary: [],
     my_user_id: null,
     receive_matched: null,
     matched: null,
@@ -737,19 +739,78 @@ try {
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
 }
-},    
-async exe_update(Match_Id){
-    try {
-        const res = await fetch(this.endpoint + '/update_when_to_send_recieve', {method: 'POST',headers: {'Content-Type': 'application/json',},
-                body: JSON.stringify({match_id: Match_Id}),
-            });
-        const data = await res.json(); console.log(data);
-        // const data = await res.json(); console.log(data);
-        this.receive_matched = data.message;
-        this.ERROR_MESSAGE = "";
-    } catch (error) {
-        this.ERROR_MESSAGE = error.message;
-    }
+},
+
+// 指定したmatchesのidのmatch_dataを取得するエンドポイント
+// app.post('/read_match_data', (req, res) => {
+// const match_id = req.body.match_id;
+async fetch_read_match_data(Match_Id){
+try {
+    console.log(Match_Id);
+    const res = await fetch(this.endpoint + '/read_match_data', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        body: JSON.stringify({match_id: Match_Id}),
+    });
+    const data = await res.json(); console.log(data);
+    const match_data_chunk = data.message;
+    console.log(match_data_chunk);
+    const match_data_url = decodeURIComponent(match_data_chunk.match_data);
+    console.log(match_data_url);
+    this.sample_data_ary.push(
+        {
+            all: match_data_chunk,
+            send_id: match_data_chunk.send_id,
+            receive_id: match_data_chunk.receive_id,
+            when_to_send: match_data_chunk.when_to_send,
+            match_data: match_data_chunk.match_data,
+        }
+    )
+    const match_data_url2 = decodeURIComponent(this.sample_data_ary[0].all.match_data);
+    if(match_data_url2 === undefined || match_data_url2 === null || match_data_url2 === "" ||
+        !match_data_url2.match(/^(http|https):\/\/([-\w]+\.)+[-\w]+(\/[-\w./?%&=]*)?$/)
+            ) throw new Error('match_data_url2が不正です');
+
+    console.log("match_data_url2", match_data_url2);
+
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+
+
+async fetch_update_when_to_send_recieve(Match_Id){
+try {
+    const res = await fetch(this.endpoint + '/update_when_to_send_recieve', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({match_id: Match_Id}),
+        });
+    const data = await res.json(); console.log(data);
+    // const data = await res.json(); console.log(data);
+    const match_data_chunk = data.message;
+    console.log(match_data_chunk);
+    const match_data_url = decodeURIComponent(match_data_chunk.match_data);
+    console.log(match_data_url);
+    sample_data_ary.push(
+        {
+            all: match_data_chunk,
+            send_id: match_data_chunk.send_id,
+            receive_id: match_data_chunk.receive_id,
+            when_to_send: match_data_chunk.when_to_send,
+            match_data: match_data_chunk.match_data,
+        }
+    )
+    // 別タブでURLを開く
+    if(match_data_url === undefined || match_data_url === null || match_data_url === "" ||
+        // url形式かどうかのチェック
+        !match_data_url.match(/^(http|https):\/\/([-\w]+\.)+[-\w]+(\/[-\w./?%&=]*)?$/)
+            ) throw new Error('match_data_urlが不正です');
+    // window.open(match_data_url, '_blank');
+    console.log(match_data_url);
+
+
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
 },
 
 // read_matchesをfetchする関数

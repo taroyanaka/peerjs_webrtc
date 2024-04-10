@@ -17,42 +17,6 @@
 </head>
 <body>
 <div id="app">
-    <div>my_user_id: {{ my_user_id }}</div>
-    <input type="number" v-model="my_user_id" placeholder="my_user_id">
-    <!-- fetch_read_matches_and_request_match_dataのbutton -->
-    <button @click="fetch_read_matches_and_request_match_data()">fetch_read_matches_and_request_match_data</button>
-
-
-    receive_matched:
-    <div v-if="receive_matched">
-        <!-- receive_matchedのidだけ表示するv-for -->
-        <div v-for="(value, key) in receive_matched" :key="key">
-                {{ key }}: 
-                <!-- valueからvalue2をv-for -->
-                <div v-for="(value2, key2) in value" :key="key2">
-                    <div v-if="key2 === 'id'">
-                        {{ key2 }}: {{ value2 }}
-                    </div>
-                </div>
-        </div>
-    </div>
-
-
-    <!-- matchedをv-for -->
-    <div v-if="matched">
-    <div v-for="(value, key) in matched" :key="key">
-        {{ key }} :
-        <!-- valueをv-for -->
-        <div v-for="(value2, key2) in value" :key="key2">
-            <div v-if="key2 !== 'match_data'">
-                {{ key2 }}: {{ value2 }}
-                <!-- key2がidの時はexe_update関数のボタンを表示 -->
-                <button v-if="key2 === 'id'" @click="exe_update(value2)">exe_update</button>
-            </div>
-        </div>
-    </div>
-    </div>
-
     <div>
         <div class="own">own</div>
         <div v-for="(value, key) in own" :key="key">
@@ -162,7 +126,25 @@ get_param(){
     // this.another = new URL(window.location.href).searchParams.get('another');
     // this.own = decodeURIComponent(new URL(window.location.href).searchParams.get('own'));
     this.another = JSON.parse(new URL(window.location.href).searchParams.get('another'));
+
+    // &before_recieve=true ならば fetch_update_when_to_send_recieveを実行
+    if(new URL(window.location.href).searchParams.get('before_recieve') === 'true'){
+        console.log("before_recieve");
+    }
+
 },
+async fetch_update_when_to_send_recieve(Match_Id){
+try {
+    const res = await fetch(this.endpoint + '/update_when_to_send_recieve', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({match_id: Match_Id}),
+        });
+    const data = await res.json(); console.log(data);
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+
 // read_matchesをfetchする関数
 async fetch_read_matches(){
     const response = await fetch(this.endpoint + '/read_matches');
