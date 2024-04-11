@@ -64,11 +64,23 @@
 </head>
 <body>
 <div id="app">
+    <!-- matche_doneには
+        all_matched
+        (
+            whenがrecieveかつ、
+            send_idかrecieve_idに自分のID(login_id_name.id)が含まれる結果
+        )
+        を表示 -->
+        <!-- all_matchedをfetchするbutton -->
+    <button @click="fetch_read_recieved_anyone_own_matches()">fetch_read_recieved_anyone_own_matches</button>
+    all_matched:
+    <div class="matche_done">
+        {{ all_matched }}
+    </div>
     <div class="matcher">
         <!-- fetch_read_matches button -->
         <button @click="fetch_read_matches()">fetch_read_matches</button>
         
-    
         receive_matched:
         <div v-if="receive_matched">
             <!-- receive_matchedのidだけ表示するv-for -->
@@ -85,9 +97,29 @@
                     </div>
             </div>
         </div>
+
+        <!-- send_matchedをfetchする -->
+        <button @click="fetch_read_send_matches()">fetch_read_send_matches</button>
+        send_matched:
+        <div v-if="send_matched">
+            <!-- send_matchedのidだけ表示するv-for -->
+            <div v-for="(value, key) in send_matched" :key="key">
+                    {{ key }}: 
+                    <!-- valueからvalue2をv-for -->
+                    <div v-for="(value2, key2) in value" :key="key2">
+                        <div v-if="key2 === 'id'">{{ key2 }}: {{ value2 }}
+                            <!-- <button @click="fetch_change_match_to_recieve(value2)">fetch_change_match_to_recieve</button> -->
+                        </div>
+                        <div v-if="key2 === 'receive_id'">{{ key2 }}: {{ value2 }}</div>
+                        <div v-if="key2 === 'send_id'">{{ key2 }}: {{ value2 }}</div>
+                        <div v-if="key2 === 'when_to_send'">{{ key2 }}: {{ value2 }}</div>
+                    </div>
+            </div>
+        </div>
+
     
-        <!-- fetch_read_matches_and_request_match_dataのbutton -->
-        <button @click="fetch_read_matches_and_request_match_data()">fetch_read_matches_and_request_match_data</button>
+        <!-- fetch_read_recieve_matchesのbutton -->
+        <button @click="fetch_read_recieve_matches()">fetch_read_recieve_matches</button>
         matched:
         <div v-if="matched">
         <div v-for="(value, key) in matched" :key="key">
@@ -211,7 +243,11 @@ data() {
 return {
     url_for_reciver_user: '',
     sample_data_ary: [],
+
     receive_matched: null,
+    send_matched: null,
+    all_matched: null,
+
     matched: null,
 
     show_full_url: false,
@@ -293,6 +329,19 @@ updated() {
     
 },
 methods: {
+async fetch_read_recieved_anyone_own_matches(){
+    try {
+        if (!this.login_id_name.id) throw new Error("login_id_name.idがありません");
+        const res = await fetch(this.endpoint + '/read_recieved_anyone_own_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_id: this.login_id_name.id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.all_matched = data.message;
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
 async fetch_change_match_to_recieve(Match_Id){
     try {
         // const match_id = req.body.match_id;
@@ -728,9 +777,9 @@ toggle_show_full_url() {
 
 
 
-async fetch_read_matches_and_request_match_data(){
+async fetch_read_recieve_matches(){
 try {
-    const res = await fetch(this.endpoint + '/read_matches_and_request_match_data', {method: 'POST',headers: {'Content-Type': 'application/json',},
+    const res = await fetch(this.endpoint + '/read_recieve_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({user_id: this.login_id_name.id}),
         });
     const data = await res.json(); console.log(data);
@@ -741,6 +790,22 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
+
+// // send_idが自分のuser_data_idでrecieveの状態のmatchを取得するエンドポイントをfetchする関数
+async fetch_read_send_matches(){
+try {
+    const res = await fetch(this.endpoint + '/read_send_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_id: this.login_id_name.id}),
+        });
+    const data = await res.json(); console.log(data);
+    // const data = await res.json(); console.log(data);
+    this.send_matched = data.message;
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+
 
 
 // read_matchesをfetchする関数
