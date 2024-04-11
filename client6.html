@@ -17,24 +17,8 @@
 </head>
 <body>
 <div id="app">
-    <div>
-        <div v-if="before_recieve">before_recieve
-            <!-- input number -->
-            <input type="number" name="" id="" v-model="number_for_fetch_update">
-            <button @click="fetch_update_when_to_send_recieve(number_for_fetch_update)">fetch_update_when_to_send_recieve</button>
-        </div>
 
-        <div class="own">own</div>
-        <div v-for="(value, key) in own" :key="key">
-            {{ key }}: {{ value }}
-        </div>
-    </div>
-    <div>
-        <div class="another">another</div>
-        <div v-for="(value, key) in another" :key="key">
-            {{ key }}: {{ value }}
-        </div>
-    </div>
+
     <div id="qrcode"></div>
     <a href="" id="url_with_peer_id">url_with_peer_id</a>
     <p>サーバーサイドのコードは https://glitch.com/edit/#!/cypress-serious-bird?path=server.js</p>
@@ -56,9 +40,7 @@ let fuga = null;
 const app = Vue.createApp({
 data() {
 return {
-    number_for_fetch_update: 0,
-    before_recieve: null,
-
+    sender_or_reciver: '', // 'sender' or 'reciver'
 
     my_user_id: null,
     receive_matched: null,
@@ -66,30 +48,6 @@ return {
     other_side_data_link: '',
     endpoint: 'http://localhost:8000',
     // endpoint: 'https://cotton-concrete-catsup.glitch.me',
-    own: {
-        user_data_id: 5,
-        user_name: 'a',
-        weight_num: 1,
-        user_type: 'company',
-        offline_online: 1,
-        skills_id_array: 12,
-        skills: [
-            {id: 1, skill: 'STR'},
-            {id: 2, skill: 'STR2'},
-        ],
-    },
-    another: {
-        user_data_id: 6,
-        user_name: 'B',
-        weight_num: 1,
-        user_type: 'customer',
-        offline_online: 1,
-        skills_id_array: 12,
-        skills: [
-            {id: 1, skill: 'STR'},
-            {id: 2, skill: 'STR2'},
-        ],
-    },
 
 }
 },
@@ -128,33 +86,23 @@ parse_url(){
     }
 },
 get_param(){
-    // get_paramでは、下記のURLをそれぞれのinput:textに代入される
-    // http://localhost:8000/client5.html?own={"user_data_id":5,"user_name":"a","weight_num":1,"user_type":"company","offline_online":1,"skills_id_array":"12","skills":[{"id":12,"skill":"D","created_at":"2024-03-27T09:01:28.504Z","updated_at":"2024-03-27T09:01:28.504Z"}]}&another={"user_data_id":6,"user_name":"B","weight_num":1,"user_type":"customer","offline_online":1,"skills_id_array":"12"}
-    this.own = JSON.parse(new URL(window.location.href).searchParams.get('own'));
-    this.another = JSON.parse(new URL(window.location.href).searchParams.get('another'));
-
-    // &before_recieve=true ならば fetch_update_when_to_send_recieveを実行
-    if(new URL(window.location.href).searchParams.get('before_recieve') === 'true'){
-        this.before_recieve = true;
-        console.log("before_recieve");
-        console.log(
-            "this.own", this.own,
-            "this.another", this.another,
-        )
-        // this.ownとthis.anotherをスワップする
-        const tmp = this.to_ary(this.own);
-        this.own = this.to_ary(this.another);
-        this.another = tmp;
-        console.log("swapped");
-        console.log(
-            "this.own", this.own,
-            "this.another", this.another,
-        );
-        // &match_id= の値を取得して、number_for_fetch_updateに代入
-        if(new URL(window.location.href).searchParams.get('match_id')){
-        this.number_for_fetch_update = Number(new URL(window.location.href).searchParams.get('match_id'));
-        };
-    };
+    try {
+            // get_paramで以下のようなパラメータを取得する
+    // this.match_id,this.send_id,this.recieve_id,に取得したparametersを代入後。サーバーのmatchesをfetchする
+// 'sender' 'http://localhost:8000/client6.html?match_id=1&send_id=5&recieve_id=7&sender_or_reciver=sender'
+// 'reciver' 'http://localhost:8000/client6.html?match_id=1&send_id=5&recieve_id=7&sender_or_reciver=reciver'
+    const url = new URL(window.location.href);
+    this.match_id = url.searchParams.get('match_id') ? url.searchParams.get('match_id') : (() => {throw new Error('match_id is not found')})();
+    this.send_id = url.searchParams.get('send_id') ? url.searchParams.get('send_id') : (() => {throw new Error('send_id is not found')})();
+    this.recieve_id = url.searchParams.get('recieve_id') ? url.searchParams.get('recieve_id') : (() => {throw new Error('recieve_id is not found')})();
+    this.sender_or_reciver = url.searchParams.get('sender_or_reciver') ? url.searchParams.get('sender_or_reciver') : (() => {throw new Error('sender_or_reciver is not found')})();
+    console.log("this.match_id", this.match_id);
+    console.log("this.send_id", this.send_id);
+    console.log("this.recieve_id", this.recieve_id);
+    console.log("this.sender_or_reciver", this.sender_or_reciver);
+    } catch (error) {
+        console.log(error);
+    }
 },
 async fetch_update_when_to_send_recieve(Match_Id){
 try {

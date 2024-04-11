@@ -5,7 +5,8 @@ CREATE TABLE matches (
   send_id INTEGER NOT NULL,
   receive_id INTEGER NOT NULL,
   when_to_send TEXT NOT NULL,
-  peer_id TEXT,
+  sender_peer_id TEXT,
+  receiver_peer_id TEXT,
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL
 );

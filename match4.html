@@ -75,7 +75,23 @@
     <button @click="fetch_read_recieved_anyone_own_matches()">fetch_read_recieved_anyone_own_matches</button>
     all_matched:
     <div class="matche_done">
-        {{ all_matched }}
+        <!-- receive_matchedのidだけ表示するv-for -->
+        <div v-for="(value, key) in all_matched" :key="key">
+            {{ key }}: 
+            <!-- valueからvalue2をv-for -->
+            <div v-for="(value2, key2) in value" :key="key2">
+                <div v-if="key2 === 'id'">{{ key2 }}: {{ value2 }}
+                    <!-- make_chat_url_with_get_param -->
+                    match_id: {{ value2 }} send_id: {{ value.send_id }} receive_id: {{ value.receive_id }}
+                    <button @click="make_chat_url_with_get_param(value2, value.send_id, value.receive_id)">make_chat_url_with_get_param</button>
+
+                </div>
+                <div v-if="key2 === 'receive_id'">{{ key2 }}: {{ value2 }}</div>
+                <div v-if="key2 === 'send_id'">{{ key2 }}: {{ value2 }}</div>
+                <div v-if="key2 === 'when_to_send'">{{ key2 }}: {{ value2 }}</div>
+            </div>
+    </div>
+
     </div>
     <div class="matcher">
         <!-- fetch_read_matches button -->
@@ -329,6 +345,29 @@ updated() {
     
 },
 methods: {
+make_chat_url_with_get_param(Match_Id, Send_Id, Recieve_Id){
+    console.log(Match_Id, Send_Id, Recieve_Id);
+    try{
+        if (!Match_Id) throw new Error("Match_Idがありません");
+        if (!this.all_matched) throw new Error("all_matchedがありません");
+        // Send_IdとRecieve_Idがパラメーターとして受け取ってるか確認
+        if (!Send_Id || !Recieve_Id) throw new Error("Send_IdかRecieve_Idがありません");
+        // this.login_id_name.idを確認
+        if (!this.login_id_name.id) throw new Error("login_id_name.idがありません");
+        // all_matchedの中にMatch_Idがあるか確認。そのmatch_idのsend_idとrecieve_idを取得。login_id_name.idがsend_idであれば'sender'、recieve_idであれば'reciver'を取得
+        const Sender_Or_Reciver = this.all_matched.find(match => match.id === Match_Id).send_id === this.login_id_name.id ? 'sender' : 'reciver';
+        // urlにmatch_idとsend_idとrecive_idとsender_or_reciverをget paramで付与して返す
+        const chat_url = this.endpoint + '/client6.html?match_id=' + Match_Id + '&send_id=' + Send_Id + '&recieve_id=' + Recieve_Id + '&sender_or_reciver=' + Sender_Or_Reciver;
+        console.log(Match_Id, Send_Id, Recieve_Id, Sender_Or_Reciver, chat_url);
+        // return chat_url;
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+
+
+
+
 async fetch_read_recieved_anyone_own_matches(){
     try {
         if (!this.login_id_name.id) throw new Error("login_id_name.idがありません");
