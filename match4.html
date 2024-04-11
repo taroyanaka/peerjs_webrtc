@@ -64,6 +64,7 @@
 </head>
 <body>
 <div id="app">
+    {{ chat_url }}
     <!-- matche_doneには
         all_matched
         (
@@ -257,6 +258,7 @@
 const app = Vue.createApp({
 data() {
 return {
+    chat_url: '',
     url_for_reciver_user: '',
     sample_data_ary: [],
 
@@ -359,6 +361,7 @@ make_chat_url_with_get_param(Match_Id, Send_Id, Recieve_Id){
         // urlにmatch_idとsend_idとrecive_idとsender_or_reciverをget paramで付与して返す
         const chat_url = this.endpoint + '/client6.html?match_id=' + Match_Id + '&send_id=' + Send_Id + '&recieve_id=' + Recieve_Id + '&sender_or_reciver=' + Sender_Or_Reciver;
         console.log(Match_Id, Send_Id, Recieve_Id, Sender_Or_Reciver, chat_url);
+        this.chat_url = chat_url;
         // return chat_url;
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
