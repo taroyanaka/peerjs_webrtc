@@ -1623,11 +1623,11 @@ try {
     req.body.when_to_send === 'match' || req.body.when_to_send === 'recieve' ? null : (()=>{throw new Error('when_to_sendはmatchかrecieveのみ許可されています4')})();
 
     // エラーチェックmatch_dataは必須。空文字列の場合はエラー。エスケープして保存
-    const match_data = req.body.match_data;
-    const error_check_match_data = match_data;
-    error_check_match_data === undefined || error_check_match_data === null || error_check_match_data.length === 0 ? (()=>{throw new Error('match_dataが空です')})() : null;
+    // const match_data = req.body.match_data;
+    // const error_check_match_data = match_data;
+    // error_check_match_data === undefined || error_check_match_data === null || error_check_match_data.length === 0 ? (()=>{throw new Error('match_dataが空です')})() : null;
     // 1000文字以上の場合はエラー
-    error_check_match_data.length > 1000 ? (()=>{throw new Error('match_dataが1000文字を超えています')})() : null;
+    // error_check_match_data.length > 1000 ? (()=>{throw new Error('match_dataが1000文字を超えています')})() : null;
     // send_idとreceive_idは必須。空文字列の場合はエラー。エスケープして保存。整数で1以上の場合のみ許可
     const error_check_send_id = req.body.send_id;
     const error_check_receive_id = req.body.receive_id;
@@ -1638,13 +1638,13 @@ try {
     // receive_idがdbにuser_data_idが存在するかチェック
     db.prepare('SELECT id FROM user_datas WHERE id = ?').get(req.body.receive_id) ? null : (()=>{throw new Error('receive_idが不正です')})();
 
-    const escaped_match_data = encodeURIComponent(match_data);
+    // const escaped_match_data = encodeURIComponent(match_data);
 
     const response = db2.prepare(`
-        INSERT INTO matches (match_data, send_id, receive_id, when_to_send, created_at, updated_at)
-            VALUES (@match_data, @send_id, @receive_id, @when_to_send, @created_at, @updated_at)
+        INSERT INTO matches (send_id, receive_id, when_to_send, created_at, updated_at)
+            VALUES (@send_id, @receive_id, @when_to_send, @created_at, @updated_at)
     `).run({
-        match_data: escaped_match_data,
+        // match_data: escaped_match_data,
         // match_data: match_data,
         send_id: req.body.send_id,
         receive_id: req.body.receive_id,
@@ -1711,30 +1711,6 @@ app.post('/read_matches_and_request_match_data', (req, res) => {
 }
 );
 
-
-// 指定したmatchesのidのmatch_dataを取得するエンドポイント
-app.post('/read_match_data', (req, res) => {
-    try {
-        const match_id = req.body.match_id;
-        const error_check_match_id = match_id;
-        // match_idは1以上の整数でmatchesに存在するidであることをチェック
-        error_check_match_id === undefined || error_check_match_id === null || typeof error_check_match_id !== 'number' || error_check_match_id < 1 ? (()=>{throw new Error('match_idが不正です1')})() : null;
-        db2.prepare('SELECT id FROM matches WHERE id = ?').get(match_id) ? null : (()=>{throw new Error('match_idが不正です2')})();
-
-        const RESULT = db2.prepare(`SELECT match_data FROM matches WHERE id = ?`).get(match_id)
-            ? db2.prepare(`SELECT match_data FROM matches WHERE id = ?`).get(match_id)
-            : (()=>{throw new Error('matchesテーブルからデータを取得できませんでした')})();
-
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-}
-);
 
 
 

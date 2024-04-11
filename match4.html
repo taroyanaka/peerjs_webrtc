@@ -1,9 +1,15 @@
 <!DOCTYPE html>
+<!-- a sideがb sideにmatch(when: match) => b sideがa sideにmatch(when: recieve) =>
+    recieve状態であればa,b双方にURL発行 => 
+    ※※※※※※仕様検討中: match4からclient6に自動的にリダイレクト(matchesにrecive状態のレコードがある場合。)
+    ※※※※※※仕様検討中: client6に自動リダイレクト後発行されたpeer_idをmatchesに挿入
+    => 片方がchatにログイン(matchをwaitingに,peer_idをmatchesに挿入) => 対向にwaitingであることが表示 =>
+    両方がchatにログイン(matchesからpeer_idを取得,matchをchattingに) => chat開始 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>match4</title>
     <script src="./vue@3.2.36.global.prod.js"></script>
     <script src="./peerjs.1.5.2.min.js"></script>
     <style>
@@ -56,18 +62,12 @@
         }
     </style>
 </head>
-<!-- a sideがb sideにmatch(when: match) => b sideがa sideにmatch(when: recieve) =>
-    recieve状態であればa,b双方にURL発行 => 片方がchatにログイン(matchをwaitingに,peer_idをmatchesに挿入) => 対向にwaitingであることが表示 =>
-    両方がchatにログイン(matchesからpeer_idを取得,matchをchattingに) => chat開始 -->
 <body>
 <div id="app">
     <div class="matcher">
         <!-- fetch_read_matches button -->
         <button @click="fetch_read_matches()">fetch_read_matches</button>
         
-        <!-- fetch_read_matches_and_request_match_dataのbutton -->
-        <button @click="fetch_read_matches_and_request_match_data()">fetch_read_matches_and_request_match_data</button>
-    
     
         receive_matched:
         <div v-if="receive_matched">
@@ -77,12 +77,7 @@
                     <!-- valueからvalue2をv-for -->
                     <div v-for="(value2, key2) in value" :key="key2">
                         <div v-if="key2 === 'id'">{{ key2 }}: {{ value2 }}
-                            <!-- <button @click="fetch_update_when_to_send_recieve(value2)">fetch_update_when_to_send_recieve</button> -->
-                            <button @click="fetch_read_match_data(value2)">fetch_read_match_data</button>
-                            <!-- href -->
-                            <a :href="url_for_reciver_user">url_for_reciver_user</a>
-                            {{ url_for_reciver_user }}
-
+                            <button @click="fetch_change_match_to_recieve(value2)">fetch_change_match_to_recieve</button>
                         </div>
                         <div v-if="key2 === 'receive_id'">{{ key2 }}: {{ value2 }}</div>
                         <div v-if="key2 === 'send_id'">{{ key2 }}: {{ value2 }}</div>
@@ -91,30 +86,26 @@
             </div>
         </div>
     
-    
-        <!-- matchedをv-for -->
+        <!-- fetch_read_matches_and_request_match_dataのbutton -->
+        <button @click="fetch_read_matches_and_request_match_data()">fetch_read_matches_and_request_match_data</button>
+        matched:
         <div v-if="matched">
         <div v-for="(value, key) in matched" :key="key">
             {{ key }} :
             <!-- valueをv-for -->
             <div v-for="(value2, key2) in value" :key="key2">
-                <div v-if="key2 !== 'match_data'">
                     {{ key2 }}: {{ value2 }}
                     <!-- key2がidの時はexe_update関数のボタンを表示 -->
                     <!-- <button v-if="key2 === 'id'" @click="exe_update(value2)">exe_update</button> -->
-                </div>
             </div>
         </div>
         </div>
-
     </div>
-
 
     <!-- fetch_delete_matches button -->
     <button @click="fetch_delete_matches()">fetch_delete_matches</button>
-
             <!-- this block for debug -->
-            <div v-if="match_url_array && login_id_name && matched_data_ary && matched_data_ary.message[0] && matched_data_ary.message[0].user_data_id">
+            <div v-if="login_id_name && matched_data_ary && matched_data_ary.message[0] && matched_data_ary.message[0].user_data_id">
                 {{ 
                 matched_data_ary.message
                     .map((a, IDX) => {
@@ -126,13 +117,13 @@
                 }}
             </div>
 <button @click="login_as()">login_as</button>
-<button @click="login_as({id: 7, name: 'C'})">login_as({id: 7, name: 'C'})</button>
 <div>{{login_id_name}}</div>
+<button @click="login_as({id: 7, name: 'C'})">login_as({id: 7, name: 'C'})</button>
 <div v-if="web_data && matched_data_ary">
-    <div v-for="match_url, match_url_idx in match_url_array">
-        <button @click="redirect_and_fetch_insert_matches(match_url, match_url_idx)">redirect_and_fetch_insert_matches</button>
-        <button @click="toggle_show_full_url">toggle_show_full_url</button>
-        <div v-show="show_full_url">{{ match_url }}</div>
+    <div v-for="match_data, match_data_idx in matched_data_ary.message">
+        <!-- {{ match_data_idx }} -->
+        {{ match_data }}
+        <button @click="fetch_insert_matches('match', match_data.user_data_id)">fetch_insert_matches</button>
     </div>
 </div>
 {{ERROR_MESSAGE}}
@@ -302,6 +293,18 @@ updated() {
     
 },
 methods: {
+async fetch_change_match_to_recieve(Match_Id){
+    try {
+        // const match_id = req.body.match_id;
+        const res = await fetch(this.endpoint + '/update_when_to_send_recieve', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({match_id: Match_Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
 login_as(Id_Name={id: 5, name: "a"}){
 if(this.web_data){
     this.current_user = this.web_data.message.find(user => user.user_data_id === Id_Name.id);
@@ -690,16 +693,15 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
-async fetch_insert_matches(When_To_Send="match", Match_User_Index=0) {
+async fetch_insert_matches(When_To_Send="match", Match_User_Id) {
 try {
     // this.login_id_name.idがundefinedやnullや0や文字列や配列の場合はエラースロー
     if(this.login_id_name.id === undefined || this.login_id_name.id === null || this.login_id_name.id === 0 || typeof this.login_id_name.id !== 'number') throw new Error('login_id_name.idが不正です');
     const send_id_of_user_data_id = this.login_id_name.id;
     const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
         body: JSON.stringify({
-            match_data: this.match_url_array[Match_User_Index],
             send_id: send_id_of_user_data_id,
-            receive_id: this.matched_data_ary.message[Match_User_Index].user_data_id,
+            receive_id: Match_User_Id,
             when_to_send: When_To_Send
         }),
     });
@@ -719,13 +721,7 @@ try {
 }
 },
 
-redirect_and_fetch_insert_matches(match_url, Match_User_Index=0){
-    this.fetch_insert_matches('match', Match_User_Index);
-    if(this.ERROR_MESSAGE){
-        return;
-    }
-    // window.location.href = match_url;
-},
+
 toggle_show_full_url() {
       this.show_full_url = !this.show_full_url;
 },
@@ -745,49 +741,6 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
-
-// 指定したmatchesのidのmatch_dataを取得するエンドポイント
-// app.post('/read_match_data', (req, res) => {
-// const match_id = req.body.match_id;
-async fetch_read_match_data(Match_Id){
-try {
-    console.log(Match_Id);
-    const res = await fetch(this.endpoint + '/read_match_data', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({match_id: Match_Id}),
-    });
-    const data = await res.json(); console.log(data);
-    const match_data_chunk = data.message;
-    console.log(match_data_chunk);
-    const match_data_url = decodeURIComponent(match_data_chunk.match_data);
-    console.log(match_data_url);
-    this.sample_data_ary.push(
-        {
-            all: match_data_chunk,
-            send_id: match_data_chunk.send_id,
-            receive_id: match_data_chunk.receive_id,
-            when_to_send: match_data_chunk.when_to_send,
-            match_data: match_data_chunk.match_data,
-        }
-    )
-    const match_data_url2 = decodeURIComponent(this.sample_data_ary[0].all.match_data);
-
-
-// stringのMatch_Id
-const str_Match_Id = String(Match_Id);
-    const match_data_url3 = match_data_url2 + "&before_recieve=true" + "&match_id=" + str_Match_Id;
-    this.sample_data_ary[0] = match_data_url3;
-    console.log(match_data_url3);
-    if(match_data_url3){
-        this.url_for_reciver_user = match_data_url3;
-    }
-
-
-    this.ERROR_MESSAGE = "";
-} catch (error) {
-    this.ERROR_MESSAGE = error.message;
-}
-},
-
 
 
 // read_matchesをfetchする関数
