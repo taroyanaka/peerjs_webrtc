@@ -40,6 +40,9 @@ let fuga = null;
 const app = Vue.createApp({
 data() {
 return {
+    match_id: 0,
+    send_id: 0,
+    recieve_id: 0,
     sender_or_reciver: '', // 'sender' or 'reciver'
 
     my_user_id: null,
@@ -65,6 +68,16 @@ mounted() {
 beforeUpdated() {},
 updated() {},
 methods: {
+async fetch_update_when_to_send_waiting(peer_id_when_get_open){
+    const param_data = [
+        peer_id_when_get_open,
+        this.match_id,
+        this.send_id,
+        this.recieve_id,
+        this.sender_or_reciver,
+    ];
+    console.log("fetch_update_when_to_send_waiting()", param_data);
+},
 send_text_fn(Text="sample_text"){
     console.log("send_text_fn");
     send_text(Text);
@@ -237,6 +250,7 @@ peer.on('open', (id) => {
     document.querySelector('.result').value = id;
     my_side_global_conn = id;
     set_url_with_peer_id();
+    app.fetch_update_when_to_send_waiting(id);
 });
 peer.on('connection', function(conn) {
     conn.on('data', function(data){

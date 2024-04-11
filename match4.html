@@ -359,7 +359,7 @@ make_chat_url_with_get_param(Match_Id, Send_Id, Recieve_Id){
         // all_matchedの中にMatch_Idがあるか確認。そのmatch_idのsend_idとrecieve_idを取得。login_id_name.idがsend_idであれば'sender'、recieve_idであれば'reciver'を取得
         const Sender_Or_Reciver = this.all_matched.find(match => match.id === Match_Id).send_id === this.login_id_name.id ? 'sender' : 'reciver';
         // urlにmatch_idとsend_idとrecive_idとsender_or_reciverをget paramで付与して返す
-        const chat_url = this.endpoint + '/client6.html?match_id=' + Match_Id + '&send_id=' + Send_Id + '&recieve_id=' + Recieve_Id + '&sender_or_reciver=' + Sender_Or_Reciver;
+        const chat_url = 'http://127.0.0.1:3000' + '/client6.html?match_id=' + Match_Id + '&send_id=' + Send_Id + '&recieve_id=' + Recieve_Id + '&sender_or_reciver=' + Sender_Or_Reciver;
         console.log(Match_Id, Send_Id, Recieve_Id, Sender_Or_Reciver, chat_url);
         this.chat_url = chat_url;
         // return chat_url;
