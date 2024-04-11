@@ -1746,8 +1746,6 @@ app.post('/read_recieved_anyone_own_matches', (req, res) => {
 );
 
 
-
-
 // /read_matches_and_request_match_dataで取得が完了したらwhen_to_sendをrecieveに変更するエンドポイント
 app.post('/update_when_to_send_recieve', (req, res) => {
     try {
@@ -1798,5 +1796,70 @@ try {
 } catch (error) {
     res.status(400).json({status: 400, result: 'fail', message: error.message});
 }
+}
+);
+
+
+
+
+// update_when_to_send_waiting
+app.post('/update_when_to_send_waiting', (req, res) => {
+    try {
+    const peer_id_when_get_open = req.body.peer_id_when_get_open;
+    const match_id = req.body.match_id;
+    const send_id = req.body.send_id;
+    const recieve_id = req.body.recieve_id;
+    const sender_or_reciver = req.body.sender_or_reciver;
+
+    const error_check_match_id = match_id;
+    // match_idは1以上の整数でmatchesに存在するidであることをチェック
+    error_check_match_id === undefined || error_check_match_id === null || typeof error_check_match_id !== 'number' || error_check_match_id < 1 ? (()=>{throw new Error('match_idが不正です1')})() : null;
+    db2.prepare('SELECT id FROM matches WHERE id = ?').get(match_id) ? null : (()=>{throw new Error('match_idが不正です2')})();
+
+    // peer_id_when_get_openをエスケープする
+    const escaped_peer_id_when_get_open = encodeURIComponent(peer_id_when_get_open);
+
+    let RESULT = null;
+    // sender_or_reciverがsenderの場合match_idが一致するmatchesのsender_peer_idにpeer_id_when_get_openをセット
+    if(sender_or_reciver === 'sender'){
+        RESULT = db2.prepare(`
+        UPDATE matches
+        SET sender_peer_id = @peer_id_when_get_open, when_to_send = 'waiting'
+        WHERE id = @id
+        AND send_id = @send_id
+        AND receive_id = @receive_id
+        `).run({
+            id: match_id,
+            peer_id_when_get_open: escaped_peer_id_when_get_open,
+            send_id: send_id,
+            receive_id: recieve_id,
+        })
+        ? 'OK'
+        : (()=>{throw new Error('matchesテーブルのsender_peer_idを更新できませんでした')})();
+    }
+    if(sender_or_reciver === 'reciver'){
+        RESULT = db2.prepare(`
+        UPDATE matches
+        SET reciver_peer_id = @peer_id_when_get_open, when_to_send = 'waiting'
+        WHERE id = @id
+        AND send_id = @send_id
+        AND receive_id = @receive_id
+        `).run({
+            id: match_id,
+            peer_id_when_get_open: escaped_peer_id_when_get_open,
+            send_id: send_id,
+            receive_id: recieve_id,
+        })
+        ? 'OK'
+        : (()=>{throw new Error('matchesテーブルのreciver_peer_idを更新できませんでした')})();
+    }
+    res.status(200)
+        .json({result: 'success',
+            status: 200,
+            message: RESULT
+        });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
 }
 );
