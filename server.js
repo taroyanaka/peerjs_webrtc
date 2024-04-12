@@ -1680,6 +1680,35 @@ app.get('/read_matches', (req, res) => {
 }
 );
 
+app.post('/read_waiting_matches', (req, res) => {
+try {
+    const user_id = req.body.user_id;
+    const error_check_user_id = user_id;
+    // user_idは1以上の整数でuser_datasに存在するidであることをチェック
+    error_check_user_id === undefined || error_check_user_id === null || typeof error_check_user_id !== 'number' || error_check_user_id < 1 ? (()=>{throw new Error('user_idが不正です1')})() : null;
+    db.prepare('SELECT id FROM user_datas WHERE id = ?').get(user_id) ? null : (()=>{throw new Error('user_idが不正です2')})();
+    console.log(req.body.user_id, 2);
+    // when_to_sendがwaitingかつ、send_idかreceive_idが自分のuser_data_idのmatchを取得する
+    const RESULT = db2.prepare(`SELECT * FROM matches WHERE (send_id = ? OR receive_id = ?) AND when_to_send = 'waiting'`).all(user_id, user_id)
+    // RESULTを絞り込む。sender_peer_idがNULLではない場合、recive_idが自分のuser_idであるものを取得する、receiver_peer_idがNULLではない場合、send_idが自分のuser_idであるものを取得する
+    const RESULT2 = RESULT.filter((data) => {
+        if (data.sender_peer_id !== null) {
+            return data.receive_id === user_id;
+        }
+        if (data.receiver_peer_id !== null) {
+            return data.send_id === user_id;
+        }
+    });
+    res.status(200)
+        .json({result: 'success',
+            status: 200,
+            message: RESULT2
+        });
+} catch (error) {
+    res.status(400).json({status: 400, result: 'fail', message: error.message});
+}
+}
+);
 // recieve_idが自分のuser_data_idのmatchを取得するエンドポイント
 app.post('/read_recieve_matches', (req, res) => {
     try {
@@ -1810,6 +1839,13 @@ app.post('/update_when_to_send_waiting', (req, res) => {
     const send_id = req.body.send_id;
     const recieve_id = req.body.recieve_id;
     const sender_or_reciver = req.body.sender_or_reciver;
+    console.log(
+peer_id_when_get_open,
+match_id,
+send_id,
+recieve_id,
+sender_or_reciver,
+    );
 
     const error_check_match_id = match_id;
     // match_idは1以上の整数でmatchesに存在するidであることをチェック

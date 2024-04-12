@@ -17,6 +17,8 @@
 </head>
 <body>
 <div id="app">
+    <!-- button fetch_update_when_to_send_recieve -->
+    <button @click="fetch_update_when_to_send_recieve()">fetch_update_when_to_send_recieve</button>
 
 
     <div id="qrcode"></div>
@@ -40,6 +42,8 @@ let fuga = null;
 const app = Vue.createApp({
 data() {
 return {
+    peer_id_when_get_open: '',
+    ERROR_MESSAGE: '',
     sample: null,
     match_id: 0,
     send_id: 0,
@@ -69,6 +73,23 @@ mounted() {
 beforeUpdated() {},
 updated() {},
 methods: {
+// async fetch_update_when_to_send_waiting(){
+// try {
+//     const res = await fetch(this.endpoint + '/update_when_to_send_waiting', {method: 'POST',headers: {'Content-Type': 'application/json',},
+//         body: JSON.stringify({
+//             peer_id_when_get_open: this.sample[0],
+//             match_id: this.sample[1],
+//             send_id: this.sample[2],
+//             recieve_id: this.sample[3],
+//             sender_or_reciver: this.sample[4]
+//         }),
+//     });
+//     const data = await res.json(); console.log(data);
+//     this.ERROR_MESSAGE = "";
+// } catch (error) {
+//     this.ERROR_MESSAGE = error.message;
+// }
+// },
 async fetch_update_when_to_send_waiting(peer_id_when_get_open){
     const param_data = [
         peer_id_when_get_open,
@@ -78,7 +99,25 @@ async fetch_update_when_to_send_waiting(peer_id_when_get_open){
         this.sender_or_reciver,
     ];
     this.sample = param_data;
+    this.peer_id_when_get_open = peer_id_when_get_open;
     console.log("fetch_update_when_to_send_waiting()", param_data);
+},
+async fetch_update_when_to_send_recieve(){
+try {
+    const res = await fetch(this.endpoint + '/update_when_to_send_waiting', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({
+                peer_id_when_get_open: this.peer_id_when_get_open,
+                match_id: this.match_id,
+                send_id: this.send_id,
+                recieve_id: this.recieve_id,
+                sender_or_reciver: this.sender_or_reciver,
+            }),
+        });
+    const data = await res.json(); console.log(data);
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
 },
 send_text_fn(Text="sample_text"){
     console.log("send_text_fn");
@@ -111,6 +150,8 @@ get_param(){
     this.send_id = url.searchParams.get('send_id') ? url.searchParams.get('send_id') : (() => {throw new Error('send_id is not found')})();
     this.recieve_id = url.searchParams.get('recieve_id') ? url.searchParams.get('recieve_id') : (() => {throw new Error('recieve_id is not found')})();
     this.sender_or_reciver = url.searchParams.get('sender_or_reciver') ? url.searchParams.get('sender_or_reciver') : (() => {throw new Error('sender_or_reciver is not found')})();
+    // this.match_id, this.send_id, this.recieve_idをNumber()にする
+    this.match_id = Number(this.match_id), this.send_id = Number(this.send_id), this.recieve_id = Number(this.recieve_id);
     console.log("this.match_id", this.match_id);
     console.log("this.send_id", this.send_id);
     console.log("this.recieve_id", this.recieve_id);
@@ -121,19 +162,6 @@ get_param(){
         console.log(error);
     }
 },
-async fetch_update_when_to_send_recieve(Match_Id){
-try {
-    console.log("fetch_update_when_to_send_recieve1", Match_Id);
-    const res = await fetch(this.endpoint + '/update_when_to_send_recieve', {method: 'POST',headers: {'Content-Type': 'application/json',},
-            body: JSON.stringify({match_id: Match_Id}),
-        });
-    const data = await res.json(); console.log(data);
-    this.ERROR_MESSAGE = "";
-} catch (error) {
-    this.ERROR_MESSAGE = error.message;
-}
-},
-
 // read_matchesをfetchする関数
 async fetch_read_matches(){
     const response = await fetch(this.endpoint + '/read_matches');
