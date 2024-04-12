@@ -1618,9 +1618,9 @@ const db2 = test_mode() === true ? new sqlite('./.data/match.sqlite3') : new sql
 
 app.post('/insert_match', (req, res) => {
 try {
-    // when_to_sendは必須。空文字列の場合はエラー。matchかrecieveのみ許可
+    // when_to_sendは必須。空文字列の場合はエラー。matchかreceiveのみ許可
     req.body.when_to_send === undefined || req.body.when_to_send === null || req.body.when_to_send.length === 0 ? (()=>{throw new Error('when_to_sendが空です3')})() : null;
-    req.body.when_to_send === 'match' || req.body.when_to_send === 'recieve' ? null : (()=>{throw new Error('when_to_sendはmatchかrecieveのみ許可されています4')})();
+    req.body.when_to_send === 'match' || req.body.when_to_send === 'receive' ? null : (()=>{throw new Error('when_to_sendはmatchかreceiveのみ許可されています4')})();
 
     // エラーチェックmatch_dataは必須。空文字列の場合はエラー。エスケープして保存
     // const match_data = req.body.match_data;
@@ -1690,7 +1690,7 @@ try {
     console.log(req.body.user_id, 2);
     // when_to_sendがwaitingかつ、send_idかreceive_idが自分のuser_data_idのmatchを取得する
     const RESULT = db2.prepare(`SELECT * FROM matches WHERE (send_id = ? OR receive_id = ?) AND when_to_send = 'waiting'`).all(user_id, user_id)
-    // RESULTを絞り込む。sender_peer_idがNULLではない場合、recive_idが自分のuser_idであるものを取得する、receiver_peer_idがNULLではない場合、send_idが自分のuser_idであるものを取得する
+    // RESULTを絞り込む。sender_peer_idがNULLではない場合、receive_idが自分のuser_idであるものを取得する、receiver_peer_idがNULLではない場合、send_idが自分のuser_idであるものを取得する
     const RESULT2 = RESULT.filter((data) => {
         if (data.sender_peer_id !== null) {
             return data.receive_id === user_id;
@@ -1709,9 +1709,11 @@ try {
 }
 }
 );
-// recieve_idが自分のuser_data_idのmatchを取得するエンドポイント
-app.post('/read_recieve_matches', (req, res) => {
+// receive_idが自分のuser_data_idのmatchを取得するエンドポイント
+app.post('/read_receive_matches', (req, res) => {
     try {
+        // console.log(req.body.user_id, 1)
+        console.log("read_receive_matches");
         const user_id = req.body.user_id;
         const error_check_user_id = user_id;
         // user_idは1以上の整数でuser_datasに存在するidであることをチェック
@@ -1731,7 +1733,7 @@ app.post('/read_recieve_matches', (req, res) => {
     }
 }
 );
-// send_idが自分のuser_data_idでrecieveの状態のmatchを取得するエンドポイント
+// send_idが自分のuser_data_idでreceiveの状態のmatchを取得するエンドポイント
 app.post('/read_send_matches', (req, res) => {
     try {
         const user_id = req.body.user_id;
@@ -1739,8 +1741,8 @@ app.post('/read_send_matches', (req, res) => {
         // user_idは1以上の整数でuser_datasに存在するidであることをチェック
         error_check_user_id === undefined || error_check_user_id === null || typeof error_check_user_id !== 'number' || error_check_user_id < 1 ? (()=>{throw new Error('user_idが不正です1')})() : null;
         db.prepare('SELECT id FROM user_datas WHERE id = ?').get(user_id) ? null : (()=>{throw new Error('user_idが不正です2')})();
-        const RESULT = db2.prepare(`SELECT * FROM matches WHERE send_id = ? AND when_to_send = 'recieve'`).all(user_id)
-        ? db2.prepare(`SELECT * FROM matches WHERE send_id = ? AND when_to_send = 'recieve'`).all(user_id)
+        const RESULT = db2.prepare(`SELECT * FROM matches WHERE send_id = ? AND when_to_send = 'receive'`).all(user_id)
+        ? db2.prepare(`SELECT * FROM matches WHERE send_id = ? AND when_to_send = 'receive'`).all(user_id)
         : (()=>{throw new Error('matchesテーブルからデータを取得できませんでした')})();
         res.status(200)
             .json({result: 'success',
@@ -1752,16 +1754,16 @@ app.post('/read_send_matches', (req, res) => {
     }
 }
 );
-// whenがrecieveかつ、send_idかrecieve_idに自分のID(login_id_name.id)が含まれる結果
-app.post('/read_recieved_anyone_own_matches', (req, res) => {
+// whenがreceiveかつ、send_idかreceive_idに自分のID(login_id_name.id)が含まれる結果
+app.post('/read_received_anyone_own_matches', (req, res) => {
     try {
         const user_id = req.body.user_id;
         const error_check_user_id = user_id;
         // user_idは1以上の整数でuser_datasに存在するidであることをチェック
         error_check_user_id === undefined || error_check_user_id === null || typeof error_check_user_id !== 'number' || error_check_user_id < 1 ? (()=>{throw new Error('user_idが不正です1')})() : null;
         db.prepare('SELECT id FROM user_datas WHERE id = ?').get(user_id) ? null : (()=>{throw new Error('user_idが不正です2')})();
-        const RESULT = db2.prepare(`SELECT * FROM matches WHERE when_to_send = 'recieve' AND (send_id = ? OR receive_id = ?)`).all(user_id, user_id)
-        ? db2.prepare(`SELECT * FROM matches WHERE when_to_send = 'recieve' AND (send_id = ? OR receive_id = ?)`).all(user_id, user_id)
+        const RESULT = db2.prepare(`SELECT * FROM matches WHERE when_to_send = 'receive' AND (send_id = ? OR receive_id = ?)`).all(user_id, user_id)
+        ? db2.prepare(`SELECT * FROM matches WHERE when_to_send = 'receive' AND (send_id = ? OR receive_id = ?)`).all(user_id, user_id)
         : (()=>{throw new Error('matchesテーブルからデータを取得できませんでした')})();
         res.status(200)
             .json({result: 'success',
@@ -1775,35 +1777,6 @@ app.post('/read_recieved_anyone_own_matches', (req, res) => {
 );
 
 
-// /read_matches_and_request_match_dataで取得が完了したらwhen_to_sendをrecieveに変更するエンドポイント
-app.post('/update_when_to_send_recieve', (req, res) => {
-    try {
-        const match_id = req.body.match_id;
-        const error_check_match_id = match_id;
-        // match_idは1以上の整数でmatchesに存在するidであることをチェック
-        error_check_match_id === undefined || error_check_match_id === null || typeof error_check_match_id !== 'number' || error_check_match_id < 1 ? (()=>{throw new Error('match_idが不正です1')})() : null;
-        db2.prepare('SELECT id FROM matches WHERE id = ?').get(match_id) ? null : (()=>{throw new Error('match_idが不正です2')})();
-
-        const RESULT = db2.prepare(`
-        UPDATE matches
-        SET when_to_send = 'recieve'
-        WHERE id = @id
-        `).run({
-            id: match_id,
-        })
-        ? 'OK'
-        : (()=>{throw new Error('matchesテーブルのwhen_to_sendを更新できませんでした')})();
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT,
-                // message: RESULT2,
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-}
-);
 
 
 
@@ -1829,22 +1802,44 @@ try {
 );
 
 
+// 指定したmatch_idのwhen_to_sendをreceiveに変更するエンドポイント
+app.post('/update_when_to_send_receive', (req, res) => {
+    try {
+        const match_id = req.body.match_id;
+        const RESULT = db2.prepare(`
+        UPDATE matches
+        SET when_to_send = 'receive'
+        WHERE id = @id
+        `).run({
+            id: match_id,
+        })
+        ? 'OK'
+        : (()=>{throw new Error('matchesテーブルのwhen_to_sendを更新できませんでした')})();
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+}
+);
 
 
-// update_when_to_send_waiting
 app.post('/update_when_to_send_waiting', (req, res) => {
     try {
     const peer_id_when_get_open = req.body.peer_id_when_get_open;
     const match_id = req.body.match_id;
     const send_id = req.body.send_id;
-    const recieve_id = req.body.recieve_id;
-    const sender_or_reciver = req.body.sender_or_reciver;
+    const receive_id = req.body.receive_id;
+    const sender_or_receiver = req.body.sender_or_receiver;
     console.log(
 peer_id_when_get_open,
 match_id,
 send_id,
-recieve_id,
-sender_or_reciver,
+receive_id,
+sender_or_receiver,
     );
 
     const error_check_match_id = match_id;
@@ -1856,8 +1851,9 @@ sender_or_reciver,
     const escaped_peer_id_when_get_open = encodeURIComponent(peer_id_when_get_open);
 
     let RESULT = null;
-    // sender_or_reciverがsenderの場合match_idが一致するmatchesのsender_peer_idにpeer_id_when_get_openをセット
-    if(sender_or_reciver === 'sender'){
+    // sender_or_receiverがsenderの場合match_idが一致するmatchesのsender_peer_idにpeer_id_when_get_openをセット
+    if(sender_or_receiver === 'sender'){
+        console.log("foo")
         RESULT = db2.prepare(`
         UPDATE matches
         SET sender_peer_id = @peer_id_when_get_open, when_to_send = 'waiting'
@@ -1868,15 +1864,16 @@ sender_or_reciver,
             id: match_id,
             peer_id_when_get_open: escaped_peer_id_when_get_open,
             send_id: send_id,
-            receive_id: recieve_id,
+            receive_id: receive_id,
         })
         ? 'OK'
         : (()=>{throw new Error('matchesテーブルのsender_peer_idを更新できませんでした')})();
     }
-    if(sender_or_reciver === 'reciver'){
+    if(sender_or_receiver === 'receiver'){
+        console.log("bar")
         RESULT = db2.prepare(`
         UPDATE matches
-        SET reciver_peer_id = @peer_id_when_get_open, when_to_send = 'waiting'
+        SET receiver_peer_id = @peer_id_when_get_open, when_to_send = 'waiting'
         WHERE id = @id
         AND send_id = @send_id
         AND receive_id = @receive_id
@@ -1884,10 +1881,10 @@ sender_or_reciver,
             id: match_id,
             peer_id_when_get_open: escaped_peer_id_when_get_open,
             send_id: send_id,
-            receive_id: recieve_id,
+            receive_id: receive_id,
         })
         ? 'OK'
-        : (()=>{throw new Error('matchesテーブルのreciver_peer_idを更新できませんでした')})();
+        : (()=>{throw new Error('matchesテーブルのreceiver_peer_idを更新できませんでした')})();
     }
     res.status(200)
         .json({result: 'success',
