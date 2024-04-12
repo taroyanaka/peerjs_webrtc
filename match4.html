@@ -1,4 +1,12 @@
 <!DOCTYPE html>
+<!--vscodeのlive previewを使う場合は、./.data/以下のファイルを無視する設定が必要
+    (.sqlite3のファイルに変更が加わった際にclient6.htmlがリロードされるため)
+    "files.watcherExclude": {
+        // ./.data/以下のファイルを無視する
+        "**/.data/**": true
+    }
+ -->
+
 <!-- a sideがb sideにmatch(when: match) => b sideがa sideにmatch(when: receive) =>
     receive状態であればa,b双方にURL発行 => 
     ※※※※※※仕様検討中: match4からclient6に自動的にリダイレクト(matchesにreceive状態のレコードがある場合。)
@@ -64,6 +72,7 @@
 </head>
 <body>
 <div id="app">
+    aaaabbb
     <!-- {{ chat_url }} -->
     <!-- char_urlでhref -->
 <div v-if="chat_url">

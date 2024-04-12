@@ -1896,3 +1896,57 @@ sender_or_receiver,
     }
 }
 );
+
+
+// fetch_get_peer_id_from_matches_as_sender_or_as_receiver
+// peer_idを取得するエンドポイント
+// sender_or_receiverがsenderならreceiver_peer_idを取得,receiverならsender_peer_idを取得
+app.post('/get_peer_id_from_matches_as_sender_or_as_receiver', (req, res) => {
+try {
+    const match_id = req.body.match_id;
+    const sender_or_receiver = req.body.sender_or_receiver;
+    const error_check_match_id = match_id;
+    // match_idは1以上の整数でmatchesに存在するidであることをチェック
+    error_check_match_id === undefined || error_check_match_id === null || typeof error_check_match_id !== 'number' || error_check_match_id < 1 ? (()=>{throw new Error('match_idが不正です1')})() : null;
+    db2.prepare('SELECT id FROM matches WHERE id = ?').get(match_id) ? null : (()=>{throw new Error('match_idが不正です2')})();
+    const RESULT = db2.prepare(`
+    SELECT sender_peer_id, receiver_peer_id
+    FROM matches
+    WHERE id = ?
+    `).get(match_id)
+    ? db2.prepare(`
+    SELECT sender_peer_id, receiver_peer_id
+    FROM matches
+    WHERE id = ?
+    `).get(match_id)
+    : (()=>{throw new Error('matchesテーブルからデータを取得できませんでした')})();
+    let peer_id_a = null;
+    let peer_id_b = null;
+    // if(sender_or_receiver === 'sender'){
+        peer_id_a = RESULT.sender_peer_id;
+        peer_id_b = RESULT.receiver_peer_id;
+    // }
+    // if(sender_or_receiver === 'receiver'){
+    //     peer_id_a = RESULT.receiver_peer_id;
+    //     peer_id_b = RESULT.sender_peer_id;
+    // }
+    res.status(200)
+        .json({result: 'success',
+            status: 200,
+            message: {
+                peer_id_a: peer_id_a,
+                peer_id_b: peer_id_b,
+            }
+        });
+} catch (error) {
+    res.status(400).json({status: 400, result: 'fail', message: error.message});
+}
+}
+);
+
+
+
+// hello world test
+app.get('/hello' , (req, res) => {
+    res.status(200).json({result: 'success', status: 200, message: 'hello world'});
+});
