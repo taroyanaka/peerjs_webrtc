@@ -1950,3 +1950,46 @@ try {
 app.get('/hello' , (req, res) => {
     res.status(200).json({result: 'success', status: 200, message: 'hello world'});
 });
+
+
+// ページをリフレッシュした際にpeer id Aが変わるため、 sender_peer_idもしくはreceiver_peer_idを更新 バックグラウンドでpeer idがclientとserverに相違がないか確認し、 相違があれば更新するようにコードを追加する
+// check_peer_id_or_change_it
+app.post('/check_peer_id_or_change_it', (req, res) => {
+    try {
+        const { match_id, sender_or_receiver, peer_id } = req.body;
+
+        // match_idは1以上の整数でmatchesに存在するidであることをチェック
+        if (match_id === undefined || match_id === null || typeof match_id !== 'number' || match_id < 1) {
+            throw new Error('match_idが不正です1');
+        }
+        if (!db2.prepare('SELECT id FROM matches WHERE id = ?').get(match_id)) {
+            throw new Error('match_idが不正です2');
+        }
+        // sender_or_receiverが'sender'か'receiver'であることをチェック
+        if (sender_or_receiver !== 'sender' && sender_or_receiver !== 'receiver') {
+            throw new Error('sender_or_receiverが不正です');
+        }
+
+        const peer_id_column = sender_or_receiver + '_peer_id';
+        const current_peer_id = db2.prepare(`SELECT ${peer_id_column} FROM matches WHERE id = ?`).get(match_id);
+
+        if (!current_peer_id) {
+            throw new Error('matchesテーブルからデータを取得できませんでした');
+        }
+
+        if (current_peer_id[peer_id_column] === peer_id) {
+            res.status(200).json({ result: 'success', status: 200, message: 'peer_idが変更されていません' });
+            return;
+        }
+
+        const update_result = db2.prepare(`UPDATE matches SET ${peer_id_column} = @peer_id WHERE id = @id`).run({ id: match_id, peer_id: peer_id });
+
+        if (!update_result) {
+            throw new Error(`matchesテーブルの${peer_id_column}を更新できませんでした`);
+        }
+
+        res.status(200).json({ result: 'success', status: 200, message: 'OK' });
+    } catch (error) {
+        res.status(400).json({ status: 400, result: 'fail', message: error.message });
+    }
+});
