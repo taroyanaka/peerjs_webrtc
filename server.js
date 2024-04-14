@@ -1736,6 +1736,8 @@ app.post('/read_receive_matches', (req, res) => {
 // send_idが自分のuser_data_idでreceiveの状態のmatchを取得するエンドポイント
 app.post('/read_send_matches', (req, res) => {
     try {
+        console.log("read_send_matches");
+        console.log(req.body.user_id);
         const user_id = req.body.user_id;
         const error_check_user_id = user_id;
         // user_idは1以上の整数でuser_datasに存在するidであることをチェック
@@ -1744,6 +1746,7 @@ app.post('/read_send_matches', (req, res) => {
         const RESULT = db2.prepare(`SELECT * FROM matches WHERE send_id = ? AND when_to_send = 'receive'`).all(user_id)
         ? db2.prepare(`SELECT * FROM matches WHERE send_id = ? AND when_to_send = 'receive'`).all(user_id)
         : (()=>{throw new Error('matchesテーブルからデータを取得できませんでした')})();
+        console.log(RESULT);
         res.status(200)
             .json({result: 'success',
                 status: 200,

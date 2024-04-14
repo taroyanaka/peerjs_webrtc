@@ -21,46 +21,6 @@
     <script src="./vue@3.2.36.global.prod.js"></script>
     <script src="./peerjs.1.5.2.min.js"></script>
     <style>
-/* タブのスタイル */
-.tab {
-  overflow: hidden;
-  border: 1px solid #ccc;
-  background-color: #f1f1f1;
-}
-
-/* タブボタンのスタイル */
-.tab button {
-  background-color: inherit;
-  float: left;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  padding: 14px 16px;
-  transition: 0.3s;
-  font-size: 17px;
-}
-
-/* タブボタンのホバー時のスタイル */
-.tab button:hover {
-  background-color: #ddd;
-}
-
-/* アクティブなタブボタンのスタイル */
-.tab button.active {
-  background-color: #ccc;
-}
-
-/* タブコンテンツのスタイル */
-.tabcontent {
-  display: none;
-  padding: 6px 12px;
-  border: 1px solid #ccc;
-  border-top: none;
-}
-
-
-
-    
         .block_0 {
             /* 右にずらす */
             margin-left: 0rem;
@@ -112,133 +72,128 @@
 </head>
 <body>
 <div id="app">
-
-<button @click="fetch_read_receive_matches()">fetch_read_receive_matches</button>
-
-<button @click="login_as()">login_as</button>
-<button @click="login_as({id: 7, name: 'C'})">login_as({id: 7, name: 'C'})</button>
-<div>{{login_id_name}}</div>
-<button @click="fetch_delete_matches()">fetch_delete_matches</button>
+    aaaabbb
+    <!-- {{ chat_url }} -->
+    <!-- char_urlでhref -->
 <div v-if="chat_url">
     <a :href="chat_url" target="_blank">chat_url</a>
 </div>
+
+<!-- make_chat_url_for_receiver_user -->
 <div v-if="chat_url_for_receiver_user">
     <a :href="chat_url_for_receiver_user" target="_blank">chat_url_for_receiver_user</a>
-</div>    
-<div class="tab">
-    <button class="tablinks" onclick="openTab(event, 'Tab1')">Tab1</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab2')">Tab2</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab3')">Tab3</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab4')">Tab4</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab5')">Tab5</button>
 </div>
-<div id="Tab1" class="tabcontent">
-<button @click="fetch_read_waiting_matches()">fetch_read_waiting_matches</button>
-waiting_matched:
-<div v-if="waiting_matched">
-    <div v-for="(value, key) in waiting_matched" :key="key">
-        {{ key }}: 
-        <div v-for="(value2, key2) in value" :key="key2">
-            {{ key2 }}: {{ value2 }}
-            <!-- idの時にmake_chat_url_for_receiver_user button表示 -->
-            <div v-if="key2 === 'id'">
-                <!-- make_chat_url_for_receiver_user(id, send_id, receive_id) -->
-                <button @click="make_chat_url_for_receiver_user(value2, value.send_id, value.receive_id)">make_chat_url_for_receiver_user {{ value2 }}, {{ value.send_id }}, {{ value.receive_id }}</button>
+
+
+    <!-- fetch_read_waiting_matches -->
+    <button @click="fetch_read_waiting_matches()">fetch_read_waiting_matches</button>
+    <!-- waiting_matched v-for -->
+    waiting_matched:
+    <div v-if="waiting_matched">
+        <div v-for="(value, key) in waiting_matched" :key="key">
+            {{ key }}: 
+            <div v-for="(value2, key2) in value" :key="key2">
+                {{ key2 }}: {{ value2 }}
+                <!-- idの時にmake_chat_url_for_receiver_user button表示 -->
+                <div v-if="key2 === 'id'">
+                    <!-- make_chat_url_for_receiver_user(id, send_id, receive_id) -->
+                    <button @click="make_chat_url_for_receiver_user(value2, value.send_id, value.receive_id)">make_chat_url_for_receiver_user {{ value2 }}, {{ value.send_id }}, {{ value.receive_id }}</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-</div>
 
-<div id="Tab2" class="tabcontent">
-<button @click="fetch_read_received_anyone_own_matches()">fetch_read_received_anyone_own_matches</button>
-all_matched:
-<div class="matche_done">
-    <!-- receive_matchedのidだけ表示するv-for -->
-    <div v-for="(value, key) in all_matched" :key="key">
-        {{ key }}: 
-        <!-- valueからvalue2をv-for -->
-        <div v-for="(value2, key2) in value" :key="key2">
-            <div v-if="key2 === 'id'">{{ key2 }}: {{ value2 }}
-                <!-- make_chat_url_with_get_param -->
-                match_id: {{ value2 }} send_id: {{ value.send_id }} receive_id: {{ value.receive_id }}
-                <button @click="make_chat_url_with_get_param(value2, value.send_id, value.receive_id)">make_chat_url_with_get_param</button>
-
-            </div>
-            <div v-if="key2 === 'receive_id'">{{ key2 }}: {{ value2 }}</div>
-            <div v-if="key2 === 'send_id'">{{ key2 }}: {{ value2 }}</div>
-            <div v-if="key2 === 'when_to_send'">{{ key2 }}: {{ value2 }}</div>
-        </div>
-</div>
-</div>
-</div>
-
-<div id="Tab3" class="tabcontent">
-<button @click="fetch_read_matches()">fetch_read_matches</button>
-receive_matched:
-<div v-if="receive_matched">
-    <div v-for="(value, key) in receive_matched" :key="key">
+    <button @click="fetch_read_received_anyone_own_matches()">fetch_read_received_anyone_own_matches</button>
+    all_matched:
+    <div class="matche_done">
+        <!-- receive_matchedのidだけ表示するv-for -->
+        <div v-for="(value, key) in all_matched" :key="key">
             {{ key }}: 
             <!-- valueからvalue2をv-for -->
             <div v-for="(value2, key2) in value" :key="key2">
                 <div v-if="key2 === 'id'">{{ key2 }}: {{ value2 }}
-                    <button @click="fetch_change_match_to_receive(value2)">fetch_change_match_to_receive</button>
+                    <!-- make_chat_url_with_get_param -->
+                    match_id: {{ value2 }} send_id: {{ value.send_id }} receive_id: {{ value.receive_id }}
+                    <button @click="make_chat_url_with_get_param(value2, value.send_id, value.receive_id)">make_chat_url_with_get_param</button>
+
                 </div>
                 <div v-if="key2 === 'receive_id'">{{ key2 }}: {{ value2 }}</div>
                 <div v-if="key2 === 'send_id'">{{ key2 }}: {{ value2 }}</div>
                 <div v-if="key2 === 'when_to_send'">{{ key2 }}: {{ value2 }}</div>
             </div>
     </div>
-</div>
-</div>
 
-<div id="Tab4" class="tabcontent">
-<button @click="fetch_read_send_matches()">fetch_read_send_matches</button>
-send_matched:
-<div v-if="send_matched">
-    <!-- send_matchedのidだけ表示するv-for -->
-    <div v-for="(value, key) in send_matched" :key="key">
-            {{ key }}: 
-            <!-- valueからvalue2をv-for -->
-            <div v-for="(value2, key2) in value" :key="key2">
-                <div v-if="key2 === 'id'">{{ key2 }}: {{ value2 }}
-                </div>
-                <div v-if="key2 === 'receive_id'">{{ key2 }}: {{ value2 }}</div>
-                <div v-if="key2 === 'send_id'">{{ key2 }}: {{ value2 }}</div>
-                <div v-if="key2 === 'when_to_send'">{{ key2 }}: {{ value2 }}</div>
+    </div>
+    <div class="matcher">
+        <!-- fetch_read_matches button -->
+        <button @click="fetch_read_matches()">fetch_read_matches</button>
+        
+        receive_matched:
+        <div v-if="receive_matched">
+            <!-- receive_matchedのidだけ表示するv-for -->
+            <div v-for="(value, key) in receive_matched" :key="key">
+                    {{ key }}: 
+                    <!-- valueからvalue2をv-for -->
+                    <div v-for="(value2, key2) in value" :key="key2">
+                        <div v-if="key2 === 'id'">{{ key2 }}: {{ value2 }}
+                            <button @click="fetch_change_match_to_receive(value2)">fetch_change_match_to_receive</button>
+                        </div>
+                        <div v-if="key2 === 'receive_id'">{{ key2 }}: {{ value2 }}</div>
+                        <div v-if="key2 === 'send_id'">{{ key2 }}: {{ value2 }}</div>
+                        <div v-if="key2 === 'when_to_send'">{{ key2 }}: {{ value2 }}</div>
+                    </div>
             </div>
+        </div>
+
+        <!-- send_matchedをfetchする -->
+        <button @click="fetch_read_send_matches()">fetch_read_send_matches</button>
+        send_matched:
+        <div v-if="send_matched">
+            <!-- send_matchedのidだけ表示するv-for -->
+            <div v-for="(value, key) in send_matched" :key="key">
+                    {{ key }}: 
+                    <!-- valueからvalue2をv-for -->
+                    <div v-for="(value2, key2) in value" :key="key2">
+                        <div v-if="key2 === 'id'">{{ key2 }}: {{ value2 }}
+                        </div>
+                        <div v-if="key2 === 'receive_id'">{{ key2 }}: {{ value2 }}</div>
+                        <div v-if="key2 === 'send_id'">{{ key2 }}: {{ value2 }}</div>
+                        <div v-if="key2 === 'when_to_send'">{{ key2 }}: {{ value2 }}</div>
+                    </div>
+            </div>
+        </div>
+
+    
+        <!-- fetch_read_receive_matchesのbutton -->
+        <button @click="fetch_read_receive_matches()">fetch_read_receive_matches</button>
+        matched:
+        <div v-if="matched">
+        <div v-for="(value, key) in matched" :key="key">
+            {{ key }} :
+            <div v-for="(value2, key2) in value" :key="key2">
+                    {{ key2 }}: {{ value2 }}
+            </div>
+        </div>
+        </div>
     </div>
-</div>
-</div>
 
-<div id="Tab5" class="tabcontent">
-<button @click="fetch_read_matches()">fetch_read_matches</button>
-matched:
-<div v-if="matched">
-<div v-for="(value, key) in matched" :key="key">
-    {{ key }} :
-    <div v-for="(value2, key2) in value" :key="key2">
-            {{ key2 }}: {{ value2 }}
-    </div>
-</div>
-</div>
-</div>
-
-
-
-
-    <div v-if="login_id_name && matched_data_ary && matched_data_ary.message[0] && matched_data_ary.message[0].user_data_id">
-        {{ 
-        matched_data_ary.message
-            .map((a, IDX) => {
-            return [
-            "send_id", login_id_name.id,
-            "receive_id", matched_data_ary.message[ IDX ].user_data_id,
-            ]
-            })
-        }}
-    </div>
-
+    <!-- fetch_delete_matches button -->
+    <button @click="fetch_delete_matches()">fetch_delete_matches</button>
+            <!-- this block for debug -->
+            <div v-if="login_id_name && matched_data_ary && matched_data_ary.message[0] && matched_data_ary.message[0].user_data_id">
+                {{ 
+                matched_data_ary.message
+                    .map((a, IDX) => {
+                    return [
+                    "send_id", login_id_name.id,
+                    "receive_id", matched_data_ary.message[ IDX ].user_data_id,
+                    ]
+                    })
+                }}
+            </div>
+<button @click="login_as()">login_as</button>
+<div>{{login_id_name}}</div>
+<button @click="login_as({id: 7, name: 'C'})">login_as({id: 7, name: 'C'})</button>
 <div v-if="web_data && matched_data_ary">
     <div v-for="match_data, match_data_idx in matched_data_ary.message">
         <!-- {{ match_data_idx }} -->
@@ -326,20 +281,6 @@ matched:
 </div>
 </body>
 <script>
-function openTab(evt, tabName) {
-  var i, tabcontent, tablinks;
-  tabcontent = document.getElementsByClassName("tabcontent");
-  for (i = 0; i < tabcontent.length; i++) {
-    tabcontent[i].style.display = "none";
-  }
-  tablinks = document.getElementsByClassName("tablinks");
-  for (i = 0; i < tablinks.length; i++) {
-    tablinks[i].className = tablinks[i].className.replace(" active", "");
-  }
-  document.getElementById(tabName).style.display = "block";
-  evt.currentTarget.className += " active";
-}
-
 const app = Vue.createApp({
 data() {
 return {
@@ -348,75 +289,12 @@ return {
     url_for_receiver_user: '',
     sample_data_ary: [],
 
-    receive_matched: [{
-    "id": 4,
-    "send_id": 5,
-    "receive_id": 7,
-    "when_to_send": "match",
-    "sender_peer_id": null,
-    "receiver_peer_id": null,
-    "created_at": "2024-04-13T23:44:47.374Z",
-    "updated_at": "2024-04-13T23:44:47.374Z"
-}],
-    send_matched: [
-    {
-        "id": 4,
-        "send_id": 5,
-        "receive_id": 7,
-        "when_to_send": "receive",
-        "sender_peer_id": "2745cdd4-d9a0-44a4-bd9f-7fcd89d9bb9c",
-        "receiver_peer_id": null,
-        "created_at": "2024-04-13T23:44:47.374Z",
-        "updated_at": "2024-04-13T23:44:47.374Z"
-    }
-],
-    all_matched: [
-    {
-        "id": 4,
-        "send_id": 5,
-        "receive_id": 7,
-        "when_to_send": "receive",
-        "sender_peer_id": null,
-        "receiver_peer_id": null,
-        "created_at": "2024-04-13T23:44:47.374Z",
-        "updated_at": "2024-04-13T23:44:47.374Z"
-    }
-],
-    waiting_matched: [
-    {
-        "id": 4,
-        "send_id": 5,
-        "receive_id": 7,
-        "when_to_send": "waiting",
-        "sender_peer_id": "2745cdd4-d9a0-44a4-bd9f-7fcd89d9bb9c",
-        "receiver_peer_id": null,
-        "created_at": "2024-04-13T23:44:47.374Z",
-        "updated_at": "2024-04-13T23:44:47.374Z"
-    }
-],
+    receive_matched: null,
+    send_matched: null,
+    all_matched: null,
+    waiting_matched: null,
 
-    matched: [
-    {
-        "id": 4,
-        "send_id": 5,
-        "receive_id": 7,
-        "when_to_send": "receive",
-        "sender_peer_id": "2745cdd4-d9a0-44a4-bd9f-7fcd89d9bb9c",
-        "receiver_peer_id": null,
-        "created_at": "2024-04-13T23:44:47.374Z",
-        "updated_at": "2024-04-13T23:44:47.374Z"
-    },
-    {
-        "id": 5,
-        "send_id": 5,
-        "receive_id": 8,
-        "when_to_send": "match",
-        "sender_peer_id": null,
-        "receiver_peer_id": null,
-        "created_at": "2024-04-14T00:18:18.231Z",
-        "updated_at": "2024-04-14T00:18:18.231Z"
-    }
-],
+    matched: null,
 
     show_full_url: false,
     login_id_name: {id: 1, name: "a"},
@@ -1019,7 +897,6 @@ try {
 // // send_idが自分のuser_data_idでreceiveの状態のmatchを取得するエンドポイントをfetchする関数
 async fetch_read_send_matches(){
 try {
-    console.log(this.login_id_name.id);
     const res = await fetch(this.endpoint + '/read_send_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({user_id: this.login_id_name.id}),
         });
