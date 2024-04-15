@@ -526,8 +526,6 @@ try {
             body: JSON.stringify({user_id: this.login_id_name.id}),
         });
     const data = await res.json(); console.log(data);
-    // const data = await res.json(); console.log(data);
-    console.log("foo");
     this.waiting_matched = data.message;
     this.ERROR_MESSAGE = "";
 } catch (error) {

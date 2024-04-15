@@ -1980,8 +1980,19 @@ app.post('/check_peer_id_or_change_it', (req, res) => {
             throw new Error('matchesテーブルからデータを取得できませんでした');
         }
 
+        console.log("match_id", match_id);
+
         if (current_peer_id[peer_id_column] === peer_id) {
-            res.status(200).json({ result: 'success', status: 200, message: 'peer_idが変更されていません' });
+            const RESULT = db2.prepare(`SELECT sender_peer_id, receiver_peer_id FROM matches WHERE id = ?`).get(match_id);
+            res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: {
+                    sender_peer_id: RESULT.sender_peer_id,
+                    receiver_peer_id: RESULT.receiver_peer_id,
+                }
+            });
+
             return;
         }
 
@@ -1991,7 +2002,17 @@ app.post('/check_peer_id_or_change_it', (req, res) => {
             throw new Error(`matchesテーブルの${peer_id_column}を更新できませんでした`);
         }
 
-        res.status(200).json({ result: 'success', status: 200, message: 'OK' });
+        const RESULT = db2.prepare(`SELECT sender_peer_id, receiver_peer_id FROM matches WHERE id = ?`).get(match_id);
+        res.status(200)
+        .json({result: 'success',
+            status: 200,
+            message: {
+                sender_peer_id: RESULT.sender_peer_id,
+                receiver_peer_id: RESULT.receiver_peer_id,
+            }
+        });
+
+
     } catch (error) {
         res.status(400).json({ status: 400, result: 'fail', message: error.message });
     }
