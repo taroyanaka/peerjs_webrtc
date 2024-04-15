@@ -15,6 +15,28 @@
 </head>
 <body>
 <div id="app">
+<!-- 
+http://127.0.0.1:3000/client6.html?match_id=4&send_id=5&receive_id=7&sender_or_receiver=sender
+
+⭕️
+mounted get_param() getのパラメーターからthis.match_id this.send_id this.receive_id this.sender_or_receiverをセット
+
+❌
+fetch_read_waiting_matches()
+fetch_check_peer_id_or_change_it()
+fetch_get_peer_id_from_matches_as_sender_or_as_receiver()
+fetch_update_when_to_send_waiting()
+fetch_update_when_to_send_receive()
+fetch_read_matches()
+fetch_read_matches_and_request_match_data()
+exe_update()
+
+paramsを取得(match_id, send_id, receive_id, sender_or_receiver)
+matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendを取得
+matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendの更新(match=>receive=>waiting)
+sender_peer_idとreceiver_peer_idが必要(sender_peer_id,receiver_peer_idどちらかが欠けていることがある)
+-->
+
     <!-- fetch_read_matches -->
     <button @click="fetch_read_matches()">fetch_read_matches</button>
     {{ login_id_name }}
@@ -70,6 +92,7 @@ let global_conn = null;
 let global_peerId = null;
 let hoge = null;
 let fuga = null;
+let url_with_peer_id = window.location.href;
 
 const app = Vue.createApp({
 data() {
@@ -105,15 +128,12 @@ watch: {
 // },
 },
 mounted() {
-    // this.get_param();
-    this.fetch_read_matches();
-
-    this.fetch_read_waiting_matches();
+    this.get_param();
 },
 beforeUpdated() {},
 updated() {},
 methods: {
-    async fetch_read_waiting_matches(){
+async fetch_read_waiting_matches(){
 try {
     const res = await fetch(this.endpoint + '/read_waiting_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({user_id: this.login_id_name.id}),
@@ -125,13 +145,8 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
-// ページをリフレッシュした際にpeer id Aが変わるため、 sender_peer_idもしくはreceiver_peer_idを更新 バックグラウンドでpeer idがclientとserverに相違がないか確認し、 相違があれば更新するようにコードを追加する
-// check_peer_id_or_change_it
-// app.post('/check_peer_id_or_change_it', (req, res) => {
-// const { match_id, sender_or_receiver, peer_id } = req.body;
 async fetch_check_peer_id_or_change_it(){
     try {
-        console.log("fetch_check_peer_id_or_change_it");
         const res = await fetch(this.endpoint + '/check_peer_id_or_change_it', {method: 'POST',headers: {'Content-Type': 'application/json',},
                 body: JSON.stringify({
                     match_id: this.match_id,
@@ -140,51 +155,23 @@ async fetch_check_peer_id_or_change_it(){
                 }),
             });
         const data = await res.json(); console.log(data);
-
-        // res.status(200)
-        //     .json({result: 'success',
-        //         status: 200,
-        //         message: {
-        //             sender_peer_id: RESULT.sender_peer_id,
-        //             receiver_peer_id: RESULT.receiver_peer_id,
-        //         }
-        //     });
-
-        console.log(data.message);
         this.sender_peer_id = data.message.sender_peer_id;
         this.receiver_peer_id = data.message.receiver_peer_id;
-        console.log(
-            "this.sender_peer_id,this.receiver_peer_id,",
-            this.sender_peer_id,
-            this.receiver_peer_id
-        )
-        // this.sender_or_receiverが'sender'の場合
         if(this.sender_or_receiver === 'sender'){
             document.querySelector('.result').value = this.sender_peer_id;
             document.querySelector('#connect-to-peer').value = this.receiver_peer_id;
         }
-        // this.sender_or_receiverが'receiver'の場合
         if(this.sender_or_receiver === 'receiver'){
             document.querySelector('.result').value = this.receiver_peer_id;
             document.querySelector('#connect-to-peer').value = this.sender_peer_id;
         }
-
-
-
         this.ERROR_MESSAGE = "";
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
     }
 },
-async fetch_hello(){
-    const res = await fetch(this.endpoint + '/hello');
-    const data = await res.json();
-    console.log(data);
-},
 async fetch_get_peer_id_from_matches_as_sender_or_as_receiver(){
 try {
-    console.log("fetch_get_peer_id_from_matches_as_sender_or_as_receiver");
-    // fetch_get_peer_id_from_matches_as_sender_or_as_receiver
     const res = await fetch(this.endpoint + '/get_peer_id_from_matches_as_sender_or_as_receiver', {method: 'POST',headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({
                 match_id: this.match_id,
@@ -193,19 +180,14 @@ try {
         });
     const data = await res.json(); console.log(data);
     if(data.message){
-        // this.sender_or_receiverが'sender'の場合
         if(this.sender_or_receiver === 'sender'){
             document.querySelector('.result').value = data.message.peer_id_a;
             document.querySelector('#connect-to-peer').value = data.message.peer_id_b;
         }
-        // this.sender_or_receiverが'receiver'の場合
         if(this.sender_or_receiver === 'receiver'){
             document.querySelector('.result').value = data.message.peer_id_b;
             document.querySelector('#connect-to-peer').value = data.message.peer_id_a;
         }
-        
-    }else{
-        throw new Error('peer_id is not found');
     }
     this.ERROR_MESSAGE = "";
 } catch (error) {
@@ -236,9 +218,63 @@ try {
             }),
         });
     const data = await res.json(); console.log(data);
-    // this.ERROR_MESSAGE = "";
+    this.ERROR_MESSAGE = "";
 } catch (error) {
-    // this.ERROR_MESSAGE = error.message;
+    this.ERROR_MESSAGE = error.message;
+}
+},
+async fetch_read_matches(){
+    const response = await fetch(this.endpoint + '/read_matches');
+    const data = await response.json();
+    if(data.message){
+        console.log(data);
+        // hoge = data.message[0];
+        // fuga = decodeURIComponent(hoge.match_data);
+        this.matched = data.message;
+        this.sender_or_receiver = (new URL(window.location.href).searchParams.get('sender_or_receiver'));
+        console.log(this.matched[0]);
+        console.log(this.sender_or_receiver);
+
+        // match_idをthis.matched[0].idから
+        this.match_id = this.matched[0].id;
+
+
+
+// senderなら        this.login_id_name = this.matched[0].sender_id、receiverならthis.login_id_name = this.matched[0].receiver_id
+        if(this.sender_or_receiver === 'sender'){
+            console.log("this.matched[0].sender_id", this.matched[0].send_id);
+            this.login_id_name.id = this.matched[0].send_id;
+        }
+        if(this.sender_or_receiver === 'receiver'){
+            console.log("this.matched[0].receiver_id", this.matched[0].receive_id);
+            this.login_id_name.id = this.matched[0].receive_id;
+        }
+
+    }
+    return data;
+},
+async fetch_read_matches_and_request_match_data(){
+try {
+    const res = await fetch(this.endpoint + '/read_matches_and_request_match_data', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_id: this.my_user_id}),
+        });
+    const data = await res.json(); console.log(data);
+    this.receive_matched = data.message;
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},    
+async exe_update(Match_Id){
+try {
+    const res = await fetch(this.endpoint + '/update_when_to_send_receive', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({match_id: Match_Id}),
+        });
+    const data = await res.json(); console.log(data);
+    this.receive_matched = data.message;
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
 }
 },
 send_text_fn(Text="sample_text"){
@@ -274,100 +310,16 @@ get_param(){
     this.sender_or_receiver = url.searchParams.get('sender_or_receiver') ? url.searchParams.get('sender_or_receiver') : (() => {throw new Error('sender_or_receiver is not found')})();
     // this.match_id, this.send_id, this.receive_idをNumber()にする
     this.match_id = Number(this.match_id), this.send_id = Number(this.send_id), this.receive_id = Number(this.receive_id);
-    console.log("this.match_id", this.match_id);
-    console.log("this.send_id", this.send_id);
-    console.log("this.receive_id", this.receive_id);
-    console.log("this.sender_or_receiver", this.sender_or_receiver);
+console.log("this.match_id", this.match_id, "this.send_id", this.send_id, "this.receive_id", this.receive_id, "this.sender_or_receiver", this.sender_or_receiver);
     // => 片方がchatにログイン(matchをwaitingに,peer_idをmatchesに挿入) => 対向にwaitingであることが表示 =>
 
     } catch (error) {
         console.log(error);
     }
 },
-// read_matchesをfetchする関数
-async fetch_read_matches(){
-    const response = await fetch(this.endpoint + '/read_matches');
-    const data = await response.json();
-    if(data.message){
-        console.log(data);
-        // hoge = data.message[0];
-        // fuga = decodeURIComponent(hoge.match_data);
-        this.matched = data.message;
-        this.sender_or_receiver = (new URL(window.location.href).searchParams.get('sender_or_receiver'));
-        console.log(this.matched[0]);
-        console.log(this.sender_or_receiver);
-
-        // match_idをthis.matched[0].idから
-        this.match_id = this.matched[0].id;
-
-
-
-// senderなら        this.login_id_name = this.matched[0].sender_id、receiverならthis.login_id_name = this.matched[0].receiver_id
-        if(this.sender_or_receiver === 'sender'){
-            console.log("this.matched[0].sender_id", this.matched[0].send_id);
-            this.login_id_name.id = this.matched[0].send_id;
-        }
-        if(this.sender_or_receiver === 'receiver'){
-            console.log("this.matched[0].receiver_id", this.matched[0].receive_id);
-            this.login_id_name.id = this.matched[0].receive_id;
-        }
-
-    }
-    return data;
-},
-
-async fetch_read_matches_and_request_match_data(){
-try {
-    console.log("my_user_id1", this.my_user_id);
-    const res = await fetch(this.endpoint + '/read_matches_and_request_match_data', {method: 'POST',headers: {'Content-Type': 'application/json',},
-            body: JSON.stringify({user_id: this.my_user_id}),
-        });
-    console.log("my_user_id1.5", this.my_user_id);
-    const data = await res.json(); console.log(data);
-    console.log("my_user_id2", this.my_user_id);
-    // const data = await res.json(); console.log(data);
-    console.log("my_user_id3", this.my_user_id);
-    this.receive_matched = data.message;
-    console.log("my_user_id4", this.my_user_id);
-    this.ERROR_MESSAGE = "";
-} catch (error) {
-    this.ERROR_MESSAGE = error.message;
-}
-},    
-
-
-
-
-// exe_update
-// app.post('/update_when_to_send_receive', (req, res) => {
-        // const match_id = req.body.match_id;
-async exe_update(Match_Id){
-    try {
-        console.log("exe_update1", Match_Id);
-        const res = await fetch(this.endpoint + '/update_when_to_send_receive', {method: 'POST',headers: {'Content-Type': 'application/json',},
-                body: JSON.stringify({match_id: Match_Id}),
-            });
-        console.log("exe_update2", Match_Id);
-        const data = await res.json(); console.log(data);
-        console.log("exe_update3", Match_Id);
-        // const data = await res.json(); console.log(data);
-        console.log("exe_update4", Match_Id);
-        this.receive_matched = data.message;
-        console.log("exe_update5", Match_Id);
-        this.ERROR_MESSAGE = "";
-    } catch (error) {
-        this.ERROR_MESSAGE = error.message;
-    }
-},
-
-
-
 
 
 }}).mount('#app');
-
-
-let url_with_peer_id = window.location.href;
 const set_url_with_peer_id = () => {
     document.getElementById('url_with_peer_id').href =
         url_with_peer_id

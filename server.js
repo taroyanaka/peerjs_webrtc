@@ -1947,14 +1947,6 @@ try {
 }
 );
 
-
-
-// hello world test
-app.get('/hello' , (req, res) => {
-    res.status(200).json({result: 'success', status: 200, message: 'hello world'});
-});
-
-
 // ページをリフレッシュした際にpeer id Aが変わるため、 sender_peer_idもしくはreceiver_peer_idを更新 バックグラウンドでpeer idがclientとserverに相違がないか確認し、 相違があれば更新するようにコードを追加する
 // check_peer_id_or_change_it
 app.post('/check_peer_id_or_change_it', (req, res) => {
