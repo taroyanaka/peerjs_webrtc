@@ -22,14 +22,17 @@ http://127.0.0.1:3000/client6.html?match_id=4&send_id=5&receive_id=7&sender_or_r
 mounted get_param() getのパラメーターからthis.match_id this.send_id this.receive_id this.sender_or_receiverをセット
 
 ❌
-fetch_read_waiting_matches()
-fetch_check_peer_id_or_change_it()
-fetch_get_peer_id_from_matches_as_sender_or_as_receiver()
-fetch_update_when_to_send_waiting()
-fetch_update_when_to_send_receive()
-fetch_read_matches()
-fetch_read_matches_and_request_match_data()
-exe_update()
+fetch_read_waiting_matches() /read_waiting_matches
+fetch_check_peer_id_or_change_it() /check_peer_id_or_change_it
+fetch_get_peer_id_from_matches_as_sender_or_as_receiver() /get_peer_id_from_matches_as_sender_or_as_receiver
+fetch_update_when_to_send_receive() 
+fetch_read_matches() /read_matches
+fetch_read_matches_and_request_match_data() /read_matches_and_request_match_data
+exe_update() /update_when_to_send_receive
+set_update_when_to_send_waiting()
+
+
+
 
 paramsを取得(match_id, send_id, receive_id, sender_or_receiver)
 matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendを取得 => 一つの関数にまとめる
@@ -194,7 +197,7 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
-async fetch_update_when_to_send_waiting(peer_id_when_get_open){
+set_update_when_to_send_waiting(peer_id_when_get_open){
     const param_data = [
         peer_id_when_get_open,
         this.match_id,
@@ -204,7 +207,7 @@ async fetch_update_when_to_send_waiting(peer_id_when_get_open){
     ];
     this.sample = param_data;
     this.peer_id_when_get_open = peer_id_when_get_open;
-    console.log("fetch_update_when_to_send_waiting()", param_data);
+    console.log("set_update_when_to_send_waiting()", param_data);
 },
 async fetch_update_when_to_send_receive(){
 try {
@@ -374,7 +377,7 @@ peer.on('open', (id) => {
     document.querySelector('.result').value = id;
     my_side_global_conn = id;
     set_url_with_peer_id();
-    app.fetch_update_when_to_send_waiting(id);
+    app.set_update_when_to_send_waiting(id);
 });
 peer.on('connection', function(conn) {
     conn.on('data', function(data){
