@@ -24,23 +24,21 @@ paramsを取得(match_id, send_id, receive_id, sender_or_receiver): mounted get_
 ❌
 fetch_get_peer_id_from_matches_as_sender_or_as_receiver() /get_peer_id_from_matches_as_sender_or_as_receiver
     // peer_idを取得するエンドポイント // sender_or_receiverがsenderならreceiver_peer_idを取得,receiverならsender_peer_idを取得
-fetch_read_matches("read_matches") /read_matches
-fetch_read_matches("read_waiting_matches") /read_waiting_matches
+fetch_read_matches_any() /read_matches_any
+    fetch_read_matches("read_matches") /read_matches
+    fetch_read_matches("read_waiting_matches") /read_waiting_matches
+        // matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendを取得 => 一つの関数にまとめる
+fetch_update_when_to_send() /update_when_to_send => (match_id, receive_or_waiting, peer_id_when_get_open, send_id, receive_id, sender_or_receiver)
+    // matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendの更新(match=>receive=>waiting) => 一つの関数にまとめる
 fetch_check_peer_id_or_change_it() /check_peer_id_or_change_it
-fetch_update_when_to_send_change("wainting", id) /update_when_to_send_waiting
-fetch_update_when_to_send_change("receive") /update_when_to_send_receive
-
-
-matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendを取得 => 一つの関数にまとめる
-matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendの更新(match=>receive=>waiting) => 一つの関数にまとめる
-sender_peer_idとreceiver_peer_idが必要(sender_peer_id,receiver_peer_idどちらかが欠けていることがある)
+    // sender_peer_idとreceiver_peer_idが必要(sender_peer_id,receiver_peer_idどちらかが欠けていることがある)
+    // sender_peer_idとreceiver_peer_idが一致しているか確認し、一致していなければ更新する
 -->
 
-    {{ login_id_name }}
-    {{ sender_peer_id }}
+{{ login_id_name }}
+{{ sender_peer_id }}
 {{ receiver_peer_id }}
-
-    waiting_matched: {{ waiting_matched }}
+{{ waiting_matched }}
 
     ページをリフレッシュした際にpeer id Aが変わるため、
     sender_peer_idもしくはreceiver_peer_idを更新
@@ -171,7 +169,9 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
-async fetch_update_when_to_send_change(To_Any="waiting", id=null){ // change to receive or waiting
+
+// async fetch_update_when_to_send_change(To_Any="waiting", id=null){ // change to receive or waiting
+async fetch_update_when_to_send(To_Any="waiting", id=null){ // change to receive or waiting
 try {
     // To_Anyが"receive"でも"waiting"でもどちらでもない場合はエラースロー
     if(To_Any !== "receive" && To_Any !== "waiting"){
@@ -179,8 +179,12 @@ try {
     }
 
     if(To_Any === "receive"){
-        const res = await fetch(this.endpoint + '/update_when_to_send_receive', {method: 'POST',headers: {'Content-Type': 'application/json',},
-                body: JSON.stringify({match_id: Match_Id}),
+        // const res = await fetch(this.endpoint + '/update_when_to_send_receive', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        const res = await fetch(this.endpoint + '/update_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
+                body: JSON.stringify({
+                    match_id: Match_Id,
+                    receive_or_waiting: 'receive',
+                }),
             });
         const data = await res.json(); console.log(data);
         this.receive_matched = data.message;
@@ -188,8 +192,10 @@ try {
     }
     if(To_Any === "waiting"){
         this.peer_id_when_get_open = set_update_when_to_send_waiting(id);
-        const res = await fetch(this.endpoint + '/update_when_to_send_waiting', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        // const res = await fetch(this.endpoint + '/update_when_to_send_waiting', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        const res = await fetch(this.endpoint + '/update_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
                 body: JSON.stringify({
+                    receive_or_waiting: 'waiting',
                     peer_id_when_get_open: this.peer_id_when_get_open,
                     match_id: this.match_id,
                     send_id: this.send_id,
@@ -204,7 +210,6 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
-
 async fetch_read_matches(Req_Type="read_matches"){
     let data = null;
         if(Req_Type === "read_waiting_matches"){
@@ -232,6 +237,30 @@ async fetch_read_matches(Req_Type="read_matches"){
     }
     return data;
 },
+async fetch_read_matches_any(All_Or_Waiting_Receive="all"){
+try {
+    const res = await fetch(this.endpoint + '/read_matches_any', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({
+                all_or_waiting_receive: All_Or_Waiting_Receive,
+                user_id: this.login_id_name.id,
+                match_id: this.match_id
+            }),
+        });
+    const data = await res.json(); console.log(data);
+    this.sample = data.message;
+    this.sender_or_receiver = data.message[0].sender_or_receiver;
+    this.match_id = data.message[0].id;
+    // this.login_id_name.id = data.message[0].send_id;
+    this.login_id_name.id = this.sender_or_receiver === 'sender' ? data.message[0].send_id : data.message[0].receive_id;
+    this.login_id_name.id = this.sender_or_receiver === 'receiver' ? data.message[0].receive_id : data.message[0].send_id;
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+
+
+
 send_text_fn(Text="sample_text"){
     console.log("send_text_fn");
     send_text(Text);
