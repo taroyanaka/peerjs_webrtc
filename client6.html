@@ -32,8 +32,8 @@ fetch_read_matches_and_request_match_data()
 exe_update()
 
 paramsを取得(match_id, send_id, receive_id, sender_or_receiver)
-matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendを取得
-matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendの更新(match=>receive=>waiting)
+matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendを取得 => 一つの関数にまとめる
+matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendの更新(match=>receive=>waiting) => 一つの関数にまとめる
 sender_peer_idとreceiver_peer_idが必要(sender_peer_id,receiver_peer_idどちらかが欠けていることがある)
 -->
 
