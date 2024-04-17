@@ -120,44 +120,41 @@ mounted() {
 beforeUpdated() {},
 updated() {},
 methods: {
-// get_paramで取得したパラメーターをセット
-    // ※openでpeer_idを取得してmatchesの sender_peer_id か receiver_peer_id を更新
-// fetch_update_when_to_sendでreceiveに変更(初回のみ)(receiveならwaitingに変更)
+// mounted: get_param()で取得したパラメーターをセット => fetch_read_matches_any()でmatchesのデータを取得する(自分側と相手側の情報)
+// peerjsのopen: fetch_update_when_to_send()でpeer_idを取得してmatchesの sender_peer_id か receiver_peer_id をセット(or更新)
+// fetch_update_when_to_send()でreceiveからwaitingに変更(waitingの場合match.htmlで対向に通知される)
 // fetch_check_peer_id_or_change_it()でpeer_idが一致しているか確認し、一致していなければ更新
+    // => いずれの場合もsender_peer_idとreceiver_peer_idがDLされ更新される
 
 get_param(){
 try {
     const url = new URL(window.location.href);
     this.match_id = url.searchParams.get('match_id') ? url.searchParams.get('match_id') : (() => {throw new Error('match_id is not found')})();
+    this.match_id = Number(this.match_id), this.send_id = Number(this.send_id), this.receive_id = Number(this.receive_id);
     this.send_id = url.searchParams.get('send_id') ? url.searchParams.get('send_id') : (() => {throw new Error('send_id is not found')})();
     this.receive_id = url.searchParams.get('receive_id') ? url.searchParams.get('receive_id') : (() => {throw new Error('receive_id is not found')})();
     this.sender_or_receiver = url.searchParams.get('sender_or_receiver') ? url.searchParams.get('sender_or_receiver') : (() => {throw new Error('sender_or_receiver is not found')})();
-    this.match_id = Number(this.match_id), this.send_id = Number(this.send_id), this.receive_id = Number(this.receive_id);
     console.log("this.match_id", this.match_id, "this.send_id", this.send_id, "this.receive_id", this.receive_id, "this.sender_or_receiver", this.sender_or_receiver);
 } catch (error) {
     console.log(error);
 }
 },
-async fetch_check_peer_id_or_change_it(){
+async fetch_read_matches_any(All_Or_Waiting_Receive="all"){
 try {
-    const res = await fetch(this.endpoint + '/check_peer_id_or_change_it', {method: 'POST',headers: {'Content-Type': 'application/json',},
+    const res = await fetch(this.endpoint + '/read_matches_any', {method: 'POST',headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({
-                match_id: this.match_id,
-                sender_or_receiver: this.sender_or_receiver,
-                peer_id: this.peer_id_when_get_open,
+                all_or_waiting_receive: All_Or_Waiting_Receive,
+                user_id: this.login_id_name.id,
+                match_id: this.match_id
             }),
         });
     const data = await res.json(); console.log(data);
-    this.sender_peer_id = data.message.sender_peer_id;
-    this.receiver_peer_id = data.message.receiver_peer_id;
-    if(this.sender_or_receiver === 'sender'){
-        document.querySelector('.result').value = this.sender_peer_id;
-        document.querySelector('#connect-to-peer').value = this.receiver_peer_id;
-    }
-    if(this.sender_or_receiver === 'receiver'){
-        document.querySelector('.result').value = this.receiver_peer_id;
-        document.querySelector('#connect-to-peer').value = this.sender_peer_id;
-    }
+    this.sample = data.message;
+    this.sender_or_receiver = data.message[0].sender_or_receiver;
+    this.match_id = data.message[0].id;
+    // this.login_id_name.id = data.message[0].send_id;
+    this.login_id_name.id = this.sender_or_receiver === 'sender' ? data.message[0].send_id : data.message[0].receive_id;
+    this.login_id_name.id = this.sender_or_receiver === 'receiver' ? data.message[0].receive_id : data.message[0].send_id;
     this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
@@ -202,28 +199,31 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
-async fetch_read_matches_any(All_Or_Waiting_Receive="all"){
+async fetch_check_peer_id_or_change_it(){
 try {
-    const res = await fetch(this.endpoint + '/read_matches_any', {method: 'POST',headers: {'Content-Type': 'application/json',},
+    const res = await fetch(this.endpoint + '/check_peer_id_or_change_it', {method: 'POST',headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({
-                all_or_waiting_receive: All_Or_Waiting_Receive,
-                user_id: this.login_id_name.id,
-                match_id: this.match_id
+                match_id: this.match_id,
+                sender_or_receiver: this.sender_or_receiver,
+                peer_id: this.peer_id_when_get_open,
             }),
         });
     const data = await res.json(); console.log(data);
-    this.sample = data.message;
-    this.sender_or_receiver = data.message[0].sender_or_receiver;
-    this.match_id = data.message[0].id;
-    // this.login_id_name.id = data.message[0].send_id;
-    this.login_id_name.id = this.sender_or_receiver === 'sender' ? data.message[0].send_id : data.message[0].receive_id;
-    this.login_id_name.id = this.sender_or_receiver === 'receiver' ? data.message[0].receive_id : data.message[0].send_id;
+    this.sender_peer_id = data.message.sender_peer_id;
+    this.receiver_peer_id = data.message.receiver_peer_id;
+    if(this.sender_or_receiver === 'sender'){
+        document.querySelector('.result').value = this.sender_peer_id;
+        document.querySelector('#connect-to-peer').value = this.receiver_peer_id;
+    }
+    if(this.sender_or_receiver === 'receiver'){
+        document.querySelector('.result').value = this.receiver_peer_id;
+        document.querySelector('#connect-to-peer').value = this.sender_peer_id;
+    }
     this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
 }
 },
-
 
 
 send_text_fn(Text="sample_text"){
@@ -301,7 +301,7 @@ peer.on('open', (id) => {
     document.querySelector('.result').value = id;
     my_side_global_conn = id;
     set_url_with_peer_id();
-    app.fetch_update_when_to_send_change("waiting", id);
+    app.fetch_update_when_to_send("waiting", id);
 });
 peer.on('connection', function(conn) {
     conn.on('data', function(data){
