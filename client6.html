@@ -15,26 +15,6 @@
 </head>
 <body>
 <div id="app">
-<!-- 
-http://127.0.0.1:3000/client6.html?match_id=4&send_id=5&receive_id=7&sender_or_receiver=sender
-
-⭕️
-paramsを取得(match_id, send_id, receive_id, sender_or_receiver): mounted get_param() getのパラメーターからthis.match_id this.send_id this.receive_id this.sender_or_receiverをセット
-
-❌
-fetch_get_peer_id_from_matches_as_sender_or_as_receiver() /get_peer_id_from_matches_as_sender_or_as_receiver
-    // peer_idを取得するエンドポイント // sender_or_receiverがsenderならreceiver_peer_idを取得,receiverならsender_peer_idを取得
-fetch_read_matches_any() /read_matches_any
-    // matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendを取得 => 一つの関数にまとめる
-fetch_update_when_to_send() /update_when_to_send => (match_id, receive_or_waiting, peer_id_when_get_open, send_id, receive_id, sender_or_receiver)
-    // matchesからqueryで(match_id, send_id, receive_id, sender_or_receiver)when_to_sendの更新(match=>receive=>waiting) => 一つの関数にまとめる
-fetch_check_peer_id_or_change_it() /check_peer_id_or_change_it
-    // sender_peer_idとreceiver_peer_idが必要(sender_peer_id,receiver_peer_idどちらかが欠けていることがある)
-    // sender_peer_idとreceiver_peer_idが一致しているか確認し、一致していなければ更新する
-
--->
-
-
 {{ login_id_name }}
 {{ sender_peer_id }}
 {{ receiver_peer_id }}
@@ -125,6 +105,11 @@ methods: {
 // fetch_update_when_to_send()でreceiveからwaitingに変更(waitingの場合match.htmlで対向に通知される)
 // fetch_check_peer_id_or_change_it()でpeer_idが一致しているか確認し、一致していなければ更新
     // => いずれの場合もsender_peer_idとreceiver_peer_idがDLされ更新される
+
+// http://127.0.0.1:3000/client6.html?match_id=4&send_id=5&receive_id=7&sender_or_receiver=sender
+// テスト用のURLとSQL => これを使ってデータを取得して、peer_idを取得して、peer_idが一致しているか確認して、一致していなければ更新する
+// select * from matches where id = 4;
+// UPDATE matches SET sender_peer_id = '', receiver_peer_id = '', when_to_send = 'receive' WHERE id = 4;
 
 get_param(){
 try {
