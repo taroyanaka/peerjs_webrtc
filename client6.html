@@ -15,30 +15,41 @@
 </head>
 <body>
 <div id="app">
-    <!-- button show_param -->
+    peer id A<input class="result" type="text">
+    <input id="connect-to-peer" type="text" placeholder="Peer ID B">
+
+<h2>{{ sender_or_receiver }}</h2>
+
 <button @click="show_param()">show_param</button>
     {{ login_id_name }}
-{{ sender_peer_id }}
-{{ receiver_peer_id }}
-{{ waiting_matched }}
+    <!-- sender_peer_id {{ sample.match.sender_peer_id }} -->
+    <!-- receiver_peer_id {{ sample.match.receiver_peer_id }} -->
+    <!-- {{ sample }} -->
+    sample.sender_peer_id    {{ sample.sender_peer_id }}
+    sample.receiver_peer_id    {{ sample.receiver_peer_id }}
+
+<!-- {{ sender_peer_id }} -->
+<!-- {{ receiver_peer_id }} -->
+<!-- {{ waiting_matched }} -->
+
 
     ページをリフレッシュした際にpeer id Aが変わるため、
     sender_peer_idもしくはreceiver_peer_idを更新
     バックグラウンドでpeer idがclientとserverに相違がないか確認し、
     相違があれば更新するようにコードを追加する
 
-    match_id: {{ match_id }}
-    send_id: {{ send_id }}
-    receive_id: {{ receive_id }}
-    sender_or_receiver: {{ sender_or_receiver }}
-    ERROR_MESSAGE: {{ ERROR_MESSAGE }}
-    sample: {{ sample }}
-    peer_id_when_get_open: {{ peer_id_when_get_open }}
-    my_user_id: {{ my_user_id }}
-    receive_matched: {{ receive_matched }}
-    matched: {{ matched }}
-    other_side_data_link: {{ other_side_data_link }}
-    endpoint: {{ endpoint }}
+    <!-- match_id: {{ match_id }} -->
+    <!-- send_id: {{ send_id }} -->
+    <!-- receive_id: {{ receive_id }} -->
+    <!-- sender_or_receiver: {{ sender_or_receiver }} -->
+    <!-- ERROR_MESSAGE: {{ ERROR_MESSAGE }} -->
+    <!-- sample: {{ sample }} -->
+    <!-- peer_id_when_get_open: {{ peer_id_when_get_open }} -->
+    <!-- my_user_id: {{ my_user_id }} -->
+    <!-- receive_matched: {{ receive_matched }} -->
+    <!-- matched: {{ matched }} -->
+    <!-- other_side_data_link: {{ other_side_data_link }} -->
+    <!-- endpoint: {{ endpoint }} -->
     <!-- button fetch_hello -->
     <button @click="fetch_hello()">fetch_hello</button>
 
@@ -52,11 +63,11 @@
     <button @click="send_text_fn('FOOOOOOOOOOOO')">send_text_fn my text</button>
     <div class="random_message"></div>
     <p>このURL(https://taroyanaka.github.io/peerjs_webrtc/client3.html)2枚のタブで別々に開く。片方に表示されたpeer id Aの英数文字列を、もう片方のタブのPeer ID BのinputにコピペしてConnect Bをクリック</p>
-    peer id A<input class="result" type="text">
-    <input id="connect-to-peer" type="text" placeholder="Peer ID B">
 </div>
 </body>
 <script>
+let GLOBAL_PEER_ID = null;
+
 let global_conn = null;
 let global_peerId = null;
 let hoge = null;
@@ -74,7 +85,11 @@ receiver_peer_id: null,
 
     peer_id_when_get_open: '',
     ERROR_MESSAGE: '',
+
     sample: null,
+    sample2: null,
+    sample3: null,
+
     match_id: 0,
     send_id: 0,
     receive_id: 0,
@@ -96,14 +111,17 @@ watch: {
 //     deep: true
 // },
 },
-mounted() {
-    this.get_param();
+async mounted() {
+    await this.get_param();
+    await this.show_param();
+    await this.fetch_read_matches_and_user_data_by_match_id();
 },
 beforeUpdated() {},
 updated() {},
 methods: {
 // mounted: get_param()で取得したパラメーターをセット => fetch_read_matches_any()でmatchesのデータを取得する(自分側と相手側の情報)
 // 初回:upsertでmatchesにレコードをinsert
+// fetch_read_matches_and_user_data_by_match_id()でmatchesとuser(自分と相手)のデータを取得
 // fetch_upsert_when_to_send()でreceiveからwaitingに変更(waitingの場合match.htmlで対向に通知される)
     // peerjsのopen: fetch_upsert_when_to_send()でpeer_idを取得してmatchesの sender_peer_id か receiver_peer_id をセット(or更新)
 
@@ -154,16 +172,16 @@ try {
 },
 async fetch_upsert_when_to_send(To_Any="waiting", id=null){ // change to receive or waiting
 try {
-// match_idに該当するmatchがwaitingで存在する場合にchattingに変更しつつ、peer_idを取得して、sender_peer_idとreceiver_peer_idを更新する関数
-const to_chatting = async () => {
-    const res = await fetch(this.endpoint + '/upsert_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
-            body: JSON.stringify({
-                match_id: this.match_id,
-                receive_or_waiting: 'chatting',
-            }),
-        });
-}
-// match_idに該当するmatchがwaitingで存在する場合にchattingに変更しつつ、peer_idを取得して、sender_peer_idとreceiver_peer_idを更新する
+    // match_idに該当するmatchがwaitingで存在する場合にchattingに変更しつつ、peer_idを取得して、sender_peer_idとreceiver_peer_idを更新する関数
+    const to_chatting = async () => {
+        const res = await fetch(this.endpoint + '/upsert_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
+                body: JSON.stringify({
+                    match_id: this.match_id,
+                    receive_or_waiting: 'chatting',
+                }),
+            });
+    }
+    // match_idに該当するmatchがwaitingで存在する場合にchattingに変更しつつ、peer_idを取得して、sender_peer_idとreceiver_peer_idを更新する
     if(To_Any === "chatting"){
         const res = await fetch(this.endpoint + '/upsert_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
                 body: JSON.stringify({
@@ -172,20 +190,14 @@ const to_chatting = async () => {
                 }),
             });
         const data = await res.json(); console.log(data);
-        this.waiting_matched = data.message;
+        // this.simple2 = data.message;
         this.ERROR_MESSAGE = "";
     }
-
-
-
-
     // To_Anyが"receive"でも"waiting"でもどちらでもない場合はエラースロー
     if(To_Any !== "receive" && To_Any !== "waiting"){
         throw new Error('To_Any is not "receive" or "waiting"');
     }
-
     if(To_Any === "receive"){
-        // const res = await fetch(this.endpoint + '/upsert_when_to_send_receive', {method: 'POST',headers: {'Content-Type': 'application/json',},
         const res = await fetch(this.endpoint + '/upsert_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
                 body: JSON.stringify({
                     match_id: Match_Id,
@@ -193,7 +205,7 @@ const to_chatting = async () => {
                 }),
             });
         const data = await res.json(); console.log(data);
-        this.receive_matched = data.message;
+        // this.simple3 = data.message;
         this.ERROR_MESSAGE = "";
     }
     if(To_Any === "waiting"){
@@ -206,7 +218,6 @@ const to_chatting = async () => {
             this.sender_or_receiver,
         )
         this.peer_id_when_get_open = id;
-        // const res = await fetch(this.endpoint + '/upsert_when_to_send_waiting', {method: 'POST',headers: {'Content-Type': 'application/json',},
         const res = await fetch(this.endpoint + '/upsert_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
                 body: JSON.stringify({
                     receive_or_waiting: 'waiting',
@@ -226,26 +237,26 @@ const to_chatting = async () => {
     this.ERROR_MESSAGE = error.message;
 }
 },
-async fetch_check_peer_id_or_change_it(){
+async fetch_check_peer_id_or_change_it(Peer_Id){
 try {
+    // Peer_Idが存在しない場合はエラースローして終了
+    if(!Peer_Id){
+        throw new Error('Peer_Id is not found');
+    }
+    
     const res = await fetch(this.endpoint + '/check_peer_id_or_change_it', {method: 'POST',headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({
                 match_id: this.match_id,
                 sender_or_receiver: this.sender_or_receiver,
-                peer_id: this.peer_id_when_get_open,
+                peer_id: Peer_Id ? this.peer_id_when_get_open : Peer_Id,
             }),
         });
     const data = await res.json(); console.log(data);
-    this.sender_peer_id = data.message.sender_peer_id;
-    this.receiver_peer_id = data.message.receiver_peer_id;
-    if(this.sender_or_receiver === 'sender'){
-        document.querySelector('.result').value = this.sender_peer_id;
-        document.querySelector('#connect-to-peer').value = this.receiver_peer_id;
-    }
-    if(this.sender_or_receiver === 'receiver'){
-        document.querySelector('.result').value = this.receiver_peer_id;
-        document.querySelector('#connect-to-peer').value = this.sender_peer_id;
-    }
+    console.log(this.sample);
+    this.sample = data.message;
+        // senderなら.resultにはsender_peer_idを、receiverならreceiver_peer_idをセット
+        document.querySelector('.result').value = this.sender_or_receiver === 'sender' ? this.sample.sender_peer_id : this.sample.receiver_peer_id;
+        document.querySelector('#connect-to-peer').value = this.sender_or_receiver === 'sender' ? this.sample.receiver_peer_id : this.sample.sender_peer_id;
     this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
@@ -324,19 +335,19 @@ let connect_to_peer_for_call = async () => {
 };
 let my_side_global_conn = null;
 let text_array = [];
-peer.on('open', (id) => {
+peer.on('open', async (id) => {
+    GLOBAL_PEER_ID = id;
     document.querySelector('.result').value = id;
-    my_side_global_conn = id;
-    set_url_with_peer_id();
-    app.fetch_upsert_when_to_send("waiting", id);
+    await app.fetch_upsert_when_to_send("waiting", id);
+    await app.fetch_check_peer_id_or_change_it(id);
 });
 peer.on('connection', function(conn) {
     conn.on('data', function(data){
         console.log('Received', data);
         if (data.another_peer_id){
-            console.log("new another_peer_id", data.another_peer_id);
-            document.querySelector('#connect-to-peer').value = data.another_peer_id;
-            global_peerId = data.another_peer_id;
+            console.log("another_peer_id", data.another_peer_id);
+            // data.another_peer_idをapp.fetch_check_peer_id_or_change_itの引数にして実行
+            app.fetch_check_peer_id_or_change_it(data.another_peer_id);
         }
         if(data.random_message){
             console.log("random_message", data.random_message);
@@ -354,28 +365,27 @@ let first_send = true;
 function send_text(Text="sample_text"){
     console.log("send_text");
 
-    if(document.querySelector('#connect-to-peer').value === ''){
-        document.querySelector('#connect-to-peer').value = (new URL(window.location.href).searchParams.get('peer_id_b'));
-    }
-    if(new URL(window.location.href).searchParams.get('peer_id_b')){
-        peerId = new URL(window.location.href).searchParams.get('peer_id_b');
-    }else{
-        peerId = global_peerId;
-    }
-    if (!peerId) {
-        console.error('Peer ID is not specified.');
-        return;
-    }
+    // if(document.querySelector('#connect-to-peer').value === ''){
+    //     document.querySelector('#connect-to-peer').value = (new URL(window.location.href).searchParams.get('peer_id_b'));
+    // }
+    // if(new URL(window.location.href).searchParams.get('peer_id_b')){
+    //     peerId = new URL(window.location.href).searchParams.get('peer_id_b');
+    // }else{
+    //     peerId = global_peerId;
+    // }
+    // if (!peerId) {
+    //     console.error('Peer ID is not specified.');
+    //     return;
+    // }
 
-    let conn2 = peer.connect(peerId);
-
+    const id_for_con = document.querySelector('#connect-to-peer').value;
+    let conn2 = peer.connect(id_for_con);
+    const another_peer_id =
+        app.sender_or_receiver === 'sender' ? app.sample.receiver_peer_id : app.sample.sender_peer_id;
+    console.log("another_peer_id", another_peer_id);
     conn2.on('open', function() {
         try {
-            if(my_side_global_conn && first_send === true){
-                conn2.send({another_peer_id: my_side_global_conn});
-                first_send = false;
-            }
-            conn2.send({random_message: Text});
+            conn2.send({random_message: Text, another_peer_id: another_peer_id});
         } catch (err) {
             console.error('Failed to send message:', err);
         }
