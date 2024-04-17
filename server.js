@@ -1664,9 +1664,9 @@ try {
 }
 );
 
-app.post('/read_matches_any', (req, res) => {
+app.post('/read_matches_any_old', (req, res) => {
     try {
-        const { all_or_waiting_receive, user_id } = req.body;
+        const { all_or_waiting_receive, user_id, match_id } = req.body;
 
         if (!user_id || typeof user_id !== 'number' || user_id < 1 || !db.prepare('SELECT id FROM user_datas WHERE id = ?').get(user_id)) {
             throw new Error('user_idが不正です');
@@ -1701,6 +1701,53 @@ app.post('/read_matches_any', (req, res) => {
         res.status(400).json({ status: 400, result: 'fail', message: error.message });
     }
 });
+
+
+// match_idを指定してmatchesテーブルのデータとuser_datasテーブルからsend_idとreceive_idのuserのデータを取得するエンドポイント
+app.post('/read_matches_and_user_data_by_match_id', (req, res) => {
+    try {
+        const { match_id } = req.body;
+        if (!match_id || typeof match_id !== 'number' || match_id < 1) {
+            throw new Error('match_idが不正です');
+        }
+
+        const match = db2.prepare('SELECT * FROM matches WHERE id = ?').get(match_id);
+
+        if (!match) {
+            throw new Error('指定されたmatch_idのマッチングデータが見つかりません');
+        }
+
+        let sender = db.prepare('SELECT * FROM user_datas WHERE id = ?').get(match.send_id);
+        // senderのskills_id_arrayを配列に変換し配列からskillsテーブルを元にskillを取得して追加する
+        const sender_skill = 
+            decodeURIComponent(sender.skills_id_array)
+            .split(',').map((id) => db.prepare('SELECT * FROM skills WHERE id = ?').get(id));
+        sender = { ...sender, skills: sender_skill };
+
+        let receiver = db.prepare('SELECT * FROM user_datas WHERE id = ?').get(match.receive_id);
+        // receiverのskills_id_arrayを配列に変換し配列からskillsテーブルを元にskillを取得して追加する
+        const receiver_skill =
+            decodeURIComponent(receiver.skills_id_array)
+            .split(',').map((id) => db.prepare('SELECT * FROM skills WHERE id = ?').get(id));
+        receiver = { ...receiver, skills: receiver_skill };
+
+        if (!sender || !receiver) {
+            throw new Error('送信者または受信者のユーザーデータが見つかりません');
+        }
+
+        res.status(200).json({ result: 'success', status: 200, 
+                                    message: {
+                                        match: match,
+                                        sender: sender,
+                                        receiver: receiver
+                                    }
+        });
+    } catch (error) {
+        res.status(400).json({ status: 400, result: 'fail', message: error.message });
+    }
+});        
+
+
 
 // send_idが自分のuser_data_idでreceiveの状態のmatchを取得するエンドポイント
 app.post('/read_send_matches', (req, res) => {

@@ -510,15 +510,12 @@ try {
     if (!Send_Id || !receive_Id) throw new Error("Send_Idかreceive_Idがありません");
     if (!this.login_id_name.id) throw new Error("login_id_name.idがありません");
     const Sender_Or_receiver = this.waiting_matched.find(match => match.id === Match_Id).send_id === this.login_id_name.id ? 'sender' : 'receiver';
-    const chat_url_for_receiver_user = 'http://127.0.0.1:3000' + '/client6.html?match_id=' + Match_Id + '&send_id=' + Send_Id + '&receive_id=' + receive_Id + '&sender_or_receiver=' + Sender_Or_receiver;
+    const chat_url_for_receiver_user = 'http://127.0.0.1:3000' + '/client6.html?match_id=' + Match_Id + '&send_id=' + Send_Id + '&receive_id=' + receive_Id + '&sender_or_receiver=' + 'receiver';
     this.chat_url_for_receiver_user = chat_url_for_receiver_user;
 } catch (error) {
     console.log(error.message);
     this.ERROR_MESSAGE = error.message;
-    
 }
-
-
 },
 async fetch_read_waiting_matches(){
 try {
@@ -552,10 +549,6 @@ make_chat_url_with_get_param(Match_Id, Send_Id, receive_Id){
         this.ERROR_MESSAGE = error.message;
     }
 },
-
-
-
-
 async fetch_read_received_anyone_own_matches(){
     try {
         if (!this.login_id_name.id) throw new Error("login_id_name.idがありません");

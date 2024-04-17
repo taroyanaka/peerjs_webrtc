@@ -17,7 +17,7 @@
 <div id="app">
     <!-- button show_param -->
 <button @click="show_param()">show_param</button>
-{{ login_id_name }}
+    {{ login_id_name }}
 {{ sender_peer_id }}
 {{ receiver_peer_id }}
 {{ waiting_matched }}
@@ -112,12 +112,13 @@ methods: {
         // => いずれの場合もsender_peer_idとreceiver_peer_idがDLされ更新される
 
 // http://127.0.0.1:3000/client6.html?match_id=4&send_id=5&receive_id=7&sender_or_receiver=sender
+// http://127.0.0.1:3000/client6.html?match_id=4&send_id=5&receive_id=7&sender_or_receiver=receiver
 // テスト用のURLとSQL => これを使ってデータを取得して、peer_idを取得して、peer_idが一致しているか確認して、一致していなければ更新する
 // select * from matches where id = 4;
 // DELETE FROM matches WHERE id = 4;
 // UPDATE matches SET sender_peer_id = '', receiver_peer_id = '', when_to_send = 'receive' WHERE id = 4;
 show_param(){
-console.log(this.match_id,this.send_id,this.receive_id,this.sender_or_receiver,)
+    console.log(this.match_id,this.send_id,this.receive_id,this.sender_or_receiver,)
 },
 get_param(){
 try {
@@ -127,36 +128,57 @@ try {
     this.send_id = url.searchParams.get('send_id') ? url.searchParams.get('send_id') : (() => {throw new Error('send_id is not found')})();
     this.receive_id = url.searchParams.get('receive_id') ? url.searchParams.get('receive_id') : (() => {throw new Error('receive_id is not found')})();
     this.sender_or_receiver = url.searchParams.get('sender_or_receiver') ? url.searchParams.get('sender_or_receiver') : (() => {throw new Error('sender_or_receiver is not found')})();
+
+    // sender_or_receiverがsenderの場合はsend_idを、receiverの場合はreceive_idをmy_user_idにセット
+    this.login_id_name = {id: this.sender_or_receiver === 'sender' ? Number(this.send_id) : Number(this.receive_id), name: null};
     console.log("this.match_id", this.match_id, "this.send_id", this.send_id, "this.receive_id", this.receive_id, "this.sender_or_receiver", this.sender_or_receiver);
 } catch (error) {
     console.log(error);
 }
 },
-async fetch_read_matches_any(All_Or_Waiting_Receive="all"){
+
+// match_idを指定してmatchesテーブルのデータとuser_datasテーブルからsend_idとreceive_idのuserのデータを取得するエンドポイント
+async fetch_read_matches_and_user_data_by_match_id(){
 try {
-    const res = await fetch(this.endpoint + '/read_matches_any', {method: 'POST',headers: {'Content-Type': 'application/json',},
+    const res = await fetch(this.endpoint + '/read_matches_and_user_data_by_match_id', {method: 'POST',headers: {'Content-Type': 'application/json',},
             body: JSON.stringify({
-                all_or_waiting_receive: All_Or_Waiting_Receive,
-                user_id: this.login_id_name.id,
                 match_id: this.match_id
             }),
         });
     const data = await res.json(); console.log(data);
     this.sample = data.message;
-    this.sender_or_receiver = data.message[0].sender_or_receiver;
-    this.match_id = data.message[0].id;
-    // this.login_id_name.id = data.message[0].send_id;
-    this.login_id_name.id = this.sender_or_receiver === 'sender' ? data.message[0].send_id : data.message[0].receive_id;
-    this.login_id_name.id = this.sender_or_receiver === 'receiver' ? data.message[0].receive_id : data.message[0].send_id;
     this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
 }
 },
 async fetch_upsert_when_to_send(To_Any="waiting", id=null){ // change to receive or waiting
-    console.log("fetch_upsert_when_to_send");
-    console.log("To_Any", To_Any);
 try {
+// match_idに該当するmatchがwaitingで存在する場合にchattingに変更しつつ、peer_idを取得して、sender_peer_idとreceiver_peer_idを更新する関数
+const to_chatting = async () => {
+    const res = await fetch(this.endpoint + '/upsert_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({
+                match_id: this.match_id,
+                receive_or_waiting: 'chatting',
+            }),
+        });
+}
+// match_idに該当するmatchがwaitingで存在する場合にchattingに変更しつつ、peer_idを取得して、sender_peer_idとreceiver_peer_idを更新する
+    if(To_Any === "chatting"){
+        const res = await fetch(this.endpoint + '/upsert_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
+                body: JSON.stringify({
+                    match_id: this.match_id,
+                    receive_or_waiting: 'waiting',
+                }),
+            });
+        const data = await res.json(); console.log(data);
+        this.waiting_matched = data.message;
+        this.ERROR_MESSAGE = "";
+    }
+
+
+
+
     // To_Anyが"receive"でも"waiting"でもどちらでもない場合はエラースロー
     if(To_Any !== "receive" && To_Any !== "waiting"){
         throw new Error('To_Any is not "receive" or "waiting"');
