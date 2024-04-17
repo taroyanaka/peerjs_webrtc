@@ -1664,75 +1664,44 @@ try {
 }
 );
 
-app.get('/read_matches', (req, res) => {
+app.post('/read_matches_any', (req, res) => {
     try {
-        const RESULT = db2.prepare(`SELECT * FROM matches`).all()
-        ? db2.prepare(`SELECT * FROM matches`).all()
-        : (()=>{throw new Error('matchesテーブルからデータを取得できませんでした')})();
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-}
-);
+        const { all_or_waiting_receive, user_id } = req.body;
 
-app.post('/read_waiting_matches', (req, res) => {
-try {
-    const user_id = req.body.user_id;
-    const error_check_user_id = user_id;
-    // user_idは1以上の整数でuser_datasに存在するidであることをチェック
-    error_check_user_id === undefined || error_check_user_id === null || typeof error_check_user_id !== 'number' || error_check_user_id < 1 ? (()=>{throw new Error('user_idが不正です1')})() : null;
-    db.prepare('SELECT id FROM user_datas WHERE id = ?').get(user_id) ? null : (()=>{throw new Error('user_idが不正です2')})();
-    console.log(req.body.user_id, 2);
-    // when_to_sendがwaitingかつ、send_idかreceive_idが自分のuser_data_idのmatchを取得する
-    const RESULT = db2.prepare(`SELECT * FROM matches WHERE (send_id = ? OR receive_id = ?) AND when_to_send = 'waiting'`).all(user_id, user_id)
-    // RESULTを絞り込む。sender_peer_idがNULLではない場合、receive_idが自分のuser_idであるものを取得する、receiver_peer_idがNULLではない場合、send_idが自分のuser_idであるものを取得する
-    const RESULT2 = RESULT.filter((data) => {
-        if (data.sender_peer_id !== null) {
-            return data.receive_id === user_id;
+        if (!user_id || typeof user_id !== 'number' || user_id < 1 || !db.prepare('SELECT id FROM user_datas WHERE id = ?').get(user_id)) {
+            throw new Error('user_idが不正です');
         }
-        if (data.receiver_peer_id !== null) {
-            return data.send_id === user_id;
+
+        if (!all_or_waiting_receive || typeof all_or_waiting_receive !== 'string' || !['all', 'waiting', 'receive'].includes(all_or_waiting_receive)) {
+            throw new Error('all_or_waiting_receiveが不正です');
         }
-    });
-    res.status(200)
-        .json({result: 'success',
-            status: 200,
-            message: RESULT2
-        });
-} catch (error) {
-    res.status(400).json({status: 400, result: 'fail', message: error.message});
-}
-}
-);
-// receive_idが自分のuser_data_idのmatchを取得するエンドポイント
-app.post('/read_receive_matches', (req, res) => {
-    try {
-        // console.log(req.body.user_id, 1)
-        console.log("read_receive_matches");
-        const user_id = req.body.user_id;
-        const error_check_user_id = user_id;
-        // user_idは1以上の整数でuser_datasに存在するidであることをチェック
-        error_check_user_id === undefined || error_check_user_id === null || typeof error_check_user_id !== 'number' || error_check_user_id < 1 ? (()=>{throw new Error('user_idが不正です1')})() : null;
-        db.prepare('SELECT id FROM user_datas WHERE id = ?').get(user_id) ? null : (()=>{throw new Error('user_idが不正です2')})();
-        console.log(req.body.user_id, 2);
-        const RESULT = db2.prepare(`SELECT * FROM matches WHERE receive_id = ? AND when_to_send = 'match'`).all(user_id)
-        ? db2.prepare(`SELECT * FROM matches WHERE receive_id = ? AND when_to_send = 'match'`).all(user_id)
-        : (()=>{throw new Error('matchesテーブルからデータを取得できませんでした')})();
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
+
+        const queries = {
+            all: `SELECT * FROM matches`,
+            waiting: `SELECT * FROM matches WHERE (send_id = ? OR receive_id = ?) AND when_to_send = 'waiting'`,
+            receive: `SELECT * FROM matches WHERE receive_id = ? AND when_to_send = 'match'`
+        };
+
+        if (!queries[all_or_waiting_receive]) {
+            throw new Error('all_or_waiting_receiveが不正です');
+        }
+
+        let RESULT = db2.prepare(queries[all_or_waiting_receive]).all(user_id, user_id);
+
+        if (all_or_waiting_receive === 'waiting') {
+            RESULT = RESULT.filter(data => data.sender_peer_id ? data.receive_id === user_id : data.send_id === user_id);
+        }
+
+        if (!RESULT) {
+            throw new Error('matchesテーブルからデータを取得できませんでした');
+        }
+
+        res.status(200).json({ result: 'success', status: 200, message: RESULT });
     } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
+        res.status(400).json({ status: 400, result: 'fail', message: error.message });
     }
-}
-);
+});
+
 // send_idが自分のuser_data_idでreceiveの状態のmatchを取得するエンドポイント
 app.post('/read_send_matches', (req, res) => {
     try {
@@ -1804,102 +1773,91 @@ try {
 }
 );
 
-
-// 指定したmatch_idのwhen_to_sendをreceiveに変更するエンドポイント
-app.post('/update_when_to_send_receive', (req, res) => {
+// when_to_sendフィールドは、マッチングの状態を表すために使用されます。それぞれの値（receive、waiting、chatting）は、次のような異なる挙動を示します:
+// receive:この状態は、ユーザーがマッチングの通知を受け取るべきであることを示します。つまり、マッチングが成立し、ユーザーがそれを確認する必要がある状態です。
+    // => sender_peer_id, receiver_peer_id 両方null
+// waiting:この状態は、マッチングが成立しているが、まだ相手ユーザーからの確認を待っていることを示します。つまり、一方のユーザーはマッチングを確認しましたが、もう一方のユーザーはまだ確認していない状態です。
+    // => sender_peer_id, receiver_peer_id 片方null
+// chatting:この状態は、両方のユーザーがマッチングを確認し、チャットを開始できることを示します。つまり、マッチングが完全に成立し、両方のユーザーが通信を開始できる状態です。
+    // => sender_peer_id, receiver_peer_id 両方trueでstringが埋まってる
+app.post('/upsert_when_to_send', (req, res) => {
     try {
-        const match_id = req.body.match_id;
-        const RESULT = db2.prepare(`
-        UPDATE matches
-        SET when_to_send = 'receive'
-        WHERE id = @id
-        `).run({
-            id: match_id,
-        })
-        ? 'OK'
-        : (()=>{throw new Error('matchesテーブルのwhen_to_sendを更新できませんでした')})();
-        res.status(200)
-            .json({result: 'success',
-                status: 200,
-                message: RESULT
-            });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-}
-);
+        const { match_id, receive_or_waiting, peer_id_when_get_open, send_id, receive_id, sender_or_receiver } = req.body;
+        console.log(match_id, receive_or_waiting, peer_id_when_get_open, send_id, receive_id, sender_or_receiver);
 
 
-app.post('/update_when_to_send_waiting', (req, res) => {
-    try {
-    const peer_id_when_get_open = req.body.peer_id_when_get_open;
-    const match_id = req.body.match_id;
-    const send_id = req.body.send_id;
-    const receive_id = req.body.receive_id;
-    const sender_or_receiver = req.body.sender_or_receiver;
-    console.log(
-peer_id_when_get_open,
-match_id,
-send_id,
-receive_id,
-sender_or_receiver,
-    );
+        // match_idが存在しない場合matchesに新たにレコードを追加する
+        if(!match_id || typeof match_id !== 'number' || match_id < 1 || !db2.prepare('SELECT id FROM matches WHERE id = ?').get(match_id)) {
+            // match_idが存在しない場合matchesに新たにレコードを追加する関数
+            const add_new_record = (match_id, send_id, receive_id, when_to_send) => {
+                const response = db2.prepare(`
+                    INSERT INTO matches (id, send_id, receive_id, when_to_send, created_at, updated_at)
+                        VALUES (@id, @send_id, @receive_id, @when_to_send, @created_at, @updated_at)
+                `).run({
+                    id: match_id,
+                    send_id: send_id,
+                    receive_id: receive_id,
+                    when_to_send: when_to_send,
+                    created_at: now(),
+                    updated_at: now()
+                });
+                return response ? 'OK' : (() => { throw new Error('matchesテーブルに新たなレコードを追加できませんでした') })();
+            };
+            const RESULT_OF_ADD_NEW_RECORD = add_new_record(match_id, send_id, receive_id, receive_or_waiting);
+            // 新たにレコードを追加できなかった場合はエラー
+            RESULT_OF_ADD_NEW_RECORD === 'OK' ? null : (() => { throw new Error(RESULT_OF_ADD_NEW_RECORD) })();
+        }
 
-    const error_check_match_id = match_id;
-    // match_idは1以上の整数でmatchesに存在するidであることをチェック
-    error_check_match_id === undefined || error_check_match_id === null || typeof error_check_match_id !== 'number' || error_check_match_id < 1 ? (()=>{throw new Error('match_idが不正です1')})() : null;
-    db2.prepare('SELECT id FROM matches WHERE id = ?').get(match_id) ? null : (()=>{throw new Error('match_idが不正です2')})();
+        if (!match_id || typeof match_id !== 'number' || match_id < 1) {
+            throw new Error('match_idが不正です');
+        }
 
-    // peer_id_when_get_openをエスケープする
-    const escaped_peer_id_when_get_open = encodeURIComponent(peer_id_when_get_open);
+        const escaped_peer_id_when_get_open = encodeURIComponent(peer_id_when_get_open);
+        let RESULT = null;
+        let query = '';
 
-    let RESULT = null;
-    // sender_or_receiverがsenderの場合match_idが一致するmatchesのsender_peer_idにpeer_id_when_get_openをセット
-    if(sender_or_receiver === 'sender'){
-        console.log("foo")
-        RESULT = db2.prepare(`
-        UPDATE matches
-        SET sender_peer_id = @peer_id_when_get_open, when_to_send = 'waiting'
-        WHERE id = @id
-        AND send_id = @send_id
-        AND receive_id = @receive_id
-        `).run({
+
+        if (receive_or_waiting === 'receive') {
+            query = `UPDATE matches SET when_to_send = 'receive' WHERE id = @id`;
+        } else if (receive_or_waiting === 'waiting' && ['sender', 'receiver', 'chatting'].includes(sender_or_receiver)) {
+            query = `UPDATE matches SET ${sender_or_receiver}_peer_id = @peer_id_when_get_open, when_to_send = 'waiting' WHERE id = @id AND send_id = @send_id AND receive_id = @receive_id`;
+        } else if (receive_or_waiting === 'chatting') {
+            query = `UPDATE matches SET when_to_send = 'chatting' WHERE id = @id`;
+        } else {
+            throw new Error('receive_or_waitingが不正です');
+        }
+        // match_idに該当するmatchがwaitingで存在する場合にchattingに変更しつつ、peer_idを取得して、sender_peer_idとreceiver_peer_idを更新する関数
+
+        if (receive_or_waiting === 'chatting') {
+            const match = db2.prepare('SELECT * FROM matches WHERE id = ? AND when_to_send = "waiting"').get(match_id);
+            if (!match) {
+                throw new Error('match_idが不正です');
+            }
+            // sender_peer_idとreceiver_peer_idどちらかがpeer_id_when_get_openと異なる場合に更新する
+            if (sender_or_receiver === 'sender' && match.sender_peer_id !== peer_id_when_get_open) {
+                query = `UPDATE matches SET sender_peer_id = @peer_id_when_get_open, when_to_send = 'chatting' WHERE id = @id`;
+            } else if (sender_or_receiver === 'receiver' && match.receiver_peer_id !== peer_id_when_get_open) {
+                query = `UPDATE matches SET receiver_peer_id = @peer_id_when_get_open, when_to_send = 'chatting' WHERE id = @id`;
+            } else {
+                throw new Error('peer_idが不正です');
+            }
+        }
+
+
+
+
+        RESULT = db2.prepare(query).run({
             id: match_id,
             peer_id_when_get_open: escaped_peer_id_when_get_open,
             send_id: send_id,
             receive_id: receive_id,
-        })
-        ? 'OK'
-        : (()=>{throw new Error('matchesテーブルのsender_peer_idを更新できませんでした')})();
-    }
-    if(sender_or_receiver === 'receiver'){
-        console.log("bar")
-        RESULT = db2.prepare(`
-        UPDATE matches
-        SET receiver_peer_id = @peer_id_when_get_open, when_to_send = 'waiting'
-        WHERE id = @id
-        AND send_id = @send_id
-        AND receive_id = @receive_id
-        `).run({
-            id: match_id,
-            peer_id_when_get_open: escaped_peer_id_when_get_open,
-            send_id: send_id,
-            receive_id: receive_id,
-        })
-        ? 'OK'
-        : (()=>{throw new Error('matchesテーブルのreceiver_peer_idを更新できませんでした')})();
-    }
-    res.status(200)
-        .json({result: 'success',
-            status: 200,
-            message: RESULT
-        });
-    } catch (error) {
-        res.status(400).json({status: 400, result: 'fail', message: error.message});
-    }
-}
-);
+        }) ? 'OK' : (() => { throw new Error('matchesテーブルを更新できませんでした') })();
 
+        res.status(200).json({ result: 'success', status: 200, message: RESULT });
+    } catch (error) {
+        res.status(400).json({ status: 400, result: 'fail', message: error.message });
+    }
+});
 
 // fetch_get_peer_id_from_matches_as_sender_or_as_receiver
 // peer_idを取得するエンドポイント

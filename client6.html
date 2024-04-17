@@ -15,6 +15,8 @@
 </head>
 <body>
 <div id="app">
+    <!-- button show_param -->
+<button @click="show_param()">show_param</button>
 {{ login_id_name }}
 {{ sender_peer_id }}
 {{ receiver_peer_id }}
@@ -101,16 +103,22 @@ beforeUpdated() {},
 updated() {},
 methods: {
 // mounted: get_param()で取得したパラメーターをセット => fetch_read_matches_any()でmatchesのデータを取得する(自分側と相手側の情報)
-// peerjsのopen: fetch_update_when_to_send()でpeer_idを取得してmatchesの sender_peer_id か receiver_peer_id をセット(or更新)
-// fetch_update_when_to_send()でreceiveからwaitingに変更(waitingの場合match.htmlで対向に通知される)
-// fetch_check_peer_id_or_change_it()でpeer_idが一致しているか確認し、一致していなければ更新
-    // => いずれの場合もsender_peer_idとreceiver_peer_idがDLされ更新される
+// 初回:upsertでmatchesにレコードをinsert
+// fetch_upsert_when_to_send()でreceiveからwaitingに変更(waitingの場合match.htmlで対向に通知される)
+    // peerjsのopen: fetch_upsert_when_to_send()でpeer_idを取得してmatchesの sender_peer_id か receiver_peer_id をセット(or更新)
+
+//※※※※※※※ when_to_send がchattingになった後はfetch_check_peer_id_or_change_itをclientがN秒間隔で実行して最新のpeer_idに更新※※※※※※※
+    // fetch_check_peer_id_or_change_it()でpeer_idが一致しているか確認し、一致していなければ更新
+        // => いずれの場合もsender_peer_idとreceiver_peer_idがDLされ更新される
 
 // http://127.0.0.1:3000/client6.html?match_id=4&send_id=5&receive_id=7&sender_or_receiver=sender
 // テスト用のURLとSQL => これを使ってデータを取得して、peer_idを取得して、peer_idが一致しているか確認して、一致していなければ更新する
 // select * from matches where id = 4;
+// DELETE FROM matches WHERE id = 4;
 // UPDATE matches SET sender_peer_id = '', receiver_peer_id = '', when_to_send = 'receive' WHERE id = 4;
-
+show_param(){
+console.log(this.match_id,this.send_id,this.receive_id,this.sender_or_receiver,)
+},
 get_param(){
 try {
     const url = new URL(window.location.href);
@@ -145,7 +153,9 @@ try {
     this.ERROR_MESSAGE = error.message;
 }
 },
-async fetch_update_when_to_send(To_Any="waiting", id=null){ // change to receive or waiting
+async fetch_upsert_when_to_send(To_Any="waiting", id=null){ // change to receive or waiting
+    console.log("fetch_upsert_when_to_send");
+    console.log("To_Any", To_Any);
 try {
     // To_Anyが"receive"でも"waiting"でもどちらでもない場合はエラースロー
     if(To_Any !== "receive" && To_Any !== "waiting"){
@@ -153,8 +163,8 @@ try {
     }
 
     if(To_Any === "receive"){
-        // const res = await fetch(this.endpoint + '/update_when_to_send_receive', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        const res = await fetch(this.endpoint + '/update_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        // const res = await fetch(this.endpoint + '/upsert_when_to_send_receive', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        const res = await fetch(this.endpoint + '/upsert_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
                 body: JSON.stringify({
                     match_id: Match_Id,
                     receive_or_waiting: 'receive',
@@ -165,9 +175,17 @@ try {
         this.ERROR_MESSAGE = "";
     }
     if(To_Any === "waiting"){
-        this.peer_id_when_get_open = set_update_when_to_send_waiting(id);
-        // const res = await fetch(this.endpoint + '/update_when_to_send_waiting', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        const res = await fetch(this.endpoint + '/update_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        console.log(
+            'To_Any === "waiting"',
+            this.peer_id_when_get_open,
+            this.match_id,
+            this.send_id,
+            this.receive_id,
+            this.sender_or_receiver,
+        )
+        this.peer_id_when_get_open = id;
+        // const res = await fetch(this.endpoint + '/upsert_when_to_send_waiting', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        const res = await fetch(this.endpoint + '/upsert_when_to_send', {method: 'POST',headers: {'Content-Type': 'application/json',},
                 body: JSON.stringify({
                     receive_or_waiting: 'waiting',
                     peer_id_when_get_open: this.peer_id_when_get_open,
@@ -178,8 +196,10 @@ try {
                 }),
             });
         const data = await res.json(); console.log(data);
+        console.log("upsert_when_to_send done");
         this.ERROR_MESSAGE = "";
     }
+    this.get_param();
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
 }
@@ -286,7 +306,7 @@ peer.on('open', (id) => {
     document.querySelector('.result').value = id;
     my_side_global_conn = id;
     set_url_with_peer_id();
-    app.fetch_update_when_to_send("waiting", id);
+    app.fetch_upsert_when_to_send("waiting", id);
 });
 peer.on('connection', function(conn) {
     conn.on('data', function(data){
