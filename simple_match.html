@@ -1,0 +1,986 @@
+<!DOCTYPE html>
+<!--vscodeのlive previewを使う場合は、./.data/以下のファイルを無視する設定が必要
+    (.sqlite3のファイルに変更が加わった際にclient6.htmlがリロードされるため)
+    "files.watcherExclude": {
+        // ./.data/以下のファイルを無視する
+        "**/.data/**": true
+    }
+ -->
+
+<!-- a sideがb sideにmatch(when: match) => b sideがa sideにmatch(when: receive) =>
+    receive状態であればa,b双方にURL発行 => 
+    ※※※※※※仕様検討中: match4からclient6に自動的にリダイレクト(matchesにreceive状態のレコードがある場合。)
+    ※※※※※※仕様検討中: client6に自動リダイレクト後発行されたpeer_idをmatchesに挿入
+    => 片方がchatにログイン(matchをwaitingに,peer_idをmatchesに挿入) => 対向にwaitingであることが表示 =>
+    両方がchatにログイン(matchesからpeer_idを取得,matchをchattingに) => chat開始 -->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>simple match</title>
+    <script src="./vue@3.2.36.global.prod.js"></script>
+    <!-- <script src="./peerjs.1.5.2.min.js"></script> -->
+    <style>
+/* タブのスタイル */
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+/* タブボタンのスタイル */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 17px;
+}
+
+/* タブボタンのホバー時のスタイル */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* アクティブなタブボタンのスタイル */
+.tab button.active {
+  background-color: #ccc;
+}
+
+/* タブコンテンツのスタイル */
+.tabcontent {
+  display: none;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+
+
+
+    
+        .block_0 {
+            /* 右にずらす */
+            margin-left: 0rem;
+            /* background-color: yellow; */
+        }
+        .block_1 {
+            /* 右にずらす */
+            margin-left: 1rem;
+            /* background-color: red; */
+        }
+        .block_2 {
+            /* 右にずらす */
+            margin-left: 3rem;
+            /* background-color: blue; */
+        }
+
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            margin: auto;
+        }
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+        }
+        .message-left {
+            align-self: flex-start;
+            background-color: #f0f0f0;
+        }
+        .message-right {
+            align-self: flex-end;
+            background-color: #0f0;
+        }
+        .online{
+            /* onlineはbold */
+            font-weight: bold;
+        }
+        .offline{
+            /* offlineの場合は灰色 */
+            color: gray;
+        }
+        .new_user_insert{
+            /* 新規ユーザー追加のフォーム */
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+
+
+<!-- <button @click="login_as()">login_as</button> -->
+<!-- <button @click="login_as({id: 7, name: 'C'})">login_as({id: 7, name: 'C'})</button> -->
+<!-- <button @click="fetch_delete_matches()">fetch_delete_matches</button> -->
+<!-- <div v-if="chat_url">
+    <a :href="chat_url" target="_blank">chat_url</a>
+</div> -->
+<div v-if="chat_url_for_receiver_user">
+    <a :href="chat_url_for_receiver_user" target="_blank">chat_url_for_receiver_user</a>
+</div>    
+<div class="tab">
+    <button class="tablinks" onclick="openTab(event, 'Tab1')">ユーザー追加</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab2')" id="login">ログイン</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab3')">Tab3</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab4')">Tab4</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab5')">Tab5</button>
+</div>
+
+<div id="Tab1" class="tabcontent">
+    <div class="new_user_insert">
+    <div>userName: <input type="text" v-model="userName" placeholder="Enter user name"></div>
+    <!-- admin password -->
+    <div>admin_password: <input type="password" v-model="admin_password" placeholder="only English and Number"></div>
+    <div><button @click="fetch_add_user_data">fetch_add_user_data</button></div>
+    </div>
+
+    <div>新規ユーザーid: <input type="text" v-model="new_user_id" placeholder="Enter user id"></div>
+    <div>新規ユーザーパスワード <input type="text" v-model="new_password" placeholder="Enter password"></div>
+</div>
+
+<div id="Tab2" class="tabcontent">    
+    <div>login_name: <input type="text" name="" id="" v-model="login_name"></div>
+    <!-- password -->
+    <div>password: <input type="password" v-model="password" placeholder="only English and Number"></div>
+    <button @click="login_as">login_as</button>
+</div>
+
+<div id="Tab3" class="tabcontent">
+</div>
+
+<div id="Tab4" class="tabcontent">
+</div>
+
+<div id="Tab5" class="tabcontent">
+</div>
+
+
+
+
+<div v-if="login_id_name && matched_data_ary && matched_data_ary.message[0] && matched_data_ary.message[0].user_data_id">
+    {{ 
+    matched_data_ary.message
+        .map((a, IDX) => {
+        return [
+        "send_id", login_id_name.id,
+        "receive_id", matched_data_ary.message[ IDX ].user_data_id,
+        ]
+        })
+    }}
+</div>
+
+<div v-if="web_data && matched_data_ary">
+    <div v-for="match_data, match_data_idx in matched_data_ary.message">
+        {{ match_data }}
+        <button @click="fetch_insert_matches('match', match_data.user_data_id)">fetch_insert_matches</button>
+    </div>
+</div>
+{{ERROR_MESSAGE}}
+<div v-if="web_data && current_user" :class="current_user.user_type === 'company' ? 'message message-right' : 'message message-left'">
+            <div>user_data_id: {{current_user.user_data_id}}</div>
+            <div>user_name: {{current_user.user_name}}</div>
+            <div>offline_online: {{current_user.offline_online}}
+                <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">1isOne</button>
+            </div>
+            <div>skills: </div>
+            <div v-for="b, b_idx in current_user.skills">
+                <span>{{b.skill}}</span>
+                <button @click="fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(b.id)">match</button>
+                <button @click="fetch_delete_user_datas_skills_id_array(current_user.user_data_id, b.id)">|</button>
+            </div>
+            <!-- fetch_update_user_datas_skills_id_arrayでselectタグとoptionタグでユーザーに追加する -->
+            <select v-model="selected_skill_id" @change="show_selected_skill_id(current_user.user_data_id)" @click="show_selected_skill_id(current_user.user_data_id)">
+                <option v-for="b, b_idx in all_skills" :value="b.id">{{b.skill}}</option>
+            </select>
+
+
+
+            hogehogehoge
+            <!-- <div v-if="all_skills.length > 0">
+                <span v-for="all_skills_one, all_skills_one_idx in all_skills">
+                    <button @click="skill_str">{{all_skills_one.skill}}</button>
+                </span>
+            </div> -->
+</div>
+
+<div>
+    <input type="text" v-model="skill_str" placeholder="Enter skill">
+    <button @click="fetch_add_skill_str">fetch_add_skill_str</button>
+            <div v-if="web_data">
+            <div v-if="web_data.message" class="chat-container">
+                <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'">
+                    <div>user_data_id: {{a.user_data_id}}</div>
+                    <div>user_name: {{a.user_name}}</div>
+                    <div>offline_online: {{a.offline_online}}
+                        <button @click="fetch_update_user_datas_online_offline(a.user_data_id)">1isOne</button>
+                    </div>
+                    <div>skills: </div>
+                    <span v-for="b, b_idx in a.skills">
+                        <span>{{b.skill}}</span>
+                        <button @click="fetch_delete_user_datas_skills_id_array(a.user_data_id, b.id)">|</button>
+                        <span>{{' '}}</span>
+                    </span>
+                </div>
+            </div>
+            </div>
+</div>
+
+
+</div>
+</body>
+<script>
+function openTab(evt, tabName) {
+    console.log(evt.currentTarget.className, tabName);
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+
+const app = Vue.createApp({
+data() {
+return {
+    new_user_id: '',
+    new_password: '',
+
+    admin_password: 'taro',
+    password: '',
+    login_name: '',
+    selected_skill_id: '',
+
+
+    chat_url_for_receiver_user: '',
+    chat_url: '',
+    url_for_receiver_user: '',
+    sample_data_ary: [],
+
+receive_matched: [{
+    "id": 4,
+    "send_id": 5,
+    "receive_id": 7,
+    "when_to_send": "match",
+    "sender_peer_id": null,
+    "receiver_peer_id": null,
+    "created_at": "2024-04-13T23:44:47.374Z",
+    "updated_at": "2024-04-13T23:44:47.374Z"
+}],
+    send_matched: [
+    {
+        "id": 4,
+        "send_id": 5,
+        "receive_id": 7,
+        "when_to_send": "receive",
+        "sender_peer_id": "2745cdd4-d9a0-44a4-bd9f-7fcd89d9bb9c",
+        "receiver_peer_id": null,
+        "created_at": "2024-04-13T23:44:47.374Z",
+        "updated_at": "2024-04-13T23:44:47.374Z"
+    }
+],
+    all_matched: [
+    {
+        "id": 4,
+        "send_id": 5,
+        "receive_id": 7,
+        "when_to_send": "receive",
+        "sender_peer_id": null,
+        "receiver_peer_id": null,
+        "created_at": "2024-04-13T23:44:47.374Z",
+        "updated_at": "2024-04-13T23:44:47.374Z"
+    }
+],
+    waiting_matched: [
+    {
+        "id": 4,
+        "send_id": 5,
+        "receive_id": 7,
+        "when_to_send": "waiting",
+        "sender_peer_id": "2745cdd4-d9a0-44a4-bd9f-7fcd89d9bb9c",
+        "receiver_peer_id": null,
+        "created_at": "2024-04-13T23:44:47.374Z",
+        "updated_at": "2024-04-13T23:44:47.374Z"
+    }
+],
+
+    matched: [
+    {
+        "id": 4,
+        "send_id": 5,
+        "receive_id": 7,
+        "when_to_send": "receive",
+        "sender_peer_id": "2745cdd4-d9a0-44a4-bd9f-7fcd89d9bb9c",
+        "receiver_peer_id": null,
+        "created_at": "2024-04-13T23:44:47.374Z",
+        "updated_at": "2024-04-13T23:44:47.374Z"
+    },
+    {
+        "id": 5,
+        "send_id": 5,
+        "receive_id": 8,
+        "when_to_send": "match",
+        "sender_peer_id": null,
+        "receiver_peer_id": null,
+        "created_at": "2024-04-14T00:18:18.231Z",
+        "updated_at": "2024-04-14T00:18:18.231Z"
+    }
+],
+
+    show_full_url: false,
+    login_id_name: {id: 1, name: "a"},
+    text_id_ary: [
+        {id: 0, text: "今通話可能", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
+        {id: 1, text: "通話OK", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
+        {id: 2, text: "こんにちは", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
+        {id: 3, text: "今NG", text_stamp_url: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg"},
+    ],
+    now_checking_match: false,
+    match_url_array: [],
+    matched_data_ary: null,
+    endpoint: 'http://localhost:8000',
+    // endpoint: 'http://127.0.0.1:3000',
+    // endpoint: 'https://cotton-concrete-catsup.glitch.me',
+
+    web_data: null,
+    userName: '',
+    weightNum: 1,
+    userType: '',
+    onlineOffline: '',
+    skills: [],
+    all_skills: [],
+
+    other_side_data_link: '',
+    own_side_data_link: '',
+    match_result: [],
+    ERROR_MESSAGE: "",
+    selected_user: 1,
+    selected_keyword: "",
+    new_keyword: "",
+    user_type_list: [
+        {id: 1, customer_type: "company",},
+        {id: 2, customer_type: "customer",},
+    ],
+    user_list: [
+        {id: 1, online_status: {start: null, until:null, on_off: "off"}, name: "a", user_type_list_id: 1, keyword_list: [1,2,3,5], weight: 1,},
+        {id: 2, online_status: {start: null, until:null, on_off: "off"}, name: "b", user_type_list_id: 1, keyword_list: [3,4], weight: 2,},
+        {id: 3, online_status: {start: null, until:null, on_off: "off"}, name: "c", user_type_list_id: 2, keyword_list: [5,6], weight: 0,},
+        {id: 4, online_status: {start: null, until:null, on_off: "off"}, name: "d", user_type_list_id: 2, keyword_list: [1,7,8,9], weight: 3,},
+    ],
+    keyword_list: [
+        {id: 1, keyword: "java"},
+        {id: 2, keyword: "sql"},
+        {id: 3, keyword: "html"},
+        {id: 4, keyword: "css"},
+        {id: 5, keyword: "javascript"},
+        {id: 6, keyword: "php"},
+        {id: 7, keyword: "python"},
+        {id: 8, keyword: "ruby"},
+        {id: 9, keyword: "c"},
+    ],
+    LIST: [],
+    selected_user_LIST: [],
+}
+},
+watch: {
+    list_1: {
+    handler(new_val, old_val) {
+    },
+    deep: true
+   },
+},
+mounted() {
+    this.list_filter();
+    this.userName = "a";
+    this.weightNum = 1;
+    this.userType = "company";
+    this.onlineOffline = 0;
+    this.fetch_read_skills();
+    this.fetch_read_user_datas_skills();
+    this.login_as();
+
+    this.login_name === '' ? this.login_name = 'a' : null;
+    document.querySelector("#login").click();
+},
+beforeUpdated() {
+},
+updated() {
+    
+    
+},
+methods: {
+make_chat_url_for_receiver_user(Match_Id, Send_Id, receive_Id){
+try {
+    console.log("make_chat_url_for_receiver_user");
+    // waiting_matchedの中にlogin_id_name.idがあるか確認
+    // sender_peer_idかreceiver_peer_idのどちらかがnullであればchat_urlを作成
+    // どちらもnullでなければchat_urlを作成しない
+    // sender_peer_idがnullであれば、senderとしてchat_urlを作成
+    // receiver_peer_idがnullであれば、receiverとしてchat_urlを作成
+    if (!Match_Id) throw new Error("Match_Idがありません");
+    if (!this.waiting_matched) throw new Error("waiting_matchedがありません");
+    if (!Send_Id || !receive_Id) throw new Error("Send_Idかreceive_Idがありません");
+    if (!this.login_id_name.id) throw new Error("login_id_name.idがありません");
+    const Sender_Or_receiver = this.waiting_matched.find(match => match.id === Match_Id).send_id === this.login_id_name.id ? 'sender' : 'receiver';
+    const chat_url_for_receiver_user = 'http://127.0.0.1:3000' + '/client6.html?match_id=' + Match_Id + '&send_id=' + Send_Id + '&receive_id=' + receive_Id + '&sender_or_receiver=' + 'receiver';
+    this.chat_url_for_receiver_user = chat_url_for_receiver_user;
+} catch (error) {
+    console.log(error.message);
+    this.ERROR_MESSAGE = error.message;
+}
+},
+async fetch_read_waiting_matches(){
+try {
+    const res = await fetch(this.endpoint + '/read_waiting_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_id: this.login_id_name.id}),
+        });
+    const data = await res.json(); console.log(data);
+    this.waiting_matched = data.message;
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+make_chat_url_with_get_param(Match_Id, Send_Id, receive_Id){
+    console.log(Match_Id, Send_Id, receive_Id);
+    try{
+        if (!Match_Id) throw new Error("Match_Idがありません");
+        if (!this.all_matched) throw new Error("all_matchedがありません");
+        // Send_Idとreceive_Idがパラメーターとして受け取ってるか確認
+        if (!Send_Id || !receive_Id) throw new Error("Send_Idかreceive_Idがありません");
+        // this.login_id_name.idを確認
+        if (!this.login_id_name.id) throw new Error("login_id_name.idがありません");
+        // all_matchedの中にMatch_Idがあるか確認。そのmatch_idのsend_idとreceive_idを取得。login_id_name.idがsend_idであれば'sender'、receive_idであれば'receiver'を取得
+        const Sender_Or_receiver = this.all_matched.find(match => match.id === Match_Id).send_id === this.login_id_name.id ? 'sender' : 'receiver';
+        // urlにmatch_idとsend_idとreceive_idとsender_or_receiverをget paramで付与して返す
+        const chat_url = 'http://127.0.0.1:3000' + '/client6.html?match_id=' + Match_Id + '&send_id=' + Send_Id + '&receive_id=' + receive_Id + '&sender_or_receiver=' + Sender_Or_receiver;
+        console.log(Match_Id, Send_Id, receive_Id, Sender_Or_receiver, chat_url);
+        this.chat_url = chat_url;
+        // return chat_url;
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_read_received_anyone_own_matches(){
+    try {
+        if (!this.login_id_name.id) throw new Error("login_id_name.idがありません");
+        const res = await fetch(this.endpoint + '/read_received_anyone_own_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_id: this.login_id_name.id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.all_matched = data.message;
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_change_match_to_receive(Match_Id){
+    try {
+        // const match_id = req.body.match_id;
+        const res = await fetch(this.endpoint + '/update_when_to_send_receive', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({match_id: Match_Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+login_as(Id_Name={id: 5, name: "a"}){
+    console.log(Id_Name);
+if(this.web_data){
+    // this.current_user = this.web_data.message.find(user => user.user_data_id === Id_Name.id);
+    // nameでフィルタ
+    this.current_user = this.web_data.message.find(user => user.user_name === this.login_name);
+}
+this.login_id_name = Id_Name;
+},
+update_online_status(){
+    this.selected_user_LIST[0].online_status.start = new Date().toISOString();
+    this.selected_user_LIST[0].online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
+    this.selected_user_LIST[0].online_status.on_off = "on";
+},
+reset_all_online_status(){
+    this.user_list = this.user_list.map(user => {
+        user.online_status.start = null;
+        user.online_status.until = null;
+        user.online_status.on_off = "off";
+        return user;
+    });
+},
+reset_selected_user_online_status(Id){
+    this.user_list = this.user_list.map(user => {
+        if (user.id === Id){
+            user.online_status.start = null;
+            user.online_status.until = null;
+            user.online_status.on_off = "off";
+        }
+        return user;
+    });
+},
+set_selected_user_online_status(Id){
+    this.user_list = this.user_list.map(user => {
+        if (user.id === Id){
+            user.online_status.start = new Date().toISOString();
+            user.online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
+            user.online_status.on_off = "on";
+        }
+        return user;
+    });
+},
+on_off(Id){
+    this.reset_other_user_online_status(Id);
+    this.set_selected_user_online_status(Id);
+},
+set_all_online_status(){
+    this.user_list = this.user_list.map(user => {
+        user.online_status.start = new Date().toISOString();
+        user.online_status.until = new Date(new Date().getTime() + 10 * 60000).toISOString();
+        user.online_status.on_off = "on";
+        return user;
+    });
+},
+reset_other_user_online_status(Id){
+    this.user_list = this.user_list.map(user => {
+        if (user.id !== Id){
+            user.online_status.start = null;
+            user.online_status.until = null;
+            user.online_status.on_off = "off";
+        }
+        return user;
+    });
+},
+list_filter(){
+    this.make_LIST();
+    this.selected_user_LIST = this.LIST.filter(user => user.id === this.selected_user);
+    this.update_online_status();
+},
+make_LIST(){
+    this.LIST = this.user_list.map(user => {
+        return {
+            name: user.name,
+            online_status: user.online_status,
+            id: user.id,
+            weight: user.weight,
+            user_type: this.user_type_list.find(user_type => user_type.id === user.user_type_list_id),
+            keyword_list: user.keyword_list.map(keyword_id => this.keyword_list.find(keyword => keyword.id === keyword_id)),
+        }
+    });
+},
+exe(){
+    console.log("abc");
+},
+to_ary(from){
+    return JSON.parse(JSON.stringify(from));
+},
+add_keyword(){
+try {
+    const user = this.user_list.find(user => user.id === this.selected_user);
+    if (user.keyword_list.some(keyword_id => keyword_id === this.selected_keyword)) throw new Error("すでに追加されています");
+    user.keyword_list.push(this.selected_keyword);
+    this.list_filter();
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+delete_keyword(keyword_id){
+    try {
+        console.log("delete_keyword", keyword_id);
+        const user = this.user_list.find(user => user.id === this.selected_user);
+        // 削除するキーワードが存在しない場合はエラースロー
+        if (!user.keyword_list.some(keyword => keyword === keyword_id)) throw new Error("削除するキーワードが存在しません");
+        user.keyword_list = user.keyword_list.filter(keyword => keyword !== keyword_id);
+        this.list_filter();
+        // 問題なく削除できた場合はERROR_MESSAGEを空にする
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+add_new_keyword(){
+    try {
+        console.log("add_new_keyword", this.new_keyword);
+        // 同じキーワードがある場合は追加しない 
+        // エラースローのワンライナー
+        if (this.keyword_list.some(keyword => keyword.keyword === this.new_keyword)) throw new Error("すでに追加されています");
+        this.keyword_list.push({
+            id: this.keyword_list.length + 1,
+            keyword: this.new_keyword,
+        });
+        this.list_filter();
+        // 追加したキーワードをadd_keywordする
+        // keyword_listの最後の要素が追加されたキーワード
+        this.selected_keyword = this.keyword_list[this.keyword_list.length - 1].id;
+
+        this.add_keyword();
+
+
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+weight_change(id){
+    this.LIST = this.LIST.map(user => {
+        if (user.id === id){
+            // user.weightは0が下限。weightが0の場合はweightを変更しない
+            user.weight > 0 ? user.weight += 1 : null;
+        }
+        return user;
+    });
+
+},
+match_exe(){
+    const match_result_online = (res) =>{
+        return res.filter(user => user.online_status.on_off === "on");
+    }
+    const selected_user = this.user_list.find(user => user.id === this.selected_user);
+    let match_result = [];
+    if (selected_user.user_type_list_id === 1){
+        // selected_userがcompanyの場合
+        // selected_userがcompanyの場合はresultはcustomerのリスト
+        const customer_list = this.user_list.filter(user => user.user_type_list_id === 2);
+        for (const customer of customer_list){
+            // selected_userとcustomerが共通して持っているキーワードを抽出
+            const match_keyword_num = selected_user.keyword_list.filter(keyword => customer.keyword_list.some(customer_keyword => customer_keyword === keyword));
+            // match_keyword_listの番号から実際のキーワードの配列を取得
+            const match_keyword_list = match_keyword_num.map(keyword_id => this.keyword_list.find(keyword => keyword.id === keyword_id));
+
+            if (match_keyword_list.length > 0){
+                match_result.push({
+                    customer: customer,
+                    weight: customer.weight,
+                    online_status: customer.online_status,
+                    match_keyword_list: match_keyword_list,
+                });
+            }
+        }
+    } ;
+    if (selected_user.user_type_list_id === 2){
+        // selected_userがcustomerの場合
+        // selected_userがcustomerの場合はresultはcompanyのリスト
+        const company_list = this.user_list.filter(user => user.user_type_list_id === 1);
+        for (const company of company_list){
+            // selected_userとcompanyが共通して持っているキーワードを抽出
+            const match_keyword_num = selected_user.keyword_list.filter(keyword => company.keyword_list.some(company_keyword => company_keyword === keyword));
+            // match_keyword_listの番号から実際のキーワードの配列を取得
+            const match_keyword_list = match_keyword_num.map(keyword_id => this.keyword_list.find(keyword => keyword.id === keyword_id));
+            if (match_keyword_list.length > 0){
+                match_result.push({
+                    company: company,
+                    weight: company.weight,
+                    online_status: company.online_status,
+                    match_keyword_list: match_keyword_list,
+                });
+            }
+        }
+    } ;
+    const sort_by_weight = (res) =>{
+        return match_result.sort((a, b) => {
+            if (a.weight < b.weight) return 1;
+            if (a.weight > b.weight) return -1;
+            return 0;
+        });
+    }
+    match_result = match_result_online(match_result);
+    this.match_result = sort_by_weight(match_result);
+    this.match_result = match_result;
+},
+start_chat(other_side_id, own_side_id){
+    // other_side_id, own_side_idがnullやundefinedでない場合はchatを開始する
+            // other_side_idがあるかfindする
+    other_side_bool = this.LIST.find(user => user.id === other_side_id);
+    own_side_bool = this.LIST.find(user => user.id === own_side_id);
+    if (other_side_id && own_side_id && other_side_bool && own_side_bool){
+        console.log("start_chat", other_side_id, own_side_id);
+
+    }
+    other_side_data = this.LIST.filter(user => user.id === other_side_id)[0];
+    own_side_data = this.LIST.filter(user => user.id === own_side_id)[0];
+    // 同じパスのclient3.htmlにget paramでJSON.stringifyされたother_side_idもしくはown_side_idを渡すリンクを作る
+    // 例:http://127.0.0.1:3000/client3.html?other_side_data_str=*****
+    var url = window.location.href;
+    var dirname = url.substring(0, url.lastIndexOf('/'));
+    // this.other_side_data_link = dirname + "/match2.html?other_side_data_str=" + JSON.stringify(other_side_data);
+    this.other_side_data_link = dirname + "/match2.html?other_side_data_str=" + JSON.stringify(other_side_data) + "&own_side_data_str=" + JSON.stringify(own_side_data);
+    // this.own_side_data_link = dirname + "/match2.html?own_side_data_str=" + JSON.stringify(own_side_data);
+    this.own_side_data_link = dirname + "/match2.html?other_side_data_str=" + JSON.stringify(own_side_data) + "&own_side_data_str=" + JSON.stringify(other_side_data);
+    // this.link_1 = dirname + "/match2.html?other_side_data_str=" + JSON.stringify(other_side_data) + "&own_side_data_str=" + JSON.stringify(own_side_data);
+    // this.link_2 = dirname + "/match2.html?other_side_data_str=" + JSON.stringify(own_side_data) + "&own_side_data_str=" + JSON.stringify(other_side_data);
+},
+parse_url(){
+    const url = new URL(window.location.href);
+    const other_side_data_str = url.searchParams.get('other_side_data_str');
+    const own_side_data_str = url.searchParams.get('own_side_data_str');
+    if (other_side_data_str){
+        console.log("other_side_data_str", other_side_data_str);
+        console.log(JSON.parse(other_side_data_str));
+    }
+    if (own_side_data_str){
+        console.log("own_side_data_str", own_side_data_str);
+        console.log(JSON.parse(own_side_data_str));
+    }
+},
+async fetch_add_user_data() {
+    try {
+    console.log("fetch_add_user_data");
+    console.log([this.userName, this.admin_password, this.weightNum, this.userType, this.onlineOffline, this.skills]);
+    // this.skillsが空の場合はall_skillsの最初の要素のidをセットする
+    this.skills.length === 0 ? this.skills.push(this.all_skills[0].id) : null;
+
+    // const [error_check_user_name, error_check_password, error_check_weight_num, error_check_user_type, error_check_offline_online, error_check_skills_id_array] =
+    //     [this.userName, this.password, this.weightNum, this.userType, this.onlineOffline, this.skills].map((val) => JSON.parse(JSON.stringify(val)));
+    // error_check_user_name === undefined || error_check_user_name === null || error_check_user_name.length === 0 || error_check_user_name.length > 24 || error_check_user_name.includes(' ') || error_check_user_name.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
+    // error_check_weight_num === undefined || error_check_weight_num === null || error_check_weight_num < 1 || error_check_weight_num > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
+    // error_check_user_type === undefined || error_check_user_type === null || error_check_user_type !== 'company' && error_check_user_type !== 'customer' ? (()=>{throw new Error('user_typeが不正です')})() : null;
+    // error_check_offline_online === undefined || error_check_offline_online === null || error_check_offline_online !== 0 && error_check_offline_online !== 1 ? (()=>{throw new Error('offline_onlineが不正です')})() : null;
+    // error_check_skills_id_array === undefined || error_check_skills_id_array === null || !Array.isArray(error_check_skills_id_array) || error_check_skills_id_array.length < 1 || error_check_skills_id_array.some((num) => typeof num !== 'number' || num < 1) ? (()=>{throw new Error('skills_id_arrayが不正です')})() : null;
+    const res = await fetch(this.endpoint + '/insert_user_datas', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        body: JSON.stringify({
+            user_name: this.userName,
+            admin_password: this.admin_password,
+            weight_num: this.weightNum,
+            user_type: this.userType,
+            offline_online: this.onlineOffline,
+            skills_id_array: this.skills,
+        }),
+    });
+    const data = await res.json(); console.log(data);
+    // new_user_id: new_user_id,
+    // password: password_24_char,
+    console.log(data);
+    this.new_user_id = data.new_user_id;
+    this.new_password = data.password_24_char;
+    this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_add_skill_str() {
+    try {
+        console.log(JSON.stringify({skill: this.skill_str}));
+        this.skill_str === undefined || this.skill_str === null || this.skill_str.length === 0 || this.skill_str.length > 24 || this.skill_str.includes(' ') || this.skill_str.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
+        const res = await fetch(this.endpoint + '/insert_skills', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({ skill: this.skill_str,}),
+        });
+        const data = await res.json(); console.log(data);
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_read_skills() {
+    try {
+        const res = await fetch(this.endpoint + '/read_skills', {method: 'GET',headers: {'Content-Type': 'application/json',},
+        });
+        const data = await res.json(); console.log(data);
+        // data.messageが空の配列の場合は早期リターン
+        if (data.message.length === 0) return;
+        this.all_skills = data.message;
+        this.all_skills = this.all_skills.sort((a, b) => a.id - b.id).reverse();
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_read_user_datas_skills() {
+    try {
+        const res = await fetch(this.endpoint + '/read_user_datas_skills', {method: 'GET',headers: {'Content-Type': 'application/json',},
+        });
+        const data = await res.json(); console.log(data);
+
+        // dataのフォーマットをhtml用に変換する
+        // { "result": "success", "status": 200, "message": [ { "user_data_id": 1, "user_name": "a", "weight_num": 1, "user_type": "company", "offline_online": 0, "skills_id_array": "1,2,3", "skills": [ { "id": 1, "skill": "SKILL_A", "created_at": "2024-03-22T09:24:09.697Z", "updated_at": "2024-03-22T09:24:09.697Z" }, { "id": 2, "skill": "skill_b", "created_at": "2024-03-22T09:24:22.458Z", "updated_at": "2024-03-22T09:24:22.458Z" }, { "id": 3, "skill": "skill_c", "created_at": "2024-03-22T09:24:27.064Z", "updated_at": "2024-03-22T09:24:27.064Z" } ] } ] }
+        this.web_data = data;
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_update_user_datas_online_offline(Id) {
+    try {
+        console.log(JSON.stringify({user_data_id: Id}));
+        const res = await fetch(this.endpoint + '/update_user_datas_online_offline', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_update_user_datas_weight_num(Id, Weight_Num, Plus_Minus="+") {
+    try {
+        console.log(JSON.stringify({user_data_id: Id, weight_num: Weight_Num}));
+        const Plus_Minus_Num = Plus_Minus === "+" ? 1 : -1;
+        const res = await fetch(this.endpoint + '/update_user_datas_weight_num', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: Id, weight_num: Weight_Num+(Plus_Minus_Num) }),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_update_user_datas_skills_id_array(Id, Skill_Id) {
+    try {
+        console.log
+        (JSON.stringify({user_data_id: Id, skill_id: Skill_Id}));
+        const res = await fetch(this.endpoint + '/update_user_datas_skills_id_array', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: Id, skill_id: Skill_Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_delete_user_datas_skills_id_array(Id, Skill_Id) {
+    try {
+        console.log(JSON.stringify({user_data_id: Id, skill_id: Skill_Id}));
+        const res = await fetch(this.endpoint + '/delete_user_datas_skills_id_array', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: Id, skill_id: Skill_Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_delete_skills(Skill_Id) {
+    try {
+        console.log(JSON.stringify({skill_id: Skill_Id}));
+        const res = await fetch(this.endpoint + '/delete_skills', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({skill_id: Skill_Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+async fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(Skill_Id) {
+try {
+    const test_user_data_id = this.login_id_name.id;
+    if(Skill_Id === undefined || Skill_Id === null || Skill_Id === 0 || typeof Skill_Id !== 'number') throw new Error('skill_idが不正です');
+    const skill_id = Skill_Id;
+    const res = await fetch(this.endpoint + '/read_1_who_find_n_companies_or_n_customers_by_1_skill', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_data_id: test_user_data_id, skill_id: skill_id}),
+    });
+    const data = await res.json(); console.log(data);
+    data.status !== 200 ? (()=>{throw new Error(data.message)})() : null;
+    this.matched_data_ary = data;
+    this.matched_data_ary.message = this.matched_data_ary.message.map(user => {
+        if(user.skills_id_array){
+            user.skills = decodeURIComponent(user.skills_id_array).split(",").map(V=>Number(V)).map(skill => {
+                return this.all_skills.find(all_skill => all_skill.id === skill);
+            });
+        }
+        return user;
+    });
+    this.match_url_array = [];
+    this.matched_data_ary.message.forEach(matched_data=>{
+        const local_url = 'http://127.0.0.1:3000';
+        this.match_url_array.push(
+            local_url + '/client6.html'
+                + '?own=' + JSON.stringify(this.web_data.message[0])
+                + '&another=' + JSON.stringify(matched_data)
+                + '&login_id_name=' + JSON.stringify(this.login_id_name)
+        );
+    });
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+async fetch_insert_matches(When_To_Send="match", Match_User_Id) {
+try {
+    // this.login_id_name.idがundefinedやnullや0や文字列や配列の場合はエラースロー
+    if(this.login_id_name.id === undefined || this.login_id_name.id === null || this.login_id_name.id === 0 || typeof this.login_id_name.id !== 'number') throw new Error('login_id_name.idが不正です');
+    const send_id_of_user_data_id = this.login_id_name.id;
+    const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        body: JSON.stringify({
+            send_id: send_id_of_user_data_id,
+            receive_id: Match_User_Id,
+            when_to_send: When_To_Send
+        }),
+    });
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+async fetch_delete_matches() { // delete_matches // 開発用のAPIエンドポイント。あとで削除する。// sqlite> DELETE FROM matches;のapp.get
+try {
+    const res = await fetch(this.endpoint + '/delete_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
+        body: null,
+    });
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+
+
+toggle_show_full_url() {
+      this.show_full_url = !this.show_full_url;
+},
+async fetch_read_receive_matches(){
+try {
+    const res = await fetch(this.endpoint + '/read_receive_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_id: this.login_id_name.id}),
+        });
+    const data = await res.json(); console.log(data);
+    // const data = await res.json(); console.log(data);
+    this.receive_matched = data.message;
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+// // send_idが自分のuser_data_idでreceiveの状態のmatchを取得するエンドポイントをfetchする関数
+async fetch_read_send_matches(){
+try {
+    console.log(this.login_id_name.id);
+    const res = await fetch(this.endpoint + '/read_send_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({user_id: this.login_id_name.id}),
+        });
+    const data = await res.json(); console.log(data);
+    // const data = await res.json(); console.log(data);
+    this.send_matched = data.message;
+    this.ERROR_MESSAGE = "";
+} catch (error) {
+    this.ERROR_MESSAGE = error.message;
+}
+},
+// read_matchesをfetchする関数
+async fetch_read_matches(){
+    const response = await fetch(this.endpoint + '/read_matches');
+    const data = await response.json();
+    if(data.message){
+        // console.log("hoge")
+        console.log(data);
+        this.matched = data.message;
+    }
+    return data;
+},
+
+async show_selected_skill_id(User_Id){
+    console.log(User_Id, this.selected_skill_id);
+    await this.fetch_update_user_datas_skills_id_array(User_Id, this.selected_skill_id);
+},
+
+
+
+}}).mount('#app');
+</script>
+</html>

@@ -17,9 +17,12 @@ DROP TABLE IF EXISTS comments;
 DROP TABLE IF EXISTS comment_replies;
 
 
+
+
 CREATE TABLE user_datas (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_name TEXT NOT NULL, -- 24 length string
+  password TEXT NOT NULL, -- hashed 12 length string, english and number
   weight_num INTEGER NOT NULL,
   user_type TEXT NOT NULL, -- 'company', 'customer'
   offline_online INTEGER NOT NULL, -- 0 for offline, 1 for online
@@ -179,3 +182,19 @@ INSERT INTO users (user_permission_id, username, userpassword, created_at, updat
 INSERT INTO users (user_permission_id, username, userpassword, created_at, updated_at) VALUES (2, 'user2', 'user_pass2', DATETIME('now'), DATETIME('now'));
 INSERT INTO users (user_permission_id, username, userpassword, created_at, updated_at) VALUES (3, 'pro1', 'pro_pass1', DATETIME('now'), DATETIME('now'));
 INSERT INTO users (user_permission_id, username, userpassword, created_at, updated_at) VALUES (4, 'testuser', 'duct_mean_fuckst1ck', DATETIME('now'), DATETIME('now'));
+
+-- skillsテーブルにTESTという文字列のレコードを挿入する
+
+INSERT INTO skills (skill, created_at, updated_at) VALUES ('TEST', DATETIME('now'), DATETIME('now'));
+-- user_datasにadmin_userを挿入する
+-- user_name: 'admin_user'
+-- password: 'taro'
+-- weight_num: 0
+-- user_type: 'company'
+-- offline_online: 0
+-- skills_id_array: [0]
+-- created_at: now(),
+-- updated_at: now(),
+
+
+-- INSERT INTO user_datas (user_name, password, weight_num, user_type, offline_online, skills_id_array, created_at, updated_at) VALUES ('admin_user', 'taro', 0, 'company', 0, '[0]', DATETIME('now'), DATETIME('now'));

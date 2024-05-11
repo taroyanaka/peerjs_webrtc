@@ -1173,8 +1173,8 @@ app.get('/read_user_datas_skills', (req, res) => {
     try {
         // skill table result
         const skill_result = db.prepare(`SELECT * FROM skills`).all()
-        ? db.prepare(`SELECT * FROM skills`).all()        
-        : (()=>{throw new Error('skillsテーブルからデータを取得できませんでした')})();
+            ? db.prepare(`SELECT * FROM skills`).all()
+            : (()=>{throw new Error('skillsテーブルからデータを取得できませんでした')})();
 
         // user_datasテーブルとskillsテーブルを結合してデータを取得する
         // skills_id_arrayに含まれるidを元にskillsテーブルからskillを取得する
@@ -1182,10 +1182,10 @@ app.get('/read_user_datas_skills', (req, res) => {
         const RESULT = db.prepare(`
         SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
         FROM user_datas`).all()
-        ? db.prepare(`
-        SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
-FROM user_datas`).all()
-        : (()=>{throw new Error('user_datasテーブルからデータを取得できませんでした')})();
+            ? db.prepare(`
+            SELECT user_datas.id AS user_data_id, user_datas.user_name, user_datas.weight_num, user_datas.user_type, user_datas.offline_online, user_datas.skills_id_array
+    FROM user_datas`).all()
+            : (()=>{throw new Error('user_datasテーブルからデータを取得できませんでした')})();
         // RESULTのskills_id_arrayをJSON.parse()して配列に変換する
         let new_RESULT = RESULT.map((result) => {
             result.skills_id_array = decodeURIComponent(result.skills_id_array);
@@ -1270,13 +1270,30 @@ app.post('/insert_skills', (req, res) => {
 // user_datasテーブルにデータを挿入するエンドポイント
 app.post('/insert_user_datas', (req, res) => {
     try {
+// console.log(req.body.user_name);
+// console.log(req.body.admin_password);
+// console.log(req.body.weight_num);
+console.log(req.body.admin_password);
+// console.log(req.body.offline_online);
+// console.log(req.body.skills_id_array);
+        console.log("insert_user_datas");
+        // console.log(req.body.weight_num);
         // 全てのreq.bodyの値をJSON.parse()でエスケープする
         // [req.body.user_name, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array]
         //     = [req.body.user_name, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array].map((value) => JSON.parse(value));
-        const [error_check_user_name, error_check_weight_num, error_check_user_type, error_check_offline_online, error_check_skills_id_array] =
-            [req.body.user_name, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array] = [req.body.user_name, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array].map((val) => JSON.parse(JSON.stringify(val)));
+         
+const [error_check_user_name, error_check_admin_password, error_check_weight_num, error_check_user_type, error_check_offline_online, error_check_skills_id_array]
+    = [req.body.user_name, req.body.admin_password, req.body.weight_num, req.body.user_type, req.body.offline_online, req.body.skills_id_array];
+    // .map((val) => JSON.parse(JSON.stringify(val)));
+
+    // console.log('error_check_user_type', error_check_user_type);
+    console.log('error_check_admin_password', error_check_admin_password);
         // error_check_user_name 1 to 24 length string not null
         error_check_user_name === undefined || error_check_user_name === null || error_check_user_name.length === 0 || error_check_user_name.length > 24 || error_check_user_name.includes(' ') || error_check_user_name.includes('　') ? (()=>{throw new Error('user_nameが不正です')})() : null;
+
+        // error_check_admin_passwordが'taro'でない場合はエラー
+        error_check_admin_password === undefined || error_check_admin_password === null || error_check_admin_password !== 'taro' ? (()=>{throw new Error('admin_passwordが不正です')})() : null;
+
         // error_check_weight_num 1 to 1000 integer not null
         error_check_weight_num === undefined || error_check_weight_num === null || error_check_weight_num < 1 || error_check_weight_num > 1000 ? (()=>{throw new Error('weight_numが不正です')})() : null;
         // error_check_user_type 'company' or 'customer' not null
@@ -1291,17 +1308,51 @@ app.post('/insert_user_datas', (req, res) => {
         // req.body.offline_online,
         // req.body.skills_id_array,を全てencodeURIComponent()でエスケープする
 
+        const {
+            createHash,
+        } = require('node:crypto');
+
+        function hashPassword(password) {
+            const hash1 = createHash('sha1');  
+            const hashed_password = hash1.update(password);
+            return hashed_password.digest('hex');
+        }
+        function generatePassword(length) {
+            const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let password = '';
+            for (let i = 0; i < length; i++) {
+                password += characters.charAt(Math.floor(Math.random() * characters.length));
+            }
+            return password;
+        }
+        const shuffle = (array) => {
+            for (let i = array.length - 1; i >= 0; i--) {
+                const rand = Math.floor(Math.random() * (i + 1));
+                [array[i], array[rand]] = [array[rand], array[i]]
+            }
+            return array;
+        }
+        // 24文字のパスワードを生成する english and number only(ハッシュ化はしない)
+        const password_24_char = shuffle(generatePassword(24).split('')).join('');
+
+        // new_user_idは'user_'+idの形式で生成する
+        const new_user_id = 'user_' + db.prepare(`SELECT COUNT(*) AS count FROM user_datas`).get().count;
+
         const escaped_all_data = {
-            user_name: encodeURIComponent(req.body.user_name),
+            user_name: new_user_id,
+            // user_name: encodeURIComponent(req.body.user_name),
+            // passwordをハッシュ化する
+            password: hashPassword(password_24_char),
             weight_num: encodeURIComponent(req.body.weight_num),
             user_type: encodeURIComponent(req.body.user_type),
             offline_online: encodeURIComponent(req.body.offline_online),
             skills_id_array: encodeURIComponent(req.body.skills_id_array),
         };
         const RESULT = db.prepare(`
-        INSERT INTO user_datas (user_name, weight_num, user_type, offline_online, skills_id_array, created_at, updated_at)
+        INSERT INTO user_datas (user_name, password, weight_num, user_type, offline_online, skills_id_array, created_at, updated_at)
             VALUES (
                 @user_name,
+                @password,
                 @weight_num,
                 @user_type,
                 @offline_online,
@@ -1311,6 +1362,7 @@ app.post('/insert_user_datas', (req, res) => {
             )
         `).run({
             user_name: escaped_all_data['user_name'],
+            password: escaped_all_data['password'],
             weight_num: escaped_all_data['weight_num'],
             user_type: escaped_all_data['user_type'],
             offline_online: escaped_all_data['offline_online'],
@@ -1328,7 +1380,9 @@ app.post('/insert_user_datas', (req, res) => {
         res.status(200)
             .json({result: 'success',
                 status: 200,
-                message: RESULT
+                message: RESULT,
+                new_user_id: new_user_id,
+                password_24_char: password_24_char,
             });
     } catch (error) {
         res.status(400).json({status: 400, result: 'fail', message: error.message});
