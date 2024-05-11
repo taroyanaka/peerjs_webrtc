@@ -19,6 +19,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>simple match</title>
     <script src="./vue@3.2.36.global.prod.js"></script>
+    <script src="./lib/qrcode.js"></script>
     <!-- <script src="./peerjs.1.5.2.min.js"></script> -->
     <style>
 /* タブのスタイル */
@@ -141,6 +142,11 @@
 
     <div>新規ユーザーid: <input type="text" v-model="new_user_id" placeholder="Enter user id"></div>
     <div>新規ユーザーパスワード <input type="text" v-model="new_password" placeholder="Enter password"></div>
+
+    新規user_url: {{ new_url_for_user_and_password }}
+
+    <button @click="make_qr_code_with_id_and_password">make_qr_code_with_id_and_password</button>
+    <div ref="qrcode"></div>    
 </div>
 
 <div id="Tab2" class="tabcontent">    
@@ -252,6 +258,7 @@ function openTab(evt, tabName) {
 const app = Vue.createApp({
 data() {
 return {
+    new_url_for_user_and_password: '',
     new_user_id: '',
     new_password: '',
 
@@ -406,10 +413,12 @@ mounted() {
     this.onlineOffline = 0;
     this.fetch_read_skills();
     this.fetch_read_user_datas_skills();
-    this.login_as();
 
-    this.login_name === '' ? this.login_name = 'a' : null;
-    document.querySelector("#login").click();
+    this.get_qr_code_with_id_and_password();
+    // this.login_as();
+
+    // this.login_name === '' ? this.login_name = 'a' : null;
+    // document.querySelector("#login").click();
 },
 beforeUpdated() {
 },
@@ -418,6 +427,40 @@ updated() {
     
 },
 methods: {
+get_qr_code_with_id_and_password(){
+    console.log("a get_qr_code_with_id_and_password");
+    if(new URL(window.location.href).searchParams.get('user_id') && new URL(window.location.href).searchParams.get('password')){
+
+        
+        console.log("b get_qr_code_with_id_and_password");
+
+        this.login_name = new URL(window.location.href).searchParams.get('user_id');
+        this.password = new URL(window.location.href).searchParams.get('password');
+        // ログインタブをクリックして開く
+        document.querySelector("#login").click();
+    }
+    console.log("c get_qr_code_with_id_and_password");
+
+},
+make_qr_code_with_id_and_password(){
+    console.log("make_qr_code_with_id_and_password");
+    console.log(this.new_user_id, this.new_password);
+
+    new QRCode(this.$refs.qrcode, {
+        // text: "https://taroyanaka.github.io/peerjs_webrtc/simple_match.html" +
+        text: window.location.href +
+            '?user_id=' + this.new_user_id + '&password=' + this.new_password
+        ,
+        width: 256,
+        height: 256,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+    this.new_url_for_user_and_password = window.location.href + '?user_id=' + this.new_user_id + '&password=' + this.new_password;
+},
+
+
 make_chat_url_for_receiver_user(Match_Id, Send_Id, receive_Id){
 try {
     console.log("make_chat_url_for_receiver_user");
