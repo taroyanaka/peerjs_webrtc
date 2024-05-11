@@ -127,7 +127,7 @@
 <div class="tab">
     <button class="tablinks" onclick="openTab(event, 'Tab1')">ユーザー追加</button>
     <button class="tablinks" onclick="openTab(event, 'Tab2')" id="login">ログイン</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab3')">Tab3</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab3')">フィルター</button>
     <button class="tablinks" onclick="openTab(event, 'Tab4')">Tab4</button>
     <button class="tablinks" onclick="openTab(event, 'Tab5')">Tab5</button>
 </div>
@@ -157,6 +157,19 @@
 </div>
 
 <div id="Tab3" class="tabcontent">
+    <!-- clear_filter_str button -->
+    <button @click="clear_filter_str">clear_filter_str</button>
+    <!-- br -->
+    <br>
+    <br>
+    <br>
+    <!-- all_skill -->
+    <div v-if="all_skills.length > 0">
+        <div v-for="all_skills_one, all_skills_one_idx in all_skills">
+            <button @click="filter_by_skill(all_skills_one.skill)">{{all_skills_one.skill}}</button>
+        </div>
+    </div>
+
 </div>
 
 <div id="Tab4" class="tabcontent">
@@ -183,21 +196,22 @@
 <div v-if="web_data && matched_data_ary">
     <div v-for="match_data, match_data_idx in matched_data_ary.message">
         {{ match_data }}
-        <button @click="fetch_insert_matches('match', match_data.user_data_id)">fetch_insert_matches</button>
+        <!-- <button @click="fetch_insert_matches('match', match_data.user_data_id)">fetch_insert_matches</button> -->
     </div>
 </div>
 {{ERROR_MESSAGE}}
 <div v-if="web_data && current_user" :class="current_user.user_type === 'company' ? 'message message-right' : 'message message-left'">
-            <div>user_data_id: {{current_user.user_data_id}}</div>
+    あなたのニックネームとスキル
+            <!-- <div>user_data_id: {{current_user.user_data_id}}</div> -->
             <div>user_name: {{current_user.user_name}}</div>
             <div>offline_online: {{current_user.offline_online}}
                 <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">1isOne</button>
             </div>
             <div>skills: </div>
             <div v-for="b, b_idx in current_user.skills">
-                <span>{{b.skill}}</span>
-                <button @click="fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(b.id)">match</button>
-                <button @click="fetch_delete_user_datas_skills_id_array(current_user.user_data_id, b.id)">|</button>
+                <span>{{decodeURIComponent(b.skill)}}</span>   
+                <!-- <button @click="fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(b.id)">match</button> -->
+                <button @click="fetch_delete_user_datas_skills_id_array(current_user.user_data_id, b.id)">削除</button>
             </div>
             <!-- fetch_update_user_datas_skills_id_arrayでselectタグとoptionタグでユーザーに追加する -->
             <select v-model="selected_skill_id" @change="show_selected_skill_id(current_user.user_data_id)" @click="show_selected_skill_id(current_user.user_data_id)">
@@ -206,7 +220,6 @@
 
 
 
-            hogehogehoge
             <!-- <div v-if="all_skills.length > 0">
                 <span v-for="all_skills_one, all_skills_one_idx in all_skills">
                     <button @click="skill_str">{{all_skills_one.skill}}</button>
@@ -219,15 +232,18 @@
     <button @click="fetch_add_skill_str">fetch_add_skill_str</button>
             <div v-if="web_data">
             <div v-if="web_data.message" class="chat-container">
-                <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'">
-                    <div>user_data_id: {{a.user_data_id}}</div>
+                <!-- <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'"> -->
+                <div v-for="a, a_idx in filtered(web_data.message)" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'">
+                    <!-- {{a}} -->
+                    <!-- <div>user_data_id: {{a.user_data_id}}</div> -->
                     <div>user_name: {{a.user_name}}</div>
                     <div>offline_online: {{a.offline_online}}
                         <button @click="fetch_update_user_datas_online_offline(a.user_data_id)">1isOne</button>
                     </div>
                     <div>skills: </div>
                     <span v-for="b, b_idx in a.skills">
-                        <span>{{b.skill}}</span>
+                        <span>{{decodeURIComponent(b.skill)}}</span>   
+                        <!-- <span>{{b.skill}}</span> -->
                         <button @click="fetch_delete_user_datas_skills_id_array(a.user_data_id, b.id)">|</button>
                         <span>{{' '}}</span>
                     </span>
@@ -258,6 +274,7 @@ function openTab(evt, tabName) {
 const app = Vue.createApp({
 data() {
 return {
+    filter_str: '',
     new_url_for_user_and_password: '',
     new_user_id: '',
     new_password: '',
@@ -405,14 +422,14 @@ watch: {
     deep: true
    },
 },
-mounted() {
+async mounted() {
     this.list_filter();
     this.userName = "a";
     this.weightNum = 1;
     this.userType = "company";
     this.onlineOffline = 0;
-    this.fetch_read_skills();
-    this.fetch_read_user_datas_skills();
+    await this.fetch_read_skills();
+    await this.fetch_read_user_datas_skills();
 
     this.get_qr_code_with_id_and_password();
     // this.login_as();
@@ -427,6 +444,19 @@ updated() {
     
 },
 methods: {
+filtered(ary){
+    if(this.filter_str){
+        console.log(ary.filter(user => user.skills.some(skill => skill.skill === this.filter_str)));
+        return ary.filter(user => user.skills.some(skill => skill.skill === encodeURIComponent(this.filter_str)));
+    }
+    return ary;
+},
+filter_by_skill(Skill_Str){
+    this.filter_str = Skill_Str;
+},
+clear_filter_str(){
+    this.filter_str = '';
+},
 get_qr_code_with_id_and_password(){
     console.log("a get_qr_code_with_id_and_password");
     if(new URL(window.location.href).searchParams.get('user_id') && new URL(window.location.href).searchParams.get('password')){
@@ -817,6 +847,9 @@ async fetch_add_skill_str() {
             body: JSON.stringify({ skill: this.skill_str,}),
         });
         const data = await res.json(); console.log(data);
+        await this.fetch_read_skills();
+        await this.fetch_read_user_datas_skills();
+        await this.login_as();
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
     }
@@ -829,6 +862,12 @@ async fetch_read_skills() {
         // data.messageが空の配列の場合は早期リターン
         if (data.message.length === 0) return;
         this.all_skills = data.message;
+        // this.all_skillsの配列をdecodeuricomponentする
+        this.all_skills = this.all_skills.map(Skill => {
+            Skill.skill = decodeURIComponent(Skill.skill);
+            return Skill;
+        });
+
         this.all_skills = this.all_skills.sort((a, b) => a.id - b.id).reverse();
         this.ERROR_MESSAGE = "";
     } catch (error) {
@@ -853,10 +892,15 @@ async fetch_update_user_datas_online_offline(Id) {
     try {
         console.log(JSON.stringify({user_data_id: Id}));
         const res = await fetch(this.endpoint + '/update_user_datas_online_offline', {method: 'POST',headers: {'Content-Type': 'application/json',},
-            body: JSON.stringify({user_data_id: Id}),
+            body: JSON.stringify({user_data_id: Id,
+                password: this.password
+            }),
         });
         const data = await res.json(); console.log(data);
         this.ERROR_MESSAGE = "";
+        await this.fetch_read_skills();
+        await this.fetch_read_user_datas_skills();
+        await this.login_as();
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
     }
@@ -874,15 +918,20 @@ async fetch_update_user_datas_weight_num(Id, Weight_Num, Plus_Minus="+") {
         this.ERROR_MESSAGE = error.message;
     }
 },
-async fetch_update_user_datas_skills_id_array(Id, Skill_Id) {
+async fetch_update_user_datas_skills_id_array(Id, Skill_Id, Password) {
     try {
         console.log
         (JSON.stringify({user_data_id: Id, skill_id: Skill_Id}));
         const res = await fetch(this.endpoint + '/update_user_datas_skills_id_array', {method: 'POST',headers: {'Content-Type': 'application/json',},
-            body: JSON.stringify({user_data_id: Id, skill_id: Skill_Id}),
+            body: JSON.stringify({user_data_id: Id, skill_id: Skill_Id,
+                password: Password
+            }),
         });
         const data = await res.json(); console.log(data);
         this.ERROR_MESSAGE = "";
+        await this.fetch_read_skills();
+        await this.fetch_read_user_datas_skills();
+        await this.login_as();
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
     }
@@ -891,10 +940,15 @@ async fetch_delete_user_datas_skills_id_array(Id, Skill_Id) {
     try {
         console.log(JSON.stringify({user_data_id: Id, skill_id: Skill_Id}));
         const res = await fetch(this.endpoint + '/delete_user_datas_skills_id_array', {method: 'POST',headers: {'Content-Type': 'application/json',},
-            body: JSON.stringify({user_data_id: Id, skill_id: Skill_Id}),
+            body: JSON.stringify({user_data_id: Id, skill_id: Skill_Id,
+                password: this.password
+            }),
         });
         const data = await res.json(); console.log(data);
         this.ERROR_MESSAGE = "";
+        await this.fetch_read_skills();
+        await this.fetch_read_user_datas_skills();
+        await this.login_as();
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
     }
@@ -1019,7 +1073,7 @@ async fetch_read_matches(){
 
 async show_selected_skill_id(User_Id){
     console.log(User_Id, this.selected_skill_id);
-    await this.fetch_update_user_datas_skills_id_array(User_Id, this.selected_skill_id);
+    await this.fetch_update_user_datas_skills_id_array(User_Id, this.selected_skill_id, this.password);
 },
 
 

@@ -1148,6 +1148,44 @@ app.post('/get_collect_value_for_test', (req, res) => {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const {
+    createHash,
+} = require('node:crypto');
+const { error } = require('console');
+
+function hashPassword(password) {
+    const hash1 = createHash('sha1');  
+    const hashed_password = hash1.update(password);
+    return hashed_password.digest('hex');
+}
+
+
 // CREATE TABLE user_datas (
 //     id INTEGER PRIMARY KEY AUTOINCREMENT,
 //     user_name TEXT NOT NULL, -- 24 length string
@@ -1308,15 +1346,6 @@ const [error_check_user_name, error_check_admin_password, error_check_weight_num
         // req.body.offline_online,
         // req.body.skills_id_array,を全てencodeURIComponent()でエスケープする
 
-        const {
-            createHash,
-        } = require('node:crypto');
-
-        function hashPassword(password) {
-            const hash1 = createHash('sha1');  
-            const hashed_password = hash1.update(password);
-            return hashed_password.digest('hex');
-        }
         function generatePassword(length) {
             const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
             let password = '';
@@ -1426,8 +1455,18 @@ app.post('/update_user_datas_weight_num', (req, res) => {
 // user_datasテーブルのonline_offlineを更新するエンドポイント
 app.post('/update_user_datas_online_offline', (req, res) => {
     try {
-        const [error_check_user_data_id] = [req.body.user_data_id];
+        const [error_check_user_data_id,
+            error_check_password
+        ] = [req.body.user_data_id,
+            req.body.password
+        ];
         error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
+        // error_check_passwordがuser_datasテーブルのpasswordと一致しない場合はエラー
+        error_check_password === undefined || error_check_password === null || error_check_password.length === 0 || error_check_password.length > 24 || error_check_password.includes(' ') || error_check_password.includes('　') ? (()=>{throw new Error('passwordが不正です')})() : null;
+        const user_data = db.prepare('SELECT password FROM user_datas WHERE id = ?').get(req.body.user_data_id);
+        const hashed_password = hashPassword(error_check_password);
+        user_data.password !== hashed_password ? (()=>{throw new Error('passwordが不正です')})() : null;
+
         const escaped_all_data = {
             user_data_id: encodeURIComponent(req.body.user_data_id),
         }; // user_datas.offline_onlineが0であれば1に、1であれば0にする
@@ -1456,12 +1495,21 @@ app.post('/update_user_datas_online_offline', (req, res) => {
 // user_datasテーブルのskills_id_arrayにskillのidを追加するエンドポイント
 app.post('/update_user_datas_skills_id_array', (req, res) => {
     try {
-        const [error_check_user_data_id, error_check_skill_id] =
-            [req.body.user_data_id, req.body.skill_id];
+        const [error_check_user_data_id, error_check_skill_id,
+            error_check_password
+        ] =
+            [req.body.user_data_id, req.body.skill_id,
+                req.body.password
+            ];
         // error_check_user_data_id 1 to 1000 integer not null
         error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
         // error_check_skill_id 1 to 1000 integer not null
         error_check_skill_id === undefined || error_check_skill_id === null || error_check_skill_id < 1 || error_check_skill_id > 1000 ? (()=>{throw new Error('skill_idが不正です')})() : null;
+        // error_check_passwordがuser_datasテーブルのpasswordと一致しない場合はエラー
+        error_check_password === undefined || error_check_password === null || error_check_password.length === 0 || error_check_password.length > 24 || error_check_password.includes(' ') || error_check_password.includes('　') ? (()=>{throw new Error('passwordが不正です')})() : null;
+        const user_data = db.prepare('SELECT password FROM user_datas WHERE id = ?').get(req.body.user_data_id);
+        const hashed_password = hashPassword(error_check_password);
+        user_data.password !== hashed_password ? (()=>{throw new Error('passwordが不正です')})() : null;
         // req.body.skill_id,を全てencodeURIComponent()でエスケープする
         const escaped_all_data = {
             user_data_id: encodeURIComponent(req.body.user_data_id),
@@ -1502,12 +1550,22 @@ app.post('/update_user_datas_skills_id_array', (req, res) => {
 // user_datasテーブルのskills_id_arrayからskillのidを削除するエンドポイント
 app.post('/delete_user_datas_skills_id_array', (req, res) => {
     try {
-        const [error_check_user_data_id, error_check_skill_id]
-            = [req.body.user_data_id, req.body.skill_id];
+        const [error_check_user_data_id, error_check_skill_id,
+            error_check_password
+        ]
+            = [req.body.user_data_id, req.body.skill_id,
+                req.body.password
+            ];
         // error_check_user_data_id 1 to 1000 integer not null
         error_check_user_data_id === undefined || error_check_user_data_id === null || error_check_user_data_id < 1 || error_check_user_data_id > 1000 ? (()=>{throw new Error('user_data_idが不正です')})() : null;
         // error_check_skill_id 1 to 1000 integer not null
         error_check_skill_id === undefined || error_check_skill_id === null || error_check_skill_id < 1 || error_check_skill_id > 1000 ? (()=>{throw new Error('skill_idが不正です')})() : null;
+        
+        error_check_password === undefined || error_check_password === null || error_check_password.length === 0 || error_check_password.length > 24 || error_check_password.includes(' ') || error_check_password.includes('　') ? (()=>{throw new Error('passwordが不正です')})() : null;
+        const user_data = db.prepare('SELECT password FROM user_datas WHERE id = ?').get(req.body.user_data_id);
+        const hashed_password = hashPassword(error_check_password);
+        user_data.password !== hashed_password ? (()=>{throw new Error('passwordが不正です')})() : null;
+
         // req.body.user_data_id,
         // req.body.skill_id,を全てencodeURIComponent()でエスケープする
         const escaped_all_data = {
