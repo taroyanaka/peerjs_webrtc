@@ -446,7 +446,6 @@ updated() {
 methods: {
 filtered(ary){
     if(this.filter_str){
-        console.log(ary.filter(user => user.skills.some(skill => skill.skill === this.filter_str)));
         return ary.filter(user => user.skills.some(skill => skill.skill === encodeURIComponent(this.filter_str)));
     }
     return ary;
@@ -458,24 +457,15 @@ clear_filter_str(){
     this.filter_str = '';
 },
 get_qr_code_with_id_and_password(){
-    console.log("a get_qr_code_with_id_and_password");
     if(new URL(window.location.href).searchParams.get('user_id') && new URL(window.location.href).searchParams.get('password')){
-
-        
-        console.log("b get_qr_code_with_id_and_password");
-
         this.login_name = new URL(window.location.href).searchParams.get('user_id');
         this.password = new URL(window.location.href).searchParams.get('password');
         // ログインタブをクリックして開く
         document.querySelector("#login").click();
     }
-    console.log("c get_qr_code_with_id_and_password");
-
 },
 make_qr_code_with_id_and_password(){
-    console.log("make_qr_code_with_id_and_password");
     console.log(this.new_user_id, this.new_password);
-
     new QRCode(this.$refs.qrcode, {
         // text: "https://taroyanaka.github.io/peerjs_webrtc/simple_match.html" +
         text: window.location.href +
