@@ -1174,15 +1174,11 @@ app.post('/get_collect_value_for_test', (req, res) => {
 
 
 
-const {
-    createHash,
-} = require('node:crypto');
-const { error } = require('console');
 
 function hashPassword(password) {
-    const hash1 = createHash('sha1');  
-    const hashed_password = hash1.update(password);
-    return hashed_password.digest('hex');
+    const CryptoJS = require("crypto-js");
+    const id = CryptoJS.SHA256(password).toString(CryptoJS.enc.Hex);
+    return id;
 }
 
 
