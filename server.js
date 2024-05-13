@@ -1264,6 +1264,46 @@ app.get('/read_skills', (req, res) => {
         res.status(400).json({status: 400, result: 'fail', message: error.message});
     }
 });
+// skillsテーブルに複数のskillを追加するエンドポイント
+app.post('/insert_multiple_skills', (req, res) => {
+try {
+    // req.body.multiple_skillsは\nの改行コードを含む文字列
+    const multiple_skills_ary = req.body.multiple_skills.split("\n");
+    const [error_check_multiple_skills_ary] = [multiple_skills_ary];
+    error_check_multiple_skills_ary === undefined || error_check_multiple_skills_ary === null || !Array.isArray(error_check_multiple_skills_ary) || error_check_multiple_skills_ary.length < 1 || error_check_multiple_skills_ary.length > 100 || error_check_multiple_skills_ary.some((skill) => typeof skill !== 'string' || skill.length === 0 || skill.length > 24 || skill.includes(' ') || skill.includes('　')) ? (()=>{throw new Error('multiple_skillsが不正です')})() : null;
+    let RESULT_ary = [];
+    multiple_skills_ary.forEach(skill=>{
+        const escaped_skill = encodeURIComponent(skill);
+        const RESULT = db.prepare(`
+        INSERT INTO skills (skill, created_at, updated_at)
+            VALUES (
+                @skill,
+                @created_at,
+                @updated_at
+            )
+        `).run({
+            skill: escaped_skill,
+            created_at: now(),
+            updated_at: now(),
+        })
+        ? RESULT_ary.push('OK')
+        : (()=>{throw new Error('skillsにレコードを挿入できませんでした')})();    
+    });
+
+res.status(200)
+    .json({result: 'success',
+        status: 200,
+        message: RESULT_ary
+    });
+} catch (error) {
+    res.status(400).json({status: 400, result: 'fail', message: error.message});
+}
+});
+
+
+
+
+
 // skillsテーブルにskillを追加するエンドポイント
 app.post('/insert_skills', (req, res) => {
     console.log(req.body);

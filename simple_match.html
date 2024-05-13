@@ -129,7 +129,7 @@
     <button class="tablinks" onclick="openTab(event, 'Tab2')" id="login">ログイン</button>
     <button class="tablinks" onclick="openTab(event, 'Tab3')">フィルター</button>
     <button class="tablinks" onclick="openTab(event, 'Tab4')">こんなスキル持ってる人いませんか</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab5')">Tab5</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab5')">タグ一括入力</button>
 </div>
 
 <div id="Tab1" class="tabcontent">
@@ -154,7 +154,7 @@
     <div>login_name: <input type="text" name="" id="" v-model="login_name"></div>
     <!-- password -->
     <div>password: <input type="password" v-model="password" placeholder="only English and Number"></div>
-    <button @click="login_as">login_as</button>
+    <button @click="login_as">login</button>
 </div>
 
 <div id="Tab3" class="tabcontent">
@@ -186,6 +186,12 @@
 </div>
 
 <div id="Tab5" class="tabcontent">
+    <!-- 10行 -->
+    複数のタグを改行して入力してください
+    <textarea name="" id="" v-model="multiple_skills"
+        cols="30" rows="10" placeholder="複数のタグを改行して入力してください"
+    ></textarea>
+    <button @click="fetch_insert_multiple_skills">タグの一括入力</button>
 </div>
 
 
@@ -215,7 +221,7 @@
             <!-- <div>user_data_id: {{current_user.user_data_id}}</div> -->
             <div>user_name: {{current_user.user_name}}</div>
             <div>offline_online: {{current_user.offline_online}}
-                <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">1isOne</button>
+                <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">onlineにする</button>
             </div>
             <div>skills: </div>
             <div v-for="b, b_idx in current_user.skills">
@@ -247,9 +253,9 @@
                     <!-- {{a}} -->
                     <!-- <div>user_data_id: {{a.user_data_id}}</div> -->
                     <div>user_name: {{a.user_name}}</div>
-                    <div>offline_online: {{a.offline_online}}
-                        <button @click="fetch_update_user_datas_online_offline(a.user_data_id)">1isOne</button>
-                    </div>
+                    <!-- <div>offline_online: {{a.offline_online}}
+                        <button @click="fetch_update_user_datas_online_offline(a.user_data_id)">onlineにする</button>
+                    </div> -->
                     <div>skills: </div>
                     <span v-for="b, b_idx in a.skills">
                         <span>{{decodeURIComponent(b.skill)}}</span>   
@@ -284,6 +290,9 @@ function openTab(evt, tabName) {
 const app = Vue.createApp({
 data() {
 return {
+    multiple_skills: `java
+php
+sql`, //multiple_skillsは\nの改行コードを含む文字列
     filter_str: '',
     new_url_for_user_and_password: '',
     new_user_id: '',
@@ -455,6 +464,20 @@ updated() {
     
 },
 methods: {
+async fetch_insert_multiple_skills(){
+    try {
+    // req.body.multiple_skillsは\nの改行コードを含む文字列
+    // const multiple_skills_ary = req.body.multiple_skills.split("\n");
+        const res = await fetch(this.endpoint + '/insert_multiple_skills', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({multiple_skills: this.multiple_skills}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+
+},
 the_skill_no_one_have(){
     // どのユーザーも所持していないスキルの配列を返す
     return this.all_skills.filter(skill => !this.web_data.message.some(user => user.skills.some(user_skill => user_skill.skill === skill.skill)));
