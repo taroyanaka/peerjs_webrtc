@@ -128,7 +128,7 @@
     <button class="tablinks" onclick="openTab(event, 'Tab1')">ユーザー追加</button>
     <button class="tablinks" onclick="openTab(event, 'Tab2')" id="login">ログイン</button>
     <button class="tablinks" onclick="openTab(event, 'Tab3')">フィルター</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab4')">Tab4</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab4')">こんなスキル持ってる人いませんか</button>
     <button class="tablinks" onclick="openTab(event, 'Tab5')">Tab5</button>
 </div>
 
@@ -149,7 +149,8 @@
     <div ref="qrcode"></div>    
 </div>
 
-<div id="Tab2" class="tabcontent">    
+<div id="Tab2" class="tabcontent">
+    追加したユーザーのデータは明日中に全て削除されます
     <div>login_name: <input type="text" name="" id="" v-model="login_name"></div>
     <!-- password -->
     <div>password: <input type="password" v-model="password" placeholder="only English and Number"></div>
@@ -164,8 +165,8 @@
     <br>
     <br>
     <!-- all_skill -->
-    <div v-if="all_skills.length > 0">
-        <div v-for="all_skills_one, all_skills_one_idx in all_skills">
+    <div v-if="the_skill_someone_have().length > 0">
+        <div v-for="all_skills_one, all_skills_one_idx in the_skill_someone_have()">
             <button @click="filter_by_skill(all_skills_one.skill)">{{all_skills_one.skill}}</button>
         </div>
     </div>
@@ -173,6 +174,15 @@
 </div>
 
 <div id="Tab4" class="tabcontent">
+    こんなスキル持ってる人いませんか一覧
+    <!-- <select>
+        <option v-for="b, b_idx in the_skill_no_one_have()" :value="b.id">{{b.skill}}</option>
+    </select> -->
+    <div v-if="the_skill_no_one_have().length > 0">
+        <div v-for="all_skills_one, all_skills_one_idx in the_skill_no_one_have()">
+            {{all_skills_one.skill}}
+        </div>
+    </div>
 </div>
 
 <div id="Tab5" class="tabcontent">
@@ -228,8 +238,8 @@
 </div>
 
 <div>
-    <input type="text" v-model="skill_str" placeholder="Enter skill">
-    <button @click="fetch_add_skill_str">fetch_add_skill_str</button>
+    <input type="text" v-model="skill_str" placeholder="タグを何でも追加して">
+    <button @click="fetch_add_skill_str">タグを追加</button>
             <div v-if="web_data">
             <div v-if="web_data.message" class="chat-container">
                 <!-- <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'"> -->
@@ -244,7 +254,7 @@
                     <span v-for="b, b_idx in a.skills">
                         <span>{{decodeURIComponent(b.skill)}}</span>   
                         <!-- <span>{{b.skill}}</span> -->
-                        <button @click="fetch_delete_user_datas_skills_id_array(a.user_data_id, b.id)">|</button>
+                        <!-- <button @click="fetch_delete_user_datas_skills_id_array(a.user_data_id, b.id)">|</button> -->
                         <span>{{' '}}</span>
                     </span>
                 </div>
@@ -445,6 +455,14 @@ updated() {
     
 },
 methods: {
+the_skill_no_one_have(){
+    // どのユーザーも所持していないスキルの配列を返す
+    return this.all_skills.filter(skill => !this.web_data.message.some(user => user.skills.some(user_skill => user_skill.skill === skill.skill)));
+},
+the_skill_someone_have(){
+    // どのユーザーも所持していないスキルの配列を返す
+    return this.all_skills.filter(skill => this.web_data.message.some(user => user.skills.some(user_skill => user_skill.skill === skill.skill)));
+},
 filtered(ary){
     if(this.filter_str){
         return ary.filter(user => user.skills.some(skill => skill.skill === encodeURIComponent(this.filter_str)));
