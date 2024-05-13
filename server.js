@@ -1202,6 +1202,48 @@ function hashPassword(password) {
 //     FOREIGN KEY (user_data_id) REFERENCES user_datas(id)
 // );
 
+
+app.post('/like_tag', (req, res) => {
+    // CREATE TABLE skill_likes (
+    //     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    //     skill_id INTEGER NOT NULL,
+    //     like_volume INTEGER NOT NULL,
+    //     created_at DATETIME NOT NULL,
+    //     updated_at DATETIME NOT NULL,
+    //     FOREIGN KEY (skill_id) REFERENCES skills(id)
+    //   );
+    try {
+        // skillに対して1:1でskill_likesをインクリメントする。レコードが存在しない場合は作る
+        // req.body.skill_id
+        // error_check
+        console.log(req.body.skill_id);
+        const [error_check_skill_id] = [req.body.skill_id];
+        error_check_skill_id === undefined || error_check_skill_id === null || typeof error_check_skill_id !== 'number' || error_check_skill_id < 1 || error_check_skill_id > 100 ? (()=>{throw new Error('skill_idが不正です')})() : null;
+        // skill_idが存在するか確認
+        const skill_exists = db.prepare(`SELECT * FROM skills WHERE id = ?`).get(req.body.skill_id);
+        skill_exists ? null : (()=>{throw new Error('skill_idが不正です')})();
+        // skill_likesにskill_idが存在するか確認
+        const skill_like_exists = db.prepare(`SELECT * FROM skill_likes WHERE skill_id = ?`).get(req.body.skill_id);
+        // skill_likesにskill_idが存在するならインクリメントする
+        skill_like_exists
+            ? db.prepare(`UPDATE skill_likes SET like_volume = like_volume + 1, updated_at = ? WHERE skill_id = ?`).run(now(), req.body.skill_id)
+            : db.prepare(`INSERT INTO skill_likes (skill_id, like_volume, created_at, updated_at) VALUES (?, ?, ?, ?)`).run(req.body.skill_id, 1, now(), now());
+        res.status(200)
+            .json({result: 'success',
+                status: 200
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
+
+
+
+      
+
+
+
+
 // user_datasテーブルとskillsテーブルを結合してデータを取得するgetのエンドポイント
 app.get('/read_user_datas_skills', (req, res) => {
     try {
@@ -1255,10 +1297,18 @@ app.get('/read_skills', (req, res) => {
         const RESULT = db.prepare(`SELECT * FROM skills`).all()
         ? db.prepare(`SELECT * FROM skills`).all()
         : (()=>{throw new Error('skillsテーブルからデータを取得できませんでした')})();
+        // RESULTにlike volumeを追加する
+        const RESULT_with_like = RESULT.map((result) => {
+            const like_volume = db.prepare(`SELECT like_volume FROM skill_likes WHERE skill_id = ?`).get(result.id);
+            result.like_volume = like_volume ? like_volume.like_volume : 0;
+            return result;
+        });
+
         res.status(200)
             .json({result: 'success',
                 status: 200,
-                message: RESULT
+                // message: RESULT
+                message: RESULT_with_like
             });
     } catch (error) {
         res.status(400).json({status: 400, result: 'fail', message: error.message});

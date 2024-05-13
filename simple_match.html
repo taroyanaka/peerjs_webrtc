@@ -130,6 +130,7 @@
     <button class="tablinks" onclick="openTab(event, 'Tab3')">フィルター</button>
     <button class="tablinks" onclick="openTab(event, 'Tab4')">こんなスキル持ってる人いませんか</button>
     <button class="tablinks" onclick="openTab(event, 'Tab5')">タグ一括入力</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab6')">アプリについて</button>
 </div>
 
 <div id="Tab1" class="tabcontent">
@@ -168,6 +169,9 @@
     <div v-if="the_skill_someone_have().length > 0">
         <div v-for="all_skills_one, all_skills_one_idx in the_skill_someone_have()">
             <button @click="filter_by_skill(all_skills_one.skill)">{{all_skills_one.skill}}</button>
+            <button @click="like_tag(all_skills_one.id)">♡</button>
+            <!-- like_volumeの数によって❤️をその分量分表示する -->
+            <span v-for="like_volume in all_skills_one.like_volume">❤️</span>
         </div>
     </div>
 
@@ -181,6 +185,10 @@
     <div v-if="the_skill_no_one_have().length > 0">
         <div v-for="all_skills_one, all_skills_one_idx in the_skill_no_one_have()">
             {{all_skills_one.skill}}
+            <!-- <button @click="like_tag(all_skills_one.id)">❤️ {{ all_skills_one.id }}</button> -->
+            <button @click="like_tag(all_skills_one.id)">♡</button>
+            <!-- like_volumeの数によって❤️をその分量分表示する -->
+            <span v-for="like_volume in all_skills_one.like_volume">❤️</span>
         </div>
     </div>
 </div>
@@ -192,6 +200,28 @@
         cols="30" rows="10" placeholder="複数のタグを改行して入力してください"
     ></textarea>
     <button @click="fetch_insert_multiple_skills">タグの一括入力</button>
+</div>
+
+<div id="Tab6" class="tabcontent">
+    <!-- en -->
+    <p>Start in 5 seconds without registration</p>
+    <p>Visualize the skills of people gathering in the community</p>
+    <p>Visualize the skills needed</p>
+        <p1>App that connects people</p1>
+
+    <p>※Even in a 1-hour exchange meeting with 20 participants, everyone can interact with everyone</p>
+    <p>※Connect with another community that has the skills that community needs</p>
+    <p>Example: A community that can program but wants a designer <=> A community that can design but wants a programmer</p>
+
+    <!-- ja -->
+    <p>登録不要で5秒で始められる</p>
+    <p>コミュニティに集まる人たちのスキルを可視化</p>
+    <p>必要とされているスキルを可視化し</p>
+        <p1>人々を繋ぎ合わせるアプリ</p1>
+
+    <p>※20人参加の1時間の交流会でも全員が全員と交流できる</p>
+    <p>※そのコミュニティが必要とするスキルを持つ別コミュニティと接続できる</p>
+    <p>例: プログラミングはできるけどデザインできる人が欲しいコミュニティ <=> デザインできるけどプログラミングできる人が欲しいコミュニティ</p>
 </div>
 
 
@@ -392,8 +422,8 @@ receive_matched: [{
     now_checking_match: false,
     match_url_array: [],
     matched_data_ary: null,
-    // endpoint: 'http://localhost:8000',
-    endpoint: 'https://cotton-concrete-catsup.glitch.me',
+    endpoint: 'http://localhost:8000',
+    // endpoint: 'https://cotton-concrete-catsup.glitch.me',
     // endpoint: 'http://127.0.0.1:3000',
     // endpoint: 'https://cotton-concrete-catsup.glitch.me',
 
@@ -466,9 +496,21 @@ updated() {
     
 },
 methods: {
-    reversed(array_like){
-        return [...array_like].reverse();
-    },
+async like_tag(Tag_Id){
+    try {
+        console.log(Tag_Id);
+        const res = await fetch(this.endpoint + '/like_tag', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: JSON.stringify({skill_id: Tag_Id}),
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }    
+},
+reversed(array_like){
+    return [...array_like].reverse();
+},
 async fetch_insert_multiple_skills(){
     try {
     // req.body.multiple_skillsは\nの改行コードを含む文字列
