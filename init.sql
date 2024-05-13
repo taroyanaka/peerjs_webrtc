@@ -5,6 +5,8 @@
 -- sqlite3で全てのテーブルとそのデータを削除するクエリ
 DROP TABLE IF EXISTS user_datas;
 DROP TABLE IF EXISTS skills;
+DROP TABLE IF EXISTS skill_likes;
+
 
 
 DROP TABLE IF EXISTS user_permission;
@@ -39,6 +41,14 @@ CREATE TABLE skills (
   updated_at DATETIME NOT NULL
 );
 
+CREATE TABLE skill_likes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  skill_id INTEGER NOT NULL,
+  like_volume INTEGER NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  FOREIGN KEY (skill_id) REFERENCES skills(id)
+);
 
 -- ユーザーの権限のテーブル。カラムはIDはと名前と作成日と更新日を持つ。IDは自動的に増加する
 -- カラムの中には、一般ユーザー、ゲストユーザーがある
