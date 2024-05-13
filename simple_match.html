@@ -246,10 +246,12 @@
 <div>
     <input type="text" v-model="skill_str" placeholder="タグを何でも追加して">
     <button @click="fetch_add_skill_str">タグを追加</button>
+
             <div v-if="web_data">
             <div v-if="web_data.message" class="chat-container">
+            <!-- <div v-if="reversed(web_data.message)" class="chat-container"> -->
                 <!-- <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'"> -->
-                <div v-for="a, a_idx in filtered(web_data.message)" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'">
+                <div v-for="a, a_idx in filtered(reversed(web_data.message))" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'">
                     <!-- {{a}} -->
                     <!-- <div>user_data_id: {{a.user_data_id}}</div> -->
                     <div>user_name: {{a.user_name}}</div>
@@ -464,6 +466,9 @@ updated() {
     
 },
 methods: {
+    reversed(array_like){
+        return [...array_like].reverse();
+    },
 async fetch_insert_multiple_skills(){
     try {
     // req.body.multiple_skillsは\nの改行コードを含む文字列
