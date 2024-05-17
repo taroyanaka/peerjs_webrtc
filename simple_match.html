@@ -22,6 +22,20 @@
     <script src="./lib/qrcode.js"></script>
     <!-- <script src="./peerjs.1.5.2.min.js"></script> -->
     <style>
+        .tab{
+            /* width 100% かつ　子要素を均等に */
+            display: flex;
+            
+        }
+        .tab > * {
+            flex: 1;
+        }
+        /* tabを左右のborderで区切る */
+        .tablinks{
+            border-left: #000 0.1rem solid;
+        }
+
+        
         .Tab6 > p{
             /* pタグ同士の行間を0.1remにする */
             line-height: 0.1rem;
@@ -136,24 +150,30 @@ header > h2{
         .chat-container {
             display: flex;
             flex-direction: column;
-            width: 50%;
-            margin: auto;
+            /* width: 50%; */
         }
         .message {
             padding: 10px;
-            margin: 10px 0;
             border-radius: 10px;
+            border: 1px solid #000;
+            /* 左右は中央に　上下は0.1rem */
+            /* margin: 0.1rem; */
+            /* 1rem */
+            /* margin: 1rem; */
+            align-self: center;
+            width: 90%;
+            margin-top: 0.3rem;
+
+
         }
-        .message-left {
+        /* .message-left {
             align-self: flex-start;
             background-color: #f0f0f0;
         }
         .message-right {
             align-self: flex-end;
-            /* background-color: #0f0; */
-            /* 枠線を表示する */
             border: 1px solid #000;
-        }
+        } */
         .online{
             /* onlineはbold */
             font-weight: bold;
@@ -171,7 +191,7 @@ header > h2{
 <body>
 <div id="app">
 <!-- header -->
-<header class="tablinks" onclick="openTab(event, 'Tab6')">
+<header onclick="openTab(event, 'Tab6')">
     <h1>COONERER</h1>
     <h2>co-op connecter</h2>
     <!-- 検索ボックス -->
@@ -190,15 +210,15 @@ header > h2{
     <a :href="chat_url_for_receiver_user" target="_blank">chat_url_for_receiver_user</a>
 </div>    
 <div class="tab">
-    <button class="tablinks" onclick="openTab(event, 'Tab1')">ユーザー追加</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab2')" id="login">ログイン</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab3')">フィルター</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab4')">こんなスキル持ってる人いませんか</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab5')">タグ一括入力</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab6')">アプリについて</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab7')">Tab7</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab8')">Tab8</button>
-    <button class="tablinks" onclick="openTab(event, 'Tab9')">Tab9</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab1')">加</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab2')" id="login">入</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab3')">出</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab4')">探</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab5')">付</button>
+    <button class="tablinks" onclick="openTab(event, 'Tab6')">名</button>
+    <!-- <button class="tablinks" onclick="openTab(event, 'Tab7')">7</button> -->
+    <!-- <button class="tablinks" onclick="openTab(event, 'Tab8')">8</button> -->
+    <!-- <button class="tablinks" onclick="openTab(event, 'Tab9')">9</button> -->
 </div>
 
 <div id="Tab1" class="tabcontent">
@@ -316,16 +336,22 @@ header > h2{
     </div>
 </div>
 {{ERROR_MESSAGE}}
-<div v-if="web_data && current_user" :class="current_user.user_type === 'company' ? 'message message-right' : 'message message-left'">
+<!-- <div v-if="web_data && current_user" :class="current_user.user_type === 'company' ? 'message message-right' : 'message message-left'"> -->
+<div v-if="web_data && current_user" :class="current_user.user_type === 'company' ? 'message' : 'message'">
     あなたのニックネームとスキル
             <!-- <div>user_data_id: {{current_user.user_data_id}}</div> -->
-            <div>user_name: {{current_user.user_name}}</div>
+            <!-- <div>user_name: {{current_user.user_name}}</div> -->
+            <div>{{current_user.user_name}}</div>
             <div>offline_online: {{current_user.offline_online}}
                 <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">onlineにする</button>
             </div>
             <div>skills: </div>
             <div v-for="b, b_idx in current_user.skills">
-                <span>{{decodeURIComponent(b.skill)}}</span>   
+                <!-- <span>{{decodeURIComponent(b.skill)}}</span> -->
+                <!-- <span>{{decodeURIComponent(b.skill)}}</span> を filter_by_skillのボタンに -->
+                <button @click="filter_by_skill(b.skill)">{{decodeURIComponent(b.skill)}}</button>
+                <!--             <button @click="filter_by_skill(all_skills_one.skill)">{{all_skills_one.skill}}</button> -->
+
                 <!-- <button @click="fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(b.id)">match</button> -->
                 <button @click="fetch_delete_user_datas_skills_id_array(current_user.user_data_id, b.id)">削除</button>
             </div>
@@ -351,16 +377,18 @@ header > h2{
             <div v-if="web_data.message" class="chat-container">
             <!-- <div v-if="reversed(web_data.message)" class="chat-container"> -->
                 <!-- <div v-for="a, a_idx in web_data.message" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'"> -->
-                <div v-for="a, a_idx in filtered(reversed(web_data.message))" :class="a.user_type === 'company' ? 'message message-right' : 'message message-left'">
+                <div v-for="a, a_idx in filtered(reversed(web_data.message))" :class="a.user_type === 'company' ? 'message' : 'message'">
                     <!-- {{a}} -->
                     <!-- <div>user_data_id: {{a.user_data_id}}</div> -->
-                    <div>user_name: {{a.user_name}}</div>
+                    <!-- <div>user_name: {{a.user_name}}</div> -->
+                    <div>{{a.user_name}}</div>
                     <!-- <div>offline_online: {{a.offline_online}}
                         <button @click="fetch_update_user_datas_online_offline(a.user_data_id)">onlineにする</button>
                     </div> -->
-                    <div>skills: </div>
+                    <span>skills: </span>
                     <span v-for="b, b_idx in a.skills">
-                        <span>{{decodeURIComponent(b.skill)}}</span>   
+                        <!-- <span>{{decodeURIComponent(b.skill)}}</span> -->
+                        <button @click="filter_by_skill(b.skill)">{{decodeURIComponent(b.skill)}}</button>
                         <!-- <span>{{b.skill}}</span> -->
                         <!-- <button @click="fetch_delete_user_datas_skills_id_array(a.user_data_id, b.id)">|</button> -->
                         <span>{{' '}}</span>
