@@ -7,6 +7,7 @@ DROP TABLE IF EXISTS user_datas;
 DROP TABLE IF EXISTS skills;
 DROP TABLE IF EXISTS skill_likes;
 
+DROP TABLE IF EXISTS bookmarks;
 
 
 DROP TABLE IF EXISTS user_permission;
@@ -77,6 +78,17 @@ CREATE TABLE users (
   created_at DATETIME NOT NULL,
   updated_at DATETIME NOT NULL,
   FOREIGN KEY (user_permission_id) REFERENCES user_permission(id)
+);
+
+-- usersが所有するお気に入りのtagのテーブル。IDは自動的に増加する。userのIDを外部キーとして持つ。bookmarsというテーブル名
+-- usersと1:1の関係,tagsと1:1の関係
+CREATE TABLE bookmarks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  tag_id INTEGER NOT NULL,
+  created_at DATETIME NOT NULL,
+  updated_at DATETIME NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
 -- linksというブログのようなサービスのテーブル。IDは自動的に増加する。userのIDを外部キーとして持つ

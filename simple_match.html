@@ -220,7 +220,7 @@
     <p>登録不要で5秒で始められる</p>
     <p>コミュニティに集まる人たちのスキルを可視化</p>
     <p>必要とされているスキルを可視化し</p>
-        <p1>人々を繋ぎ合わせるアプリ</p1>
+        <p>人々を繋ぎ合わせるアプリ</p>
 
     <p>※20人参加の1時間の交流会でも全員が全員と交流できる</p>
     <p>※そのコミュニティが必要とするスキルを持つ別コミュニティと接続できる</p>
@@ -427,8 +427,8 @@ receive_matched: [{
     now_checking_match: false,
     match_url_array: [],
     matched_data_ary: null,
-    // endpoint: 'http://localhost:8000',
-    endpoint: 'https://cotton-concrete-catsup.glitch.me',
+    endpoint: 'http://localhost:8000',
+    // endpoint: 'https://cotton-concrete-catsup.glitch.me',
     // endpoint: 'http://127.0.0.1:3000',
     // endpoint: 'https://cotton-concrete-catsup.glitch.me',
 
@@ -551,6 +551,11 @@ clear_filter_str(){
     this.filter_str = '';
 },
 get_qr_code_with_id_and_password(){
+    let currentDomain = window.location.protocol + "//" + window.location.hostname + ":3004";
+    // console.log(currentDomain);
+    let port = window.location.port;
+    // console.log(port);
+
     if(new URL(window.location.href).searchParams.get('user_id') && new URL(window.location.href).searchParams.get('password')){
         this.login_name = new URL(window.location.href).searchParams.get('user_id');
         this.password = new URL(window.location.href).searchParams.get('password');
@@ -560,9 +565,11 @@ get_qr_code_with_id_and_password(){
 },
 make_qr_code_with_id_and_password(){
     console.log(this.new_user_id, this.new_password);
+    // 既存のQRCodeがあったら削除する
+    if (this.qrcode) this.qrcode.clear();
     new QRCode(this.$refs.qrcode, {
         // text: "https://taroyanaka.github.io/peerjs_webrtc/simple_match.html" +
-        text: window.location.href +
+        text: window.location.origin + window.location.pathname +
             '?user_id=' + this.new_user_id + '&password=' + this.new_password
         ,
         width: 256,
@@ -571,7 +578,8 @@ make_qr_code_with_id_and_password(){
         colorLight : "#ffffff",
         correctLevel : QRCode.CorrectLevel.H
     });
-    this.new_url_for_user_and_password = window.location.href + '?user_id=' + this.new_user_id + '&password=' + this.new_password;
+    // this.new_url_for_user_and_password = window.location.href + '?user_id=' + this.new_user_id + '&password=' + this.new_password;
+    this.new_url_for_user_and_password = window.location.origin + window.location.pathname + '?user_id=' + this.new_user_id + '&password=' + this.new_password;
 },
 
 

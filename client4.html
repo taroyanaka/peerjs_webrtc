@@ -97,7 +97,6 @@ const text_to_qr = () => {
     const Text = url_with_peer_id + '?peer_id_b=' + document.querySelector('.result').value;
     console.log("text_to_qr", Text);
     new QRCode(document.getElementById("qrcode"), Text);
-    
 }
 let url_with_peer_id = new URL(window.location.href);
 const set_url_with_peer_id = () => {
