@@ -22,13 +22,68 @@
     <script src="./lib/qrcode.js"></script>
     <!-- <script src="./peerjs.1.5.2.min.js"></script> -->
     <style>
+        .Tab6 > p{
+            /* pタグ同士の行間を0.1remにする */
+            line-height: 0.1rem;
+
+
+        }
+/* <header>
+    <h1>COONERER</h1>
+    <h2>co-op connecter</h2>
+</header> */
+header{
+    display: inline-block;
+}
+header > h1{
+    font-size: 1rem;
+    text-align: left;
+    margin-bottom: 0;
+    display: inline-block;
+
+}
+header > h2{
+    font-size: 0.6rem;
+    text-align: left;
+    /* gray */
+    color: #808080;
+    /* margin top 0 */
+    margin-top: 0;
+    margin-left: 0.1rem;
+    /* 上方向の余白を無くす */
+    display: inline-block;
+
+}
+
+.search{
+    /* 検索ボックス */
+    width: 20%;
+    height: 2rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    box-sizing: border-box;
+    float: right;
+}
+/* searchをクリックしたらwidthが60%になる */
+.search:focus{
+    width: 60%;
+}
+
 /* タブのスタイル */
-.tab {
+/* .tab {
   overflow: hidden;
   border: 1px solid #ccc;
   background-color: #f1f1f1;
+} */
+.tab {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
 }
-
 /* タブボタンのスタイル */
 .tab button {
   background-color: inherit;
@@ -95,7 +150,9 @@
         }
         .message-right {
             align-self: flex-end;
-            background-color: #0f0;
+            /* background-color: #0f0; */
+            /* 枠線を表示する */
+            border: 1px solid #000;
         }
         .online{
             /* onlineはbold */
@@ -113,6 +170,14 @@
 </head>
 <body>
 <div id="app">
+<!-- header -->
+<header class="tablinks" onclick="openTab(event, 'Tab6')">
+    <h1>COONERER</h1>
+    <h2>co-op connecter</h2>
+    <!-- 検索ボックス -->
+</header>
+<input type="text" class="search" placeholder="search" v-model="search_str" @input="text_filter" @change="text_filter">
+
 
 
 <!-- <button @click="login_as()">login_as</button> -->
@@ -207,24 +272,24 @@
 
 <div id="Tab6" class="tabcontent">
     <!-- en -->
-    <p>Start in 5 seconds without registration</p>
-    <p>Visualize the skills of people gathering in the community</p>
-    <p>Visualize the skills needed</p>
-        <p1>App that connects people</p1>
+    <p>Start in 5 seconds without registration
+    Visualize the skills of people gathering in the community
+    Visualize the skills needed
+        App that connects people
 
-    <p>※Even in a 1-hour exchange meeting with 20 participants, everyone can interact with everyone</p>
-    <p>※Connect with another community that has the skills that community needs</p>
-    <p>Example: A community that can program but wants a designer <=> A community that can design but wants a programmer</p>
+    ※Even in a 1-hour exchange meeting with 20 participants, everyone can interact with everyone
+    ※Connect with another community that has the skills that community needs
+    Example: A community that can program but wants a designer <=> A community that can design but wants a programmer</p>
 
     <!-- ja -->
-    <p>登録不要で5秒で始められる</p>
-    <p>コミュニティに集まる人たちのスキルを可視化</p>
-    <p>必要とされているスキルを可視化し</p>
-        <p>人々を繋ぎ合わせるアプリ</p>
+    <p>登録不要で5秒で始められる
+    コミュニティに集まる人たちのスキルを可視化
+    必要とされているスキルを可視化し
+        人々を繋ぎ合わせるアプリ
 
-    <p>※20人参加の1時間の交流会でも全員が全員と交流できる</p>
-    <p>※そのコミュニティが必要とするスキルを持つ別コミュニティと接続できる</p>
-    <p>例: プログラミングはできるけどデザインできる人が欲しいコミュニティ <=> デザインできるけどプログラミングできる人が欲しいコミュニティ</p>
+    ※20人参加の1時間の交流会でも全員が全員と交流できる
+    ※そのコミュニティが必要とするスキルを持つ別コミュニティと接続できる
+    例: プログラミングはできるけどデザインできる人が欲しいコミュニティ <=> デザインできるけどプログラミングできる人が欲しいコミュニティ</p>
 </div>
 
 <div id="Tab7" class="tabcontent"></div>
@@ -327,6 +392,9 @@ function openTab(evt, tabName) {
 const app = Vue.createApp({
 data() {
 return {
+    // オリジナルLIST
+    original_LIST: [],
+    search_str: '',
     multiple_skills: `java
 php
 sql`, //multiple_skillsは\nの改行コードを含む文字列
@@ -427,8 +495,8 @@ receive_matched: [{
     now_checking_match: false,
     match_url_array: [],
     matched_data_ary: null,
-    // endpoint: 'http://localhost:8000',
-    endpoint: 'https://cotton-concrete-catsup.glitch.me',
+    endpoint: 'http://localhost:8000',
+    // endpoint: 'https://cotton-concrete-catsup.glitch.me',
     // endpoint: 'http://127.0.0.1:3000',
     // endpoint: 'https://cotton-concrete-catsup.glitch.me',
 
@@ -478,6 +546,12 @@ watch: {
     },
     deep: true
    },
+   search_str: {
+    handler(new_val, old_val) {
+        this.text_filter();
+    },
+    deep: true
+   },
 },
 async mounted() {
     this.list_filter();
@@ -489,7 +563,16 @@ async mounted() {
     await this.fetch_read_user_datas_skills();
 
     this.get_qr_code_with_id_and_password();
-    // this.login_as();
+    this.setup_text_filter();
+
+    // login_nameとpasswordが入力されている場合はloginを試す
+    try {
+        if(this.login_name && this.password){
+            this.login_as();
+        }
+    } catch (error) {
+        
+    }
 
     // this.login_name === '' ? this.login_name = 'a' : null;
     // document.querySelector("#login").click();
@@ -501,6 +584,23 @@ updated() {
     
 },
 methods: {
+    // <input type="text" class="search" placeholder="search">
+setup_text_filter(){
+    this.original_LIST = JSON.parse(JSON.stringify(this.web_data.message));
+},
+text_filter(){
+    console.log("text_filter");
+    // this.search_strが入力されたら、this.web_data.messageの中からthis.search_strを含むものだけを表示する
+    // まずoriginal_LISTにthis.web_data.messageのコピーを代入
+    if(this.search_str === ''){
+        // If search_str is empty, restore web_data.message from original_LIST
+        this.web_data.message = JSON.parse(JSON.stringify(this.original_LIST));
+    }else{
+        // this.original_LIST = JSON.parse(JSON.stringify(this.web_data.message));
+        // console.log(JSON.parse(JSON.stringify(this.original_LIST)).filter(a => a.includes(this.search_str)));
+        this.web_data.message = JSON.parse(JSON.stringify(this.original_LIST)).filter(a => a.skills.some(skill => skill.skill.includes(this.search_str)));
+    }
+},
 async like_tag(Tag_Id){
     try {
         console.log(Tag_Id);
