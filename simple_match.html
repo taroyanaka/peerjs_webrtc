@@ -22,6 +22,13 @@
     <script src="./lib/qrcode.js"></script>
     <!-- <script src="./peerjs.1.5.2.min.js"></script> -->
     <style>
+    .fn_box{
+        display: flex;
+        justify-content: space-between;
+    }
+    .add_tag{}
+    .right_side_clear_filter_str{}
+
         .tab{
             /* width 100% かつ　子要素を均等に */
             display: flex;
@@ -126,6 +133,7 @@ header > h2{
   padding: 6px 12px;
   border: 1px solid #ccc;
   border-top: none;
+  z-index: 100;
 }
 
 
@@ -370,8 +378,13 @@ header > h2{
 </div>
 
 <div>
-    <input type="text" v-model="skill_str" placeholder="タグを何でも追加して">
-    <button @click="fetch_add_skill_str">タグを追加</button>
+    <div class="fn_box">
+        <div class="add_tag">
+            <input type="text" v-model="skill_str" placeholder="タグを何でも追加して">
+            <button @click="fetch_add_skill_str">タグを追加</button>
+        </div>
+        <button @click="clear_filter_str" class="right_side_clear_filter_str">clear_filter_str</button>
+    </div>
 
             <div v-if="web_data">
             <div v-if="web_data.message" class="chat-container">
