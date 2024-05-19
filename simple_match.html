@@ -198,7 +198,7 @@ header > h2{
 <!-- header -->
 <header onclick="openTab(event, 'Tab6')">
     <h1>COONERER</h1>
-    <h2>co-op connecter 0.0.0.1</h2>
+    <h2>co-op connecter ver 0.0.0.2</h2>
     <!-- 検索ボックス -->
 </header>
 <input type="text" class="search" placeholder="search" v-model="search_str" @input="text_filter" @change="text_filter">
@@ -240,8 +240,8 @@ header > h2{
         <div>新規ユーザーパスワード <input type="text" v-model="new_password" placeholder="Enter password"></div>
         新規user_url: <a :href="new_url_for_user_and_password">{{ new_url_for_user_and_password }}</a>
         <!-- <button @click="make_qr_code_with_id_and_password">make_qr_code_with_id_and_password</button> -->
-        <div ref="qrcode"></div>
     </div>
+    <div ref="qrcode"></div>
 </div>
 
 <div id="Tab2" class="tabcontent">
