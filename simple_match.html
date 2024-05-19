@@ -254,12 +254,13 @@ header > h2{
 
 <div id="Tab3" class="tabcontent">
     <!-- clear_filter_str button -->
-    <button @click="clear_filter_str">clear_filter_str</button>
+    <button @click="clear_filter_str">絞り込みを解除</button>
     <!-- br -->
     <br>
     <br>
     <br>
     <!-- all_skill -->
+    <div>全てのスキル一覧 クリックしたらユーザー表示が絞れる</div>
     <div v-if="the_skill_someone_have().length > 0">
         <div v-for="all_skills_one, all_skills_one_idx in the_skill_someone_have()">
             <button @click="filter_by_skill(all_skills_one.skill)">{{all_skills_one.skill}}</button>
@@ -381,7 +382,7 @@ header > h2{
             <input type="text" v-model="skill_str" placeholder="タグを何でも追加して">
             <button @click="fetch_add_skill_str">タグを追加</button>
         </div>
-        <button @click="clear_filter_str" class="right_side_clear_filter_str">clear_filter_str</button>
+        <button @click="clear_filter_str" class="right_side_clear_filter_str">絞り込みを解除</button>
     </div>
 
             <div v-if="web_data">
@@ -634,6 +635,7 @@ try {
         if(this.login_name && this.password){
             this.login_as();
         }
+    this.skill_str = '';
 } catch (error) {
     console.log(error);
 }
@@ -1096,7 +1098,6 @@ async fetch_add_skill_str() {
         });
         const data = await res.json(); console.log(data);
         // insertに成功したらthis.skill_strに''をセットする
-        this.skill_str = '';
         await this.web_data_set_up();
     } catch (error) {
         this.ERROR_MESSAGE = error.message;

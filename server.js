@@ -1359,7 +1359,7 @@ app.post('/insert_skills', (req, res) => {
     console.log(req.body);
     try {
         // 同じskillが存在する場合はエラーを返す
-        const skill_exists = db.prepare(`SELECT * FROM skills WHERE skill = ?`).get(req.body.skill);
+        const skill_exists = db.prepare(`SELECT * FROM skills WHERE skill = ?`).get(encodeURIComponent(req.body.skill));
         skill_exists ? (()=>{throw new Error('同じskillが存在します')})() : null;
 
         // const skill = JSON.parse(req.body.skill);
