@@ -1317,6 +1317,12 @@ app.get('/read_skills', (req, res) => {
 // skillsテーブルに複数のskillを追加するエンドポイント
 app.post('/insert_multiple_skills', (req, res) => {
 try {
+    // 同じskillが存在する場合はエラーを返す
+    req.body.multiple_skills.split("\n").forEach(Skill=>{
+        const skill_exists = db.prepare(`SELECT * FROM skills WHERE skill = ?`).get(encodeURIComponent(Skill));
+        skill_exists.skill ? (()=>{throw new Error('同じskillが存在します')})() : null;
+    })
+
     // req.body.multiple_skillsは\nの改行コードを含む文字列
     const multiple_skills_ary = req.body.multiple_skills.split("\n");
     const [error_check_multiple_skills_ary] = [multiple_skills_ary];
@@ -1360,7 +1366,11 @@ app.post('/insert_skills', (req, res) => {
     try {
         // 同じskillが存在する場合はエラーを返す
         const skill_exists = db.prepare(`SELECT * FROM skills WHERE skill = ?`).get(encodeURIComponent(req.body.skill));
-        skill_exists ? (()=>{throw new Error('同じskillが存在します')})() : null;
+        console.log(skill_exists);
+        skill_exists.skill ? console.log("error is this") : null;
+        // skill_exists ? (()=>{throw new Error('同じskillが存在します')})() : null;
+        skill_exists.skill ? (()=>{throw new Error('同じskillが存在します')})() : null;
+
 
         // const skill = JSON.parse(req.body.skill);
         const skill = req.body.skill;
