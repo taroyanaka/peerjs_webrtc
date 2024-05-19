@@ -1,18 +1,4 @@
 <!DOCTYPE html>
-<!--vscodeのlive previewを使う場合は、./.data/以下のファイルを無視する設定が必要
-    (.sqlite3のファイルに変更が加わった際にclient6.htmlがリロードされるため)
-    "files.watcherExclude": {
-        // ./.data/以下のファイルを無視する
-        "**/.data/**": true
-    }
- -->
-
-<!-- a sideがb sideにmatch(when: match) => b sideがa sideにmatch(when: receive) =>
-    receive状態であればa,b双方にURL発行 => 
-    ※※※※※※仕様検討中: match4からclient6に自動的にリダイレクト(matchesにreceive状態のレコードがある場合。)
-    ※※※※※※仕様検討中: client6に自動リダイレクト後発行されたpeer_idをmatchesに挿入
-    => 片方がchatにログイン(matchをwaitingに,peer_idをmatchesに挿入) => 対向にwaitingであることが表示 =>
-    両方がchatにログイン(matchesからpeer_idを取得,matchをchattingに) => chat開始 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -42,10 +28,12 @@
         .tab{
             /* width 100% かつ　子要素を均等に */
             display: flex;
+            height: 2.5rem;
             
         }
         .tab > * {
             flex: 1;
+            height: 1.5rem;
         }
         /* tabを左右のborderで区切る */
         .tablinks{
@@ -240,19 +228,20 @@ header > h2{
 
 <div id="Tab1" class="tabcontent">
     <div class="new_user_insert">
+    <div>ユーザー追加</div>
     <div>userName: <input type="text" v-model="userName" placeholder="Enter user name"></div>
     <!-- admin password -->
     <div>admin_password: <input type="password" v-model="admin_password" placeholder="only English and Number"></div>
-    <div><button @click="fetch_add_user_data">fetch_add_user_data</button></div>
+    <button @click="fetch_add_user_data">ユーザー追加</button>
     </div>
 
-    <div>新規ユーザーid: <input type="text" v-model="new_user_id" placeholder="Enter user id"></div>
-    <div>新規ユーザーパスワード <input type="text" v-model="new_password" placeholder="Enter password"></div>
-
-    新規user_url: {{ new_url_for_user_and_password }}
-
-    <button @click="make_qr_code_with_id_and_password">make_qr_code_with_id_and_password</button>
-    <div ref="qrcode"></div>    
+    <div v-if="new_user_id && new_password">
+        <div>新規ユーザーid: <input type="text" v-model="new_user_id" placeholder="Enter user id"></div>
+        <div>新規ユーザーパスワード <input type="text" v-model="new_password" placeholder="Enter password"></div>
+        新規user_url: <a :href="new_url_for_user_and_password">{{ new_url_for_user_and_password }}</a>
+        <!-- <button @click="make_qr_code_with_id_and_password">make_qr_code_with_id_and_password</button> -->
+        <div ref="qrcode"></div>
+    </div>
 </div>
 
 <div id="Tab2" class="tabcontent">
@@ -1080,6 +1069,7 @@ async fetch_add_user_data() {
     this.new_user_id = data.new_user_id;
     this.new_password = data.password_24_char;
     this.ERROR_MESSAGE = "";
+    this.make_qr_code_with_id_and_password();
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
     }
