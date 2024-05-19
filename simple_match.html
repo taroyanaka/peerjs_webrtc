@@ -349,10 +349,12 @@ header > h2{
             <!-- <div>user_data_id: {{current_user.user_data_id}}</div> -->
             <!-- <div>user_name: {{current_user.user_name}}</div> -->
             <div>{{current_user.user_name}}</div>
-            <div>offline_online: {{current_user.offline_online}}
+            <!-- 0はオフライン,1はオンライン -->
+            <!-- offline_online:  -->
+            <div>{{current_user.offline_online ? '現在はonline' : '現在はoffline'}}
                 <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">{{ current_user.offline_online ? 'offlineにする' : 'onlineにする' }}</button>
             </div>
-            <div>skills: </div>
+            <span>タグ: </span>
             <div v-for="b, b_idx in current_user.skills">
                 <!-- <span>{{decodeURIComponent(b.skill)}}</span> -->
                 <!-- <span>{{decodeURIComponent(b.skill)}}</span> を filter_by_skillのボタンに -->
@@ -397,7 +399,7 @@ header > h2{
                     <!-- <div>offline_online: {{a.offline_online}}
                         <button @click="fetch_update_user_datas_online_offline(a.user_data_id)">onlineにする</button>
                     </div> -->
-                    <span>skills: </span>
+                    <span>タグ: </span>
                     <span v-for="b, b_idx in a.skills">
                         <!-- <span>{{decodeURIComponent(b.skill)}}</span> -->
                         <button @click="filter_by_skill(b.skill)">{{decodeURIComponent(b.skill)}}</button>
