@@ -198,7 +198,7 @@ header > h2{
 <!-- header -->
 <header onclick="openTab(event, 'Tab6')">
     <h1>COONERER</h1>
-    <h2>co-op connecter ver 0.0.0.2</h2>
+    <h2>co-op connecter ver:0.0.0.3</h2>
     <!-- 検索ボックス -->
 </header>
 <input type="text" class="search" placeholder="search" v-model="search_str" @input="text_filter" @change="text_filter">
@@ -349,7 +349,7 @@ header > h2{
             <!-- <div>user_name: {{current_user.user_name}}</div> -->
             <div>{{current_user.user_name}}</div>
             <div>offline_online: {{current_user.offline_online}}
-                <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">onlineにする</button>
+                <button @click="fetch_update_user_datas_online_offline(current_user.user_data_id)">{{ current_user.offline_online ? 'offlineにする' : 'onlineにする' }}</button>
             </div>
             <div>skills: </div>
             <div v-for="b, b_idx in current_user.skills">
@@ -626,7 +626,18 @@ updated() {
     
 },
 methods: {
-    // <input type="text" class="search" placeholder="search">
+async web_data_set_up(){
+try {
+    await this.fetch_read_skills();
+    await this.fetch_read_user_datas_skills();
+    this.setup_text_filter();
+        if(this.login_name && this.password){
+            this.login_as();
+        }
+} catch (error) {
+    console.log(error);
+}
+},
 setup_text_filter(){
     this.original_LIST = JSON.parse(JSON.stringify(this.web_data.message));
 },
@@ -651,6 +662,7 @@ async like_tag(Tag_Id){
         });
         const data = await res.json(); console.log(data);
         this.ERROR_MESSAGE = "";
+        await this.web_data_set_up();
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
     }    
@@ -667,6 +679,7 @@ async fetch_insert_multiple_skills(){
         });
         const data = await res.json(); console.log(data);
         this.ERROR_MESSAGE = "";
+        await this.web_data_set_up();
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
     }
@@ -1082,9 +1095,9 @@ async fetch_add_skill_str() {
             body: JSON.stringify({ skill: this.skill_str,}),
         });
         const data = await res.json(); console.log(data);
-        await this.fetch_read_skills();
-        await this.fetch_read_user_datas_skills();
-        await this.login_as();
+        // insertに成功したらthis.skill_strに''をセットする
+        this.skill_str = '';
+        await this.web_data_set_up();
     } catch (error) {
         this.ERROR_MESSAGE = error.message;
     }
