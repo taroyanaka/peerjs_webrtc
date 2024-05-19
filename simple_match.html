@@ -198,7 +198,7 @@ header > h2{
 <!-- header -->
 <header onclick="openTab(event, 'Tab1')">
     <h1>COONERER</h1>
-    <h2>co-op connecter ver:0.0.0.8</h2>
+    <h2>co-op connecter ver:0.0.0.9</h2>
     <!-- 検索ボックス -->
 </header>
 <input type="text" class="search" placeholder="search" v-model="search_str" @input="text_filter" @change="text_filter">
@@ -298,6 +298,8 @@ header > h2{
 </div>
 
 <div id="Tab6" class="tabcontent">
+    <div>このページのqrコード</div>
+    <div ref="qrcode2"></div>
     <!-- en -->
     <p>Start in 5 seconds without registration
     Visualize the skills of people gathering in the community
@@ -617,6 +619,7 @@ async mounted() {
     } finally {
         // tab1を開く
         document.querySelector("#Tab1").click();
+        this.site_qr_code();
     }
 
     // tab2を開く
@@ -633,6 +636,18 @@ updated() {
     
 },
 methods: {
+site_qr_code(){
+    new QRCode(this.$refs.qrcode2, {
+        // text: "https://taroyanaka.github.io/peerjs_webrtc/simple_match.html" +
+        text: window.location.origin + window.location.pathname
+        ,
+        width: 256,
+        height: 256,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+},
 async web_data_set_up(){
 try {
     await this.fetch_read_skills();
