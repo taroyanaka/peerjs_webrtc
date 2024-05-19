@@ -228,11 +228,11 @@ header > h2{
 
 <div id="Tab1" class="tabcontent">
     <div class="new_user_insert">
-    <div>ユーザー追加</div>
-    <div>userName: <input type="text" v-model="userName" placeholder="Enter user name"></div>
-    <!-- admin password -->
-    <div>admin_password: <input type="password" v-model="admin_password" placeholder="only English and Number"></div>
-    <button @click="fetch_add_user_data">ユーザー追加</button>
+    <!-- <div>ユーザー追加</div> -->
+    <!-- <div>userName: <input type="text" v-model="userName" placeholder="Enter user name"></div> -->
+    <!-- <div>admin_password(追加済み): <input type="password" v-model="admin_password" placeholder="only English and Number"></div> -->
+    <button @click="fetch_add_user_data">ユーザー追加(パスワードは再発行できないから忘れたら新規登録してね)</button>
+    ※24時間毎に全データを消すけどヤバいデータは載せないようにしよう
     </div>
 
     <div v-if="new_user_id && new_password">
