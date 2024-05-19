@@ -345,7 +345,7 @@ header > h2{
 {{ERROR_MESSAGE}}
 <!-- <div v-if="web_data && current_user" :class="current_user.user_type === 'company' ? 'message message-right' : 'message message-left'"> -->
 <div v-if="web_data && current_user" :class="current_user.user_type === 'company' ? 'message' : 'message'">
-    あなたのニックネームとスキル
+    あなたのIDとスキル
             <!-- <div>user_data_id: {{current_user.user_data_id}}</div> -->
             <!-- <div>user_name: {{current_user.user_name}}</div> -->
             <div>{{current_user.user_name}}</div>
@@ -379,7 +379,7 @@ header > h2{
 <div>
     <div class="fn_box">
         <div class="add_tag">
-            <input type="text" v-model="skill_str" placeholder="SNSのIDでもスキルでも趣味でも何でも追加して">
+            <input type="text" v-model="skill_str" size="50" placeholder="SNSのIDでもスキルでも趣味でも何でも追加して">
             <button @click="fetch_add_skill_str">タグを追加</button>
         </div>
         <button @click="clear_filter_str" class="right_side_clear_filter_str">絞り込みを解除</button>
