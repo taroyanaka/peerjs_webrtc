@@ -1362,18 +1362,14 @@ res.status(200)
 
 // skillsテーブルにskillを追加するエンドポイント
 app.post('/insert_skills', (req, res) => {
-    console.log(req.body);
     try {
-        // 同じskillが存在する場合はエラーを返す
-        const skill_exists = db.prepare(`SELECT * FROM skills WHERE skill = ?`).get(encodeURIComponent(req.body.skill));
-        console.log(skill_exists);
-        skill_exists.skill ? console.log("error is this") : null;
-        // skill_exists ? (()=>{throw new Error('同じskillが存在します')})() : null;
-        skill_exists.skill ? (()=>{throw new Error('同じskillが存在します')})() : null;
-
-
-        // const skill = JSON.parse(req.body.skill);
         const skill = req.body.skill;
+        console.log("skill", skill);
+        console.log("encodeURIComponent(skill)", encodeURIComponent(skill));
+        // 同じskillが存在する場合はエラーを返す
+        const skill_exists = db.prepare(`SELECT * FROM skills WHERE skill = ?`).get(encodeURIComponent(skill));
+        console.log("skill_exists", skill_exists);
+        skill_exists ? (()=>{throw new Error('同じskillが存在します')})() : null;
         const [error_check_skill] = [skill];
         error_check_skill === undefined || error_check_skill === null || error_check_skill.length === 0 || error_check_skill.length > 24 || error_check_skill.includes(' ') || error_check_skill.includes('　') ? (()=>{throw new Error('skillが不正です')})() : null;
         const escaped_skill = encodeURIComponent(skill);
@@ -1401,6 +1397,7 @@ app.post('/insert_skills', (req, res) => {
         res.status(400).json({status: 400, result: 'fail', message: error.message});
     }
 });
+
 // user_datasテーブルにデータを挿入するエンドポイント
 app.post('/insert_user_datas', (req, res) => {
     try {
@@ -2226,6 +2223,7 @@ app.post('/check_peer_id_or_change_it', (req, res) => {
 
 
 // -- user_datas, skills, skill_likesの全レコードを削除するエンドポイント
+// -- user_datas, skills, skill_likesの全レコードを削除するエンドポイント
 app.post('/delete_all_records', (req, res) => {
     try {
         const RESULT = db.prepare('DELETE FROM skill_likes').run()
@@ -2233,7 +2231,28 @@ app.post('/delete_all_records', (req, res) => {
         && db.prepare('DELETE FROM user_datas').run()
         ? 'OK'
         : (()=>{throw new Error('user_datas, skills, skill_likesの全レコードを削除できませんでした')})();
-        res.status(200)
+        
+      
+      if(RESULT === 'OK'){
+        const escaped_skill = encodeURIComponent('sample');
+        const RESULT2 = db.prepare(`
+        INSERT INTO skills (skill, created_at, updated_at)
+            VALUES (
+                @skill,
+                @created_at,
+                @updated_at
+            )
+        `).run({
+            skill: escaped_skill,
+            created_at: now(),
+            updated_at: now(),
+        })
+        ? 'OK'
+        : (()=>{throw new Error('skillsにレコードを挿入できませんでした')})();
+      }
+
+      
+      res.status(200)
             .json({result: 'success',
                 status: 200,
                 message: RESULT

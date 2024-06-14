@@ -1352,6 +1352,12 @@ async show_selected_skill_id(User_Id){
 
 // fetch delete_all_records
 async fetch_delete_all_records(){
+    // ローカル環境と本番環境で生成されるパスワードが異なる(別の文字列をそれぞれの環境で生成している)ので、
+    // ローカルで生成したパスワードをセットした状態だと本番環境でパスワードが一致しないためエラーになる
+    // 完全なサンプルユーザー(サンプルパスワードを用意した)を作るfetchの関数を作るか、
+    // endpointを切り替える際はfetch_delete_all_recordsを毎回行うかする
+
+    // もしくは根本的にgoogleログインなどのuid固定をするか
     try {
         const res = await fetch(this.endpoint + '/delete_all_records', {method: 'POST',headers: {'Content-Type': 'application/json',},
             body: null,
