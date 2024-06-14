@@ -26,7 +26,7 @@
 
         }
         .tab{
-            /* width 100% かつ　子要素を均等に */
+            /* width 100% かつ　子要た素を均等に */
             display: flex;
             height: 2.5rem;
             
@@ -1350,7 +1350,32 @@ async show_selected_skill_id(User_Id){
     await this.fetch_update_user_datas_skills_id_array(User_Id, this.selected_skill_id, this.password);
 },
 
+// fetch delete_all_records
+async fetch_delete_all_records(){
+    try {
+        const res = await fetch(this.endpoint + '/delete_all_records', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: null,
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
 
+// sampleのスキルを追加するfetchの関数
+async fetch_add_sample_skill(){
+    try {
+        const res = await fetch(this.endpoint + '/add_sample_skill', {method: 'POST',headers: {'Content-Type': 'application/json',},
+            body: null,
+        });
+        const data = await res.json(); console.log(data);
+        this.ERROR_MESSAGE = "";
+    } catch (error) {
+        this.ERROR_MESSAGE = error.message;
+    }
+},
+        
 
 }}).mount('#app');
 </script>

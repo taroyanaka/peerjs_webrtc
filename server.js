@@ -2222,3 +2222,63 @@ app.post('/check_peer_id_or_change_it', (req, res) => {
         res.status(400).json({ status: 400, result: 'fail', message: error.message });
     }
 });
+
+
+
+// -- user_datas, skills, skill_likesの全レコードを削除するエンドポイント
+app.post('/delete_all_records', (req, res) => {
+    try {
+        const RESULT = db.prepare('DELETE FROM skill_likes').run()
+        && db.prepare('DELETE FROM skills').run()
+        && db.prepare('DELETE FROM user_datas').run()
+        ? 'OK'
+        : (()=>{throw new Error('user_datas, skills, skill_likesの全レコードを削除できませんでした')})();
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
+
+// sampleのスキルを追加するfetchの関数
+// async fetch_add_sample_skill(){
+//     try {
+//         const res = await fetch(this.endpoint + '/add_sample_skill', {method: 'POST',headers: {'Content-Type': 'application/json',},
+//             body: null,
+//         });
+//         const data = await res.json(); console.log(data);
+//         this.ERROR_MESSAGE = "";
+//     } catch (error) {
+//         this.ERROR_MESSAGE = error.message;
+//     }
+// },
+app.post('/add_sample_skill', (req, res) => {
+    try {
+        const escaped_skill = encodeURIComponent('sample');
+        const RESULT = db.prepare(`
+        INSERT INTO skills (skill, created_at, updated_at)
+            VALUES (
+                @skill,
+                @created_at,
+                @updated_at
+            )
+        `).run({
+            skill: escaped_skill,
+            created_at: now(),
+            updated_at: now(),
+        })
+        ? 'OK'
+        : (()=>{throw new Error('skillsにレコードを挿入できませんでした')})();
+
+        res.status(200)
+            .json({result: 'success',
+                status: 200,
+                message: RESULT
+            });
+    } catch (error) {
+        res.status(400).json({status: 400, result: 'fail', message: error.message});
+    }
+});
