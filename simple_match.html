@@ -205,15 +205,6 @@ header > h2{
 
 
 
-<!-- <button @click="login_as()">login_as</button> -->
-<!-- <button @click="login_as({id: 7, name: 'C'})">login_as({id: 7, name: 'C'})</button> -->
-<!-- <button @click="fetch_delete_matches()">fetch_delete_matches</button> -->
-<!-- <div v-if="chat_url">
-    <a :href="chat_url" target="_blank">chat_url</a>
-</div> -->
-<div v-if="chat_url_for_receiver_user">
-    <a :href="chat_url_for_receiver_user" target="_blank">chat_url_for_receiver_user</a>
-</div>    
 <div class="tab">
     <button class="tablinks" onclick="openTab(event, 'Tab1')">加</button>
     <button class="tablinks" onclick="openTab(event, 'Tab2')" id="login">入</button>
@@ -458,10 +449,6 @@ sql`, //multiple_skillsは\nの改行コードを含む文字列
     login_name: '',
     selected_skill_id: '',
 
-    chat_url_for_receiver_user: '',
-    chat_url: '',
-    url_for_receiver_user: '',
-    sample_data_ary: [],
 
     show_full_url: false,
     login_id_name: {id: 1, name: "a"},
