@@ -520,20 +520,9 @@ async mounted() {
         document.querySelector("#Tab1").click();
         this.site_qr_code();
     }
-
-    // tab2を開く
-    // document.querySelector("#Tab2").click();
-
-
-    // this.login_name === '' ? this.login_name = 'a' : null;
-    // document.querySelector("#login").click();
 },
-beforeUpdated() {
-},
-updated() {
-    
-    
-},
+beforeUpdated() {},
+updated() {},
 methods: {
 site_qr_code(){
     new QRCode(this.$refs.qrcode2, {
@@ -547,6 +536,9 @@ site_qr_code(){
         correctLevel : QRCode.CorrectLevel.H
     });
 },
+
+
+// text filter
 setup_text_filter(){
     this.original_LIST = JSON.parse(JSON.stringify(this.web_data.message));
 },
@@ -557,7 +549,16 @@ text_filter(){
         this.web_data.message = JSON.parse(JSON.stringify(this.original_LIST)).filter(a => a.skills.some(skill => skill.skill.includes(this.search_str)));
     }
 },
-// レンダリング
+// text filter
+
+
+// tag filter & reverse for web_data rendering
+filter_by_skill(Skill_Str){
+    this.filter_str = Skill_Str;
+},
+clear_filter_str(){
+    this.filter_str = '';
+},
 filtered(ary){
     if(this.filter_str){
         return ary.filter(user => user.skills.some(skill => skill.skill === encodeURIComponent(this.filter_str)));
@@ -575,18 +576,11 @@ the_skill_someone_have(){
     // ユーザーが所持してるスキルの配列を返す
     return this.all_skills.filter(skill => this.web_data.message.some(user => user.skills.some(user_skill => user_skill.skill === skill.skill)));
 },
-filter_by_skill(Skill_Str){
-    this.filter_str = Skill_Str;
-},
-clear_filter_str(){
-    this.filter_str = '';
-},
+// skill filter & reverse for web_data rendering
+
 get_qr_code_with_id_and_password(){
     let currentDomain = window.location.protocol + "//" + window.location.hostname + ":3004";
-    // console.log(currentDomain);
     let port = window.location.port;
-    // console.log(port);
-
     if(new URL(window.location.href).searchParams.get('user_id') && new URL(window.location.href).searchParams.get('password')){
         this.login_name = new URL(window.location.href).searchParams.get('user_id');
         this.password = new URL(window.location.href).searchParams.get('password');
@@ -595,7 +589,6 @@ get_qr_code_with_id_and_password(){
     }
 },
 make_qr_code_with_id_and_password(){
-    console.log(this.new_user_id, this.new_password);
     // 既存のQRCodeがあったら削除する
     if (this.qrcode) this.qrcode.clear();
     new QRCode(this.$refs.qrcode, {
@@ -612,6 +605,9 @@ make_qr_code_with_id_and_password(){
     // this.new_url_for_user_and_password = window.location.href + '?user_id=' + this.new_user_id + '&password=' + this.new_password;
     this.new_url_for_user_and_password = window.location.origin + window.location.pathname + '?user_id=' + this.new_user_id + '&password=' + this.new_password;
 },
+
+
+
 login_as(Id_Name={id: 5, name: "a"}){
     if(this.web_data){
         this.current_user = this.web_data.message.find(user => user.user_name === this.login_name);
