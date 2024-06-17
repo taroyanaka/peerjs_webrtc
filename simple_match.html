@@ -358,7 +358,7 @@ header > h2{
                 <button @click="filter_by_skill(b.skill)">{{decodeURIComponent(b.skill)}}</button>
                 <!--             <button @click="filter_by_skill(all_skills_one.skill)">{{all_skills_one.skill}}</button> -->
 
-                <!-- <button @click="fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(b.id)">match</button> -->
+
                 <button @click="fetch_delete_user_datas_skills_id_array(current_user.user_data_id, b.id)">削除</button>
             </div>
             <!-- fetch_update_user_datas_skills_id_arrayでselectタグとoptionタグでユーザーに追加する -->
@@ -450,12 +450,8 @@ sql`, //multiple_skillsは\nの改行コードを含む文字列
     selected_skill_id: '',
 
 
-    show_full_url: false,
     login_id_name: {id: 1, name: "a"},
 
-    now_checking_match: false,
-    match_url_array: [],
-    matched_data_ary: null,
     // endpoint: 'http://localhost:8000',
     endpoint: 'https://cotton-concrete-catsup.glitch.me',
     // endpoint: 'http://127.0.0.1:3000',
@@ -763,67 +759,6 @@ try {
         body: JSON.stringify({skill_id: Skill_Id}),
     });
     const data = await res.json(); console.log(data);
-    this.ERROR_MESSAGE = "";
-} catch (error) {
-    this.ERROR_MESSAGE = error.message;
-}
-},
-async fetch_read_1_who_find_n_companies_or_n_customers_by_1_skill(Skill_Id) {
-try {
-    const test_user_data_id = this.login_id_name.id;
-    if(Skill_Id === undefined || Skill_Id === null || Skill_Id === 0 || typeof Skill_Id !== 'number') throw new Error('skill_idが不正です');
-    const skill_id = Skill_Id;
-    const res = await fetch(this.endpoint + '/read_1_who_find_n_companies_or_n_customers_by_1_skill', {method: 'POST',headers: {'Content-Type': 'application/json',},
-            body: JSON.stringify({user_data_id: test_user_data_id, skill_id: skill_id}),
-    });
-    const data = await res.json(); console.log(data);
-    data.status !== 200 ? (()=>{throw new Error(data.message)})() : null;
-    this.matched_data_ary = data;
-    this.matched_data_ary.message = this.matched_data_ary.message.map(user => {
-        if(user.skills_id_array){
-            user.skills = decodeURIComponent(user.skills_id_array).split(",").map(V=>Number(V)).map(skill => {
-                return this.all_skills.find(all_skill => all_skill.id === skill);
-            });
-        }
-        return user;
-    });
-    this.match_url_array = [];
-    this.matched_data_ary.message.forEach(matched_data=>{
-        const local_url = 'http://127.0.0.1:3000';
-        this.match_url_array.push(
-            local_url + '/client6.html'
-                + '?own=' + JSON.stringify(this.web_data.message[0])
-                + '&another=' + JSON.stringify(matched_data)
-                + '&login_id_name=' + JSON.stringify(this.login_id_name)
-        );
-    });
-    this.ERROR_MESSAGE = "";
-} catch (error) {
-    this.ERROR_MESSAGE = error.message;
-}
-},
-async fetch_insert_matches(When_To_Send="match", Match_User_Id) {
-try {
-    // this.login_id_name.idがundefinedやnullや0や文字列や配列の場合はエラースロー
-    if(this.login_id_name.id === undefined || this.login_id_name.id === null || this.login_id_name.id === 0 || typeof this.login_id_name.id !== 'number') throw new Error('login_id_name.idが不正です');
-    const send_id_of_user_data_id = this.login_id_name.id;
-    const res = await fetch(this.endpoint + '/insert_match', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: JSON.stringify({
-            send_id: send_id_of_user_data_id,
-            receive_id: Match_User_Id,
-            when_to_send: When_To_Send
-        }),
-    });
-    this.ERROR_MESSAGE = "";
-} catch (error) {
-    this.ERROR_MESSAGE = error.message;
-}
-},
-async fetch_delete_matches() { // delete_matches // 開発用のAPIエンドポイント。あとで削除する。// sqlite> DELETE FROM matches;のapp.get
-try {
-    const res = await fetch(this.endpoint + '/delete_matches', {method: 'POST',headers: {'Content-Type': 'application/json',},
-        body: null,
-    });
     this.ERROR_MESSAGE = "";
 } catch (error) {
     this.ERROR_MESSAGE = error.message;
